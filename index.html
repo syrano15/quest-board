@@ -181,6 +181,26 @@
   .meta{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;}
   .time{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;}
   .task.done .time{color:var(--dim);}
+  .seqchip{display:inline-flex;align-items:baseline;gap:.1rem;font-family:"IBM Plex Mono",monospace;
+    font-size:.72rem;font-weight:600;color:var(--text);background:var(--surface);
+    border:1px solid var(--line);border-radius:.3rem;padding:0 .35rem;line-height:1.7;font-variant-numeric:tabular-nums;}
+  .seqchip i{font-style:normal;color:var(--dim);font-weight:400;}
+  .task.done .seqchip{color:var(--muted);}
+  .seqbar{height:3px;border-radius:99px;background:var(--surface);overflow:hidden;margin-top:.25rem;max-width:11rem;}
+  .seqbar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+  .task.done .seqbar i{background:var(--done);}
+  .nextep{flex:none;align-self:center;background:none;border:1px dashed var(--line);border-radius:.45rem;
+    color:var(--muted);font-size:.76rem;padding:.3rem .55rem;margin-right:.3rem;cursor:pointer;white-space:nowrap;
+    transition:all .15s ease;}
+  .nextep:hover{border-color:var(--accent);border-style:solid;color:var(--accent);}
+  .w-seq{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+    border:1px solid var(--line);border-radius:3px;padding:0 3px;margin-right:5px;vertical-align:1px;
+    color:var(--muted);text-decoration:none;}
+  .w-item.done .w-seq{text-decoration:none;}
+  .fnum{display:flex;align-items:center;gap:.5rem;}
+  .fnum input{width:5rem;background:var(--surface);border:1px solid var(--line);border-radius:.5rem;
+    color:var(--text);font:inherit;font-size:.92rem;padding:.45rem .6rem;}
+  .fnum span{color:var(--muted);font-size:.85rem;}
   .donetime{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--done);font-variant-numeric:tabular-nums;}
   .task.done .note,.task.done .rsn{opacity:.8;}
   .chip{font-size:.64rem;font-weight:600;letter-spacing:.04em;border-radius:.25rem;padding:.05rem .32rem;line-height:1.65;}
@@ -278,7 +298,7 @@
   .fdate .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
     font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
   .fdate .q:hover{border-color:var(--accent);color:var(--accent);}
-  .toast{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);z-index:40;
+  .toast{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);z-index:15;
     display:flex;align-items:center;gap:.7rem;max-width:min(30rem,92vw);
     background:var(--panel);border:1px solid var(--accent-dim);border-left:4px solid var(--accent);
     border-radius:.6rem;padding:.6rem .8rem;box-shadow:0 8px 28px rgba(0,0,0,.45);}
@@ -549,7 +569,7 @@
 
     <form class="quick" id="quickForm">
       <div class="sugbox" id="sugMain" hidden></div>
-      <input type="text" id="quickInput" placeholder="할 일 추가 — 예: #집안일 내일 분리수거 · !! 월 10:00 회의" maxlength="120" autocomplete="off">
+      <input type="text" id="quickInput" placeholder="할 일 추가 — 예: #집안일 내일 분리수거 · #취미 드라마 @3/12" maxlength="120" autocomplete="off">
       <button class="primary" type="submit">추가</button>
     </form>
   </main>
@@ -618,6 +638,8 @@
       <div class="hrow"><code>월 / 다음주 화</code><span>다음 그 요일</span></div>
       <div class="hrow"><code>9/8</code><span>특정 날짜</span></div>
       <div class="hrow"><code>+3</code><span>3일 뒤</span></div>
+      <div class="hrow"><code>드라마이름 @3/12</code><span>회차 — 맨 뒤에 씁니다 (전체 12화 중 3화)</span></div>
+      <div class="hrow"><code>드라마이름 @3</code><span>전체 회차를 모르면 숫자만</span></div>
       <div class="hrow"><code>#회의 !! 월 10:00 킥오프</code><span>섞어 써도 됩니다</span></div>
     </div>
     <p class="hsec">카드 조작</p>
@@ -628,6 +650,7 @@
       <div class="hrow"><code>!</code><span>우선순위 순환 (보통 → 중요 → 긴급)</span></div>
       <div class="hrow"><code>✎</code><span>상세 창 열기</span></div>
       <div class="hrow"><code>✕</code><span>삭제</span></div>
+      <div class="hrow"><code>＋ 다음 회차</code><span>회차 항목을 완료하면 나타납니다. 누르면 다음 회차가 생깁니다</span></div>
     </div>
     <p class="hsec">색이 뜻하는 것</p>
     <div class="htab">
@@ -683,6 +706,10 @@
     <div id="stDetailWrap" hidden>
       <h3 style="margin:.6rem 0 .5rem;font-size:.78rem;letter-spacing:.14em;color:var(--dim);font-family:'IBM Plex Mono',monospace">카테고리별 상세</h3>
       <div style="overflow-x:auto"><table class="sttable" id="stTable"></table></div>
+      <div id="stSerWrap" hidden>
+        <h3 style="margin:.9rem 0 .5rem;font-size:.78rem;letter-spacing:.14em;color:var(--dim);font-family:'IBM Plex Mono',monospace">시리즈 진행</h3>
+        <div style="overflow-x:auto"><table class="sttable" id="stSerTable"></table></div>
+      </div>
     </div>
 
     <div class="composer-row">
@@ -788,6 +815,13 @@
         <button type="button" class="q" data-d="1">내일</button>
         <button type="button" class="q" data-d="mon">다음 월요일</button>
       </div>
+      <span class="fl">회차 (드라마·연재물처럼 이어지는 일)</span>
+      <div class="fnum">
+        <input type="number" id="isSeq" min="0" max="9999" placeholder="현재">
+        <span>/</span>
+        <input type="number" id="isSeqTot" min="0" max="9999" placeholder="전체">
+        <span>비워두면 일반 항목</span>
+      </div>
       <span class="fl">카테고리</span>
       <div class="chips catpick" id="isCats"></div>
       <span class="fl">상태</span>
@@ -834,7 +868,7 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v1.8 · 2026-09-06";
+  var APP_VERSION = "v1.9 · 2026-09-06";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
     "2026": {"01-01":"신정", "02-16":"설날 연휴", "02-17":"설날", "02-18":"설날 연휴", "03-01":"삼일절", "03-02":"대체공휴일(삼일절)", "05-05":"어린이날", "05-24":"부처님오신날", "05-25":"대체공휴일(부처님오신날)", "06-06":"현충일", "08-15":"광복절", "08-17":"대체공휴일(광복절)", "09-24":"추석 연휴", "09-25":"추석", "09-26":"추석 연휴", "10-03":"개천절", "10-05":"대체공휴일(개천절)", "10-09":"한글날", "12-25":"성탄절"},
@@ -880,6 +914,20 @@ var HOLIDAYS = {
     it.done = !!on;
     if(on){ if(!it.doneAt) it.doneAt = Date.now(); } else { delete it.doneAt; }
     save(); render();
+  }
+  function canNext(it){
+    return !!(it.seq && it.done && !it.canceled && (!it.seqTot || it.seq < it.seqTot));
+  }
+  function makeNext(it){
+    var n = {
+      id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+      text: it.text, cat: it.cat || null, pri: 0, done:false,
+      seq: it.seq + 1, note: it.note || ""
+    };
+    if(it.seqTot) n.seqTot = it.seqTot;
+    day(viewKey).push(n);
+    save(); render();
+    toast("EP " + n.seq + " 을(를) 추가했습니다", null);
   }
   function hhmm(t){
     if(!t) return "";
@@ -1037,8 +1085,12 @@ var HOLIDAYS = {
       if((dm = eatDate(text))){ dateKey = dm.key; text = dm.rest.trim(); continue; }
       break;
     }
+    var seq = 0, seqTot = 0;
+    var sm = text.match(/\s*@\s*(\d{1,4})(?:\s*\/\s*(\d{1,4}))?\s*$/);
+    if(sm){ seq = +sm[1]; seqTot = sm[2] ? +sm[2] : 0; text = text.slice(0, sm.index).trim(); }
     if(!text) return null;
     var item = { id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7), text:text, done:false, pri:pri, cat:catId };
+    if(seq){ item.seq = seq; if(seqTot) item.seqTot = seqTot; }
     if(dateKey) item._date = dateKey;
     var m = text.match(/^(\d{1,2}:\d{2})\s*(?:[-–—~]\s*(\d{1,2}:\d{2}))?\s+(.+)$/);
     if(m){
@@ -1077,7 +1129,8 @@ var HOLIDAYS = {
   function lineOf(it){
     var c = catById(it.cat);
     return (it.pri ? "!".repeat(it.pri)+" " : "") + (c ? "#"+c.name+" " : "") +
-           (it.time ? it.time.replace(" – ","-")+" " : "") + it.text;
+           (it.time ? it.time.replace(" – ","-")+" " : "") + it.text +
+           (it.seq ? " @" + it.seq + (it.seqTot ? "/" + it.seqTot : "") : "");
   }
 
   /* ---------- urgency ---------- */
@@ -1157,6 +1210,8 @@ var HOLIDAYS = {
     $("isText").value = lineOf(item);
     $("isDate").value = viewKey;
     $("isNote").value = item.note || "";
+    $("isSeq").value = item.seq || "";
+    $("isSeqTot").value = item.seqTot || "";
     sheetCat = item.cat || null;
     renderCatPick();
     $("isReason").value = item.reason || "";
@@ -1174,6 +1229,8 @@ var HOLIDAYS = {
     var muted = item.defer || item.canceled;
     var st = muted ? null : statusOf(item), meta = "";
     meta += catChip(item);
+    if(item.seq) meta += '<span class="seqchip">EP ' + item.seq +
+      (item.seqTot ? '<i>/' + item.seqTot + '</i>' : '') + '</span>';
     if(item.time) meta += '<span class="time">' + item.time + '</span>';
     if(item.canceled) meta += '<span class="chip cancel">취소</span>';
     else if(item.defer) meta += '<span class="chip def">연기</span>';
@@ -1189,8 +1246,11 @@ var HOLIDAYS = {
       '<button class="open" type="button" aria-label="상세 보기">' +
         '<span class="body"><span class="label"></span>' + (meta ? '<span class="meta">' + meta + '</span>' : '') +
           (muted && item.reason ? '<span class="rsn">' + esc(item.reason) + '</span>' : '') +
-          (item.note ? '<span class="note">' + esc(item.note) + '</span>' : '') + '</span>' +
+          (item.note ? '<span class="note">' + esc(item.note) + '</span>' : '') +
+          (item.seq && item.seqTot ? '<span class="seqbar"><i style="width:' +
+             Math.min(100, Math.round(item.seq / item.seqTot * 100)) + '%"></i></span>' : '') + '</span>' +
       '</button>' +
+      (canNext(item) ? '<button class="nextep" type="button">＋ 다음 회차</button>' : '') +
       '<span class="acts">' +
         '<button class="icon js-pri p' + (item.pri||0) + '" type="button" title="우선순위" aria-label="우선순위">' + (item.pri === 2 ? "!!" : "!") + '</button>' +
         '<button class="icon js-defer' + (item.defer ? " on" : "") + '" type="button" title="연기 / 지연" aria-label="연기">' + SKIP + '</button>' +
@@ -1207,6 +1267,7 @@ var HOLIDAYS = {
     };
     row.querySelector(".js-del").onclick = function(){ var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); render(); };
     row.querySelector(".js-edit").onclick = function(){ openItemSheet(item, "edit"); };
+    if(canNext(item)) row.querySelector(".nextep").onclick = function(){ makeNext(item); };
     return row;
   }
 
@@ -1369,7 +1430,8 @@ var HOLIDAYS = {
       c.onclick = function(){ markDone(r.it, true); };
       var b = document.createElement("button");
       b.type = "button"; b.className = "wopen"; b.setAttribute("aria-label","상세 보기");
-      b.innerHTML = '<span class="wt">' + catChip(r.it, "w-cat") + '<span class="wtx"></span>' +
+      b.innerHTML = '<span class="wt">' + catChip(r.it, "w-cat") +
+        (r.it.seq ? '<span class="w-seq">EP' + r.it.seq + '</span>' : '') + '<span class="wtx"></span>' +
         (r.it.defer && r.it.reason ? '<span class="w-rsn">' + esc(r.it.reason) + '</span>' : '') +
         (r.it.note ? '<span class="w-note">' + esc(r.it.note) + '</span>' : '') + '</span>' +
         (tag ? '<span class="ws">' + esc(tag) + '</span>' : '');
@@ -1621,10 +1683,14 @@ var HOLIDAYS = {
     if(!sheetItem) return;
     var p = parseLine($("isText").value);
     if(p){ sheetItem.text = p.text; sheetItem.time = p.time; sheetItem.from = p.from; sheetItem.to = p.to; sheetItem.pri = p.pri;
-           if(p.cat) sheetItem.cat = p.cat; }
+           if(p.cat) sheetItem.cat = p.cat;
+           if(p.seq){ sheetItem.seq = p.seq; if(p.seqTot) sheetItem.seqTot = p.seqTot; } }
     var newKey = $("isDate").value;
     sheetItem.note = $("isNote").value.trim();
     sheetItem.cat = sheetCat;
+    var sq = parseInt($("isSeq").value, 10), st = parseInt($("isSeqTot").value, 10);
+    if(sq > 0){ sheetItem.seq = sq; if(st > 0) sheetItem.seqTot = st; else delete sheetItem.seqTot; }
+    else { delete sheetItem.seq; delete sheetItem.seqTot; }
     sheetItem.defer = (sheetState === "defer");
     if(sheetItem.defer) sheetItem.everDefer = true;
     sheetItem.canceled = (sheetState === "cancel");
@@ -1789,8 +1855,10 @@ var HOLIDAYS = {
         it = store.days[k][i];
         key = String(it.text || "").trim();
         if(key.length < 2) continue;
-        if(!map[key]) map[key] = { text:key, n:0, cat:it.cat || null, last:k };
+        if(!map[key]) map[key] = { text:key, n:0, cat:it.cat || null, last:k, seq:0, seqTot:0 };
         map[key].n++;
+        if(it.seq && it.seq > map[key].seq) map[key].seq = it.seq;
+        if(it.seqTot) map[key].seqTot = it.seqTot;
         if(k > map[key].last){ map[key].last = k; map[key].cat = it.cat || null; }
       }
     }
@@ -1805,7 +1873,8 @@ var HOLIDAYS = {
       var sp = splitTokens(input.value);
       var hasCat = /(^|\s)#\S+/.test(sp.prefix);
       var c = (!hasCat && x.cat) ? catById(x.cat) : null;
-      input.value = (c ? "#" + c.name + " " : "") + sp.prefix + x.text;
+      var tail = x.seq ? (" @" + (x.seq + 1) + (x.seqTot ? "/" + x.seqTot : "")) : "";
+      input.value = (c ? "#" + c.name + " " : "") + sp.prefix + x.text + tail;
       close(); input.focus();
     }
     function draw(){
@@ -1817,6 +1886,7 @@ var HOLIDAYS = {
         b.type = "button";
         b.className = "sug" + (i === sel ? " sel" : "");
         b.innerHTML = (c ? '<span class="cat" style="color:' + c.color + '">' + esc(c.name) + '</span>' : '') +
+          (x.seq ? '<span class="seqchip">→ EP ' + (x.seq + 1) + (x.seqTot ? '<i>/' + x.seqTot + '</i>' : '') + '</span>' : '') +
           '<span class="st"></span><span class="sn">' + x.n + '회</span>';
         b.querySelector(".st").textContent = x.text;
         b.onmousedown = function(e){ e.preventDefault(); pick(x); };
@@ -1900,7 +1970,7 @@ var HOLIDAYS = {
         else { rest++; D.rest++; }
       });
     });
-    renderDetail(detail);
+    renderDetail(detail, keys);
     $("tDone").textContent = done; $("tRest").textContent = rest;
     $("tDefer").textContent = defer; $("tCancel").textContent = cancel;
     $("stDonutN").textContent = done;
@@ -2000,7 +2070,45 @@ var HOLIDAYS = {
   $("helpBtn").onclick = function(){ $("helpOverlay").hidden = false; };
   $("helpClose").onclick = function(){ $("helpOverlay").hidden = true; };
   $("helpOverlay").addEventListener("mousedown", function(e){ if(e.target === $("helpOverlay")) $("helpOverlay").hidden = true; });
-  function renderDetail(detail){
+  function seriesRows(keys){
+    var m = {}, i, k, it;
+    for(k in store.days){
+      for(i = 0; i < store.days[k].length; i++){
+        it = store.days[k][i];
+        if(!it.seq) continue;
+        var t = String(it.text || "").trim();
+        if(!m[t]) m[t] = { text:t, cat:it.cat || null, max:0, tot:0, inRange:0, lastDay:"" };
+        if(it.seq > m[t].max && it.done) m[t].max = it.seq;
+        if(it.seqTot) m[t].tot = it.seqTot;
+        if(it.done && keys.indexOf(k) >= 0) m[t].inRange++;
+        if(it.done && k > m[t].lastDay) m[t].lastDay = k;
+      }
+    }
+    var arr = [];
+    for(k in m) arr.push(m[k]);
+    arr.sort(function(a, b){ return b.inRange - a.inRange || (b.lastDay < a.lastDay ? -1 : 1); });
+    return arr;
+  }
+  function renderSeries(keys){
+    var rows = seriesRows(keys), w = $("stSerWrap"), t = $("stSerTable");
+    w.hidden = !rows.length;
+    if(!rows.length) return;
+    var head = '<thead><tr><th>시리즈</th><th>진행</th><th>이 기간</th><th>마지막</th></tr></thead>', body = "";
+    rows.forEach(function(r){
+      var c = catById(r.cat);
+      var d = r.lastDay ? fromIso(r.lastDay) : null;
+      var pct = r.tot ? Math.round(r.max / r.tot * 100) : 0;
+      body += '<tr><td>' + (c ? '<span class="cat" style="color:' + c.color + '">' + esc(c.name) + '</span> ' : '') +
+        esc(r.text) + '</td>' +
+        '<td>' + (r.max ? ('EP ' + r.max + (r.tot ? ' / ' + r.tot + '  <span class="z">' + pct + '%</span>' : ''))
+                        : '<span class="z">시작 전' + (r.tot ? ' / ' + r.tot : '') + '</span>') + '</td>' +
+        '<td class="ok">' + (r.inRange || '·') + '</td>' +
+        '<td class="z">' + (d ? (d.getMonth()+1) + "/" + d.getDate() : '·') + '</td></tr>';
+    });
+    t.innerHTML = head + "<tbody>" + body + "</tbody>";
+  }
+  function renderDetail(detail, keys){
+    renderSeries(keys || []);
     var t = $("stTable"), ids = [], cid;
     for(cid in detail) ids.push(cid);
     ids.sort(function(a, b){ return detail[b].all - detail[a].all; });
