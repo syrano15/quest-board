@@ -95,6 +95,14 @@
   .ghost:hover{border-color:var(--muted);color:var(--text);}
   .row2{display:flex;gap:.4rem;} .row2 .ghost{flex:1;text-align:center;}
   .hint{margin:0;font-size:.68rem;color:var(--dim);line-height:1.5;}
+  .mlist{display:flex;flex-direction:column;gap:.4rem;}
+  .mrow{display:flex;flex-direction:column;gap:.15rem;text-align:left;cursor:pointer;
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:.6rem;padding:.7rem .85rem;
+    transition:all .15s ease;}
+  .mrow:hover{background:var(--surface-2);border-color:var(--line);}
+  .mrow b{font-size:.95rem;font-weight:600;}
+  .mrow span{font-size:.78rem;color:var(--muted);}
+  .mrow.danger b{color:var(--urgent);}
   .footline{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.1rem;}
   .linkbtn{background:none;border:none;padding:0;color:var(--muted);font-size:.74rem;cursor:pointer;
     text-decoration:underline;text-underline-offset:2px;}
@@ -199,7 +207,16 @@
   .edit-input{flex:1;min-width:0;background:var(--ink);border:1px solid var(--accent-dim);border-radius:.4rem;
     color:var(--text);font:inherit;font-size:.98rem;padding:.35rem .5rem;margin:.25rem .5rem .25rem 0;}
 
-  .quick{display:flex;gap:.45rem;flex:none;}
+  .quick{display:flex;gap:.45rem;flex:none;position:relative;}
+  .w-add{position:relative;}
+  .sugbox{position:absolute;left:0;right:0;bottom:calc(100% + .35rem);z-index:25;
+    background:var(--panel);border:1px solid var(--line);border-radius:.6rem;padding:.3rem;
+    box-shadow:0 -8px 28px rgba(0,0,0,.45);max-height:14rem;overflow-y:auto;}
+  .sug{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;background:none;border:none;
+    border-radius:.4rem;padding:.45rem .55rem;cursor:pointer;font:inherit;font-size:.9rem;}
+  .sug:hover,.sug.sel{background:var(--surface-2);}
+  .sug .st{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sug .sn{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--dim);flex:none;}
   .quick input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:.55rem;
     color:var(--text);font:inherit;font-size:.92rem;padding:.6rem .75rem;}
   .quick input::placeholder{color:var(--dim);}
@@ -319,6 +336,14 @@
   .lgi .t{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--done);width:2.9rem;flex:none;font-variant-numeric:tabular-nums;}
   .lgi .t.nt{color:var(--dim);}
   .lgi .x{flex:1;min-width:0;word-break:keep-all;}
+  .sttable{width:100%;border-collapse:collapse;font-size:.86rem;}
+  .sttable th,.sttable td{padding:.45rem .5rem;text-align:right;white-space:nowrap;}
+  .sttable th{font-size:.72rem;color:var(--dim);font-weight:600;border-bottom:1px solid var(--line);}
+  .sttable td{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--line-soft);}
+  .sttable th:first-child,.sttable td:first-child{text-align:left;font-family:inherit;}
+  .sttable tr.tot td{border-bottom:none;border-top:1px solid var(--line);color:var(--text);font-weight:600;}
+  .sttable .z{color:var(--dim);}
+  .sttable .ok{color:var(--done);} .sttable .df{color:var(--defer);} .sttable .cx{color:var(--dim);}
   .stempty{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem 0;}
   @media (max-width:820px){ .stgrid{grid-template-columns:1fr;} .tiles{grid-template-columns:repeat(2,1fr);} }
 
@@ -483,18 +508,12 @@
     <div class="side-foot">
       <button class="primary" id="openComposer" type="button">＋ 여러 줄 한번에 추가</button>
       <button class="ghost profbtn" id="profBtn" type="button"><span class="dot"></span><span id="profLabel">회사 보드</span> · 전환</button>
-      <button class="ghost" id="widgetBtn" type="button">위젯 모드로 보기</button>
       <div class="row2">
         <button class="ghost" id="catBtn" type="button">카테고리</button>
         <button class="ghost" id="bgBtn" type="button">배경 이미지</button>
       </div>
       <button class="ghost" id="statsBtn" type="button">통계 보기</button>
-      <button class="ghost" id="syncBtn" type="button">기기 간 동기화</button>
-      <div class="row2">
-        <button class="ghost" id="backupBtn" type="button">백업 저장</button>
-        <button class="ghost" id="restoreBtn" type="button">불러오기</button>
-      </div>
-      <button class="ghost" id="clearChecks" type="button">이 날 체크 초기화</button>
+      <button class="ghost" id="moreBtn" type="button">그 외 기능 ⋯</button>
       <input type="file" id="restoreFile" accept=".json,application/json" hidden>
       <div class="footline">
         <button class="linkbtn" id="helpBtn" type="button">입력 도움말</button>
@@ -529,6 +548,7 @@
     <div class="list" id="list"></div>
 
     <form class="quick" id="quickForm">
+      <div class="sugbox" id="sugMain" hidden></div>
       <input type="text" id="quickInput" placeholder="할 일 추가 — 예: #집안일 내일 분리수거 · !! 월 10:00 회의" maxlength="120" autocomplete="off">
       <button class="primary" type="submit">추가</button>
     </form>
@@ -555,6 +575,7 @@
   <div id="wHeroSlot"></div>
   <div class="w-list" id="wList"></div>
   <form class="w-add" id="wAddForm">
+    <div class="sugbox" id="sugW" hidden></div>
     <input type="text" id="wAddInput" placeholder="＋ 할 일 (월 / 내일 / !! / 09:30)" maxlength="120" autocomplete="off">
     <button class="go" type="submit">추가</button>
     <button class="more" type="button" id="wBulk" title="여러 줄 한번에 추가">≡</button>
@@ -565,6 +586,23 @@
 </head>
 <body>
 <div id="bgLayer"></div><div id="bgDim"></div><div class="syncdot" id="syncDot"></div>
+
+<div class="overlay" id="moreOverlay" hidden>
+  <div class="sheet" style="width:min(30rem,100%)">
+    <h2>그 외 기능</h2>
+    <div class="mlist">
+      <button type="button" class="mrow" id="widgetBtn"><b>위젯 모드로 보기</b><span>세로 슬림 창으로 새로 엽니다</span></button>
+      <button type="button" class="mrow" id="syncBtn"><b>기기 간 동기화</b><span>회사·집 PC가 같은 목록을 보게 합니다</span></button>
+      <button type="button" class="mrow" id="backupBtn"><b>백업 저장</b><span>지금 보드를 JSON 파일로 내려받습니다</span></button>
+      <button type="button" class="mrow" id="restoreBtn"><b>불러오기</b><span>백업 파일에서 되살립니다</span></button>
+      <button type="button" class="mrow danger" id="clearChecks"><b>이 날 체크 초기화</b><span>오늘 보드의 완료 표시를 모두 해제합니다</span></button>
+    </div>
+    <div class="composer-row">
+      <span style="flex:1"></span>
+      <button type="button" class="primary" id="moreClose" style="padding:.55rem 1.2rem">닫기</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="helpOverlay" hidden>
   <div class="sheet" style="width:min(40rem,100%);max-height:88vh;overflow-y:auto">
@@ -642,7 +680,13 @@
       </div>
     </div>
 
+    <div id="stDetailWrap" hidden>
+      <h3 style="margin:.6rem 0 .5rem;font-size:.78rem;letter-spacing:.14em;color:var(--dim);font-family:'IBM Plex Mono',monospace">카테고리별 상세</h3>
+      <div style="overflow-x:auto"><table class="sttable" id="stTable"></table></div>
+    </div>
+
     <div class="composer-row">
+      <button type="button" class="ghost" id="stDetail">자세히 보기</button>
       <span style="flex:1"></span>
       <button type="button" class="primary" id="stClose" style="padding:.55rem 1.2rem">닫기</button>
     </div>
@@ -790,7 +834,7 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v1.7 · 2026-09-06";
+  var APP_VERSION = "v1.8 · 2026-09-06";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
     "2026": {"01-01":"신정", "02-16":"설날 연휴", "02-17":"설날", "02-18":"설날 연휴", "03-01":"삼일절", "03-02":"대체공휴일(삼일절)", "05-05":"어린이날", "05-24":"부처님오신날", "05-25":"대체공휴일(부처님오신날)", "06-06":"현충일", "08-15":"광복절", "08-17":"대체공휴일(광복절)", "09-24":"추석 연휴", "09-25":"추석", "09-26":"추석 연휴", "10-03":"개천절", "10-05":"대체공휴일(개천절)", "10-09":"한글날", "12-25":"성탄절"},
@@ -1272,7 +1316,8 @@ var HOLIDAYS = {
         carry.items.forEach(function(x){
           day(viewKey).push({ id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
             text:x.text, time:x.time, from:x.from, to:x.to, pri:x.pri||0, cat:x.cat||null, note:x.note||"",
-            reason:x.reason||"", pushed:(x.pushed||0)+1, defer:false, canceled:false, done:false });
+            reason:x.reason||"", pushed:(x.pushed||0)+1, everDefer:x.everDefer||x.defer||false,
+            defer:false, canceled:false, done:false });
         });
         save(); render();
       };
@@ -1432,7 +1477,8 @@ var HOLIDAYS = {
         carry.items.forEach(function(x){
           day(viewKey).push({ id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
             text:x.text, time:x.time, from:x.from, to:x.to, pri:x.pri||0, cat:x.cat||null, note:x.note||"",
-            reason:x.reason||"", pushed:(x.pushed||0)+1, defer:false, canceled:false, done:false });
+            reason:x.reason||"", pushed:(x.pushed||0)+1, everDefer:x.everDefer||x.defer||false,
+            defer:false, canceled:false, done:false });
         });
         save(); render();
       };
@@ -1503,6 +1549,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("moreOverlay").hidden){ $("moreOverlay").hidden = true; return; }
     if(!$("helpOverlay").hidden){ $("helpOverlay").hidden = true; return; }
     if(!$("statsOverlay").hidden){ $("statsOverlay").hidden = true; return; }
     if(!$("itemOverlay").hidden) closeItemSheet();
@@ -1579,6 +1626,7 @@ var HOLIDAYS = {
     sheetItem.note = $("isNote").value.trim();
     sheetItem.cat = sheetCat;
     sheetItem.defer = (sheetState === "defer");
+    if(sheetItem.defer) sheetItem.everDefer = true;
     sheetItem.canceled = (sheetState === "cancel");
     sheetItem.reason = (sheetState === "open") ? "" : $("isReason").value.trim();
     if(sheetItem.canceled){ sheetItem.done = false; delete sheetItem.doneAt; }
@@ -1721,6 +1769,86 @@ var HOLIDAYS = {
     this.value = "";
   };
 
+  /* ---------- 입력 자동완성 ---------- */
+  function splitTokens(line){
+    var text = String(line), consumed = "", pm, dm, cm, guard = 0;
+    var lead = text.match(/^\s*(?:[-*•▪]|\d+[.)])\s*/);
+    if(lead){ consumed += lead[0]; text = text.slice(lead[0].length); }
+    while(guard++ < 6){
+      if((pm = text.match(/^(!{1,2})\s*/))){ consumed += pm[0]; text = text.slice(pm[0].length); continue; }
+      if((cm = text.match(/^#(\S+)\s+/)) && catByName(cm[1])){ consumed += cm[0]; text = text.slice(cm[0].length); continue; }
+      if((dm = eatDate(text))){ consumed += text.slice(0, text.length - dm.rest.length); text = dm.rest; continue; }
+      break;
+    }
+    return { prefix: consumed, rest: text };
+  }
+  function suggestIndex(){
+    var map = {}, k, i, it, key;
+    for(k in store.days){
+      for(i = 0; i < store.days[k].length; i++){
+        it = store.days[k][i];
+        key = String(it.text || "").trim();
+        if(key.length < 2) continue;
+        if(!map[key]) map[key] = { text:key, n:0, cat:it.cat || null, last:k };
+        map[key].n++;
+        if(k > map[key].last){ map[key].last = k; map[key].cat = it.cat || null; }
+      }
+    }
+    var arr = [];
+    for(k in map) arr.push(map[k]);
+    return arr;
+  }
+  function attachSuggest(input, box){
+    var items = [], sel = -1;
+    function close(){ box.hidden = true; sel = -1; }
+    function pick(x){
+      var sp = splitTokens(input.value);
+      var hasCat = /(^|\s)#\S+/.test(sp.prefix);
+      var c = (!hasCat && x.cat) ? catById(x.cat) : null;
+      input.value = (c ? "#" + c.name + " " : "") + sp.prefix + x.text;
+      close(); input.focus();
+    }
+    function draw(){
+      box.innerHTML = "";
+      if(!items.length){ close(); return; }
+      items.forEach(function(x, i){
+        var c = catById(x.cat);
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sug" + (i === sel ? " sel" : "");
+        b.innerHTML = (c ? '<span class="cat" style="color:' + c.color + '">' + esc(c.name) + '</span>' : '') +
+          '<span class="st"></span><span class="sn">' + x.n + '회</span>';
+        b.querySelector(".st").textContent = x.text;
+        b.onmousedown = function(e){ e.preventDefault(); pick(x); };
+        box.appendChild(b);
+      });
+      box.hidden = false;
+    }
+    input.addEventListener("input", function(){
+      var q = splitTokens(input.value).rest.trim().toLowerCase();
+      if(q.length < 1){ close(); return; }
+      var all = suggestIndex();
+      items = all.filter(function(x){
+        var t = x.text.toLowerCase();
+        return t !== q && t.indexOf(q) >= 0;
+      }).sort(function(a, b){
+        var ai = a.text.toLowerCase().indexOf(q), bi = b.text.toLowerCase().indexOf(q);
+        if(ai !== bi) return ai - bi;
+        if(b.n !== a.n) return b.n - a.n;
+        return b.last < a.last ? -1 : 1;
+      }).slice(0, 6);
+      sel = -1; draw();
+    });
+    input.addEventListener("keydown", function(e){
+      if(box.hidden) return;
+      if(e.key === "ArrowDown"){ e.preventDefault(); sel = Math.min(sel + 1, items.length - 1); draw(); }
+      else if(e.key === "ArrowUp"){ e.preventDefault(); sel = Math.max(sel - 1, -1); draw(); }
+      else if(e.key === "Enter" && sel >= 0){ e.preventDefault(); pick(items[sel]); }
+      else if(e.key === "Escape"){ e.preventDefault(); close(); }
+    });
+    input.addEventListener("blur", function(){ setTimeout(close, 120); });
+  }
+
   /* ---------- 통계 ---------- */
   var stRange = "week";
   function mondayOf(d){
@@ -1751,20 +1879,28 @@ var HOLIDAYS = {
     Array.prototype.forEach.call($("stPeriods").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
 
     var done = 0, rest = 0, defer = 0, cancel = 0;
-    var byCat = {}, byDay = {}, log = [];
+    var byCat = {}, byDay = {}, log = [], detail = {};
+    function bucket(cid){
+      if(!detail[cid]) detail[cid] = { all:0, done:0, rest:0, defer:0, dfDone:0, cancel:0, pushed:0 };
+      return detail[cid];
+    }
     keys.forEach(function(k){
       byDay[k] = 0;
       (store.days[k] || []).forEach(function(it){
-        if(it.canceled){ cancel++; return; }
+        var cid = it.cat || "__none", D = bucket(cid);
+        D.all++;
+        if(it.pushed) D.pushed++;
+        if(it.canceled){ cancel++; D.cancel++; return; }
         if(it.done){
-          done++; byDay[k]++;
-          var cid = it.cat || "__none";
+          done++; byDay[k]++; D.done++;
+          if(it.everDefer) D.dfDone++;
           byCat[cid] = (byCat[cid] || 0) + 1;
           log.push({ k:k, at:it.doneAt || 0, it:it });
-        } else if(it.defer) defer++;
-        else rest++;
+        } else if(it.defer){ defer++; D.defer++; }
+        else { rest++; D.rest++; }
       });
     });
+    renderDetail(detail);
     $("tDone").textContent = done; $("tRest").textContent = rest;
     $("tDefer").textContent = defer; $("tCancel").textContent = cancel;
     $("stDonutN").textContent = done;
@@ -1850,12 +1986,51 @@ var HOLIDAYS = {
       lo.appendChild(row);
     });
   }
+  $("moreBtn").onclick = function(){ $("moreOverlay").hidden = false; };
+  $("moreClose").onclick = function(){ $("moreOverlay").hidden = true; };
+  $("moreOverlay").addEventListener("mousedown", function(e){ if(e.target === $("moreOverlay")) $("moreOverlay").hidden = true; });
+  Array.prototype.forEach.call($("moreOverlay").querySelectorAll(".mrow"), function(b){
+    b.addEventListener("click", function(){ $("moreOverlay").hidden = true; });
+  });
+  attachSuggest($("quickInput"), $("sugMain"));
+  attachSuggest($("wAddInput"), $("sugW"));
   $("verText").textContent = APP_VERSION.split(" ")[0];
   $("verText").title = APP_VERSION;
   $("helpVer").textContent = APP_VERSION;
   $("helpBtn").onclick = function(){ $("helpOverlay").hidden = false; };
   $("helpClose").onclick = function(){ $("helpOverlay").hidden = true; };
   $("helpOverlay").addEventListener("mousedown", function(e){ if(e.target === $("helpOverlay")) $("helpOverlay").hidden = true; });
+  function renderDetail(detail){
+    var t = $("stTable"), ids = [], cid;
+    for(cid in detail) ids.push(cid);
+    ids.sort(function(a, b){ return detail[b].all - detail[a].all; });
+    var head = '<thead><tr><th>카테고리</th><th>전체</th><th>완료</th><th>남음</th>' +
+      '<th>연기 중</th><th>연기 후 완료</th><th>취소</th><th>밀림</th><th>완료율</th></tr></thead>';
+    var rows = "", tot = { all:0, done:0, rest:0, defer:0, dfDone:0, cancel:0, pushed:0 };
+    function cell(v, cls){ return '<td class="' + (v ? (cls || "") : "z") + '">' + (v || "·") + '</td>'; }
+    ids.forEach(function(id){
+      var D = detail[id], c = catById(id);
+      var live = D.all - D.cancel;
+      var pct = live ? Math.round(D.done / live * 100) : 0;
+      ["all","done","rest","defer","dfDone","cancel","pushed"].forEach(function(k){ tot[k] += D[k]; });
+      rows += '<tr><td>' +
+        (c ? '<span class="cat" style="color:' + c.color + '">' + esc(c.name) + '</span>' : '<span class="z">카테고리 없음</span>') +
+        '</td>' + cell(D.all) + cell(D.done, "ok") + cell(D.rest) + cell(D.defer, "df") +
+        cell(D.dfDone, "ok") + cell(D.cancel, "cx") + cell(D.pushed) +
+        '<td>' + (live ? pct + "%" : "·") + '</td></tr>';
+    });
+    var tlive = tot.all - tot.cancel;
+    rows += '<tr class="tot"><td>합계</td>' + cell(tot.all) + cell(tot.done, "ok") + cell(tot.rest) +
+      cell(tot.defer, "df") + cell(tot.dfDone, "ok") + cell(tot.cancel, "cx") + cell(tot.pushed) +
+      '<td>' + (tlive ? Math.round(tot.done / tlive * 100) + "%" : "·") + '</td></tr>';
+    t.innerHTML = head + "<tbody>" + (ids.length ? rows : '<tr><td colspan="9" class="z">항목이 없습니다</td></tr>') + "</tbody>";
+  }
+  $("stDetail").onclick = function(){
+    var w = $("stDetailWrap");
+    w.hidden = !w.hidden;
+    this.textContent = w.hidden ? "자세히 보기" : "간단히 보기";
+    if(!w.hidden) setTimeout(function(){ w.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 30);
+  };
   $("statsBtn").onclick = function(){ renderStats(); $("statsOverlay").hidden = false; };
   $("stClose").onclick = function(){ $("statsOverlay").hidden = true; };
   $("statsOverlay").addEventListener("mousedown", function(e){ if(e.target === $("statsOverlay")) $("statsOverlay").hidden = true; });
