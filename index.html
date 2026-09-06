@@ -260,6 +260,16 @@
     border-radius:.4rem;background:var(--surface);cursor:pointer;}
   .catrow input[type=text]{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);
     border-radius:.4rem;color:var(--text);font:inherit;font-size:.92rem;padding:.42rem .6rem;}
+  .swrow{display:flex;align-items:center;gap:.55rem;font-size:.92rem;cursor:pointer;user-select:none;}
+  .swrow input{width:1.1rem;height:1.1rem;accent-color:var(--accent);cursor:pointer;}
+  .systate{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);}
+  .systate .d{width:.5rem;height:.5rem;border-radius:99px;background:var(--dim);flex:none;}
+  .systate.ok .d{background:var(--done);} .systate.err .d{background:var(--urgent);}
+  .systate.busy .d{background:var(--accent);}
+  .systate.err{color:var(--urgent);}
+  .syncdot{position:fixed;right:.7rem;bottom:.7rem;z-index:30;width:.5rem;height:.5rem;border-radius:99px;
+    background:var(--accent);opacity:0;transition:opacity .25s ease;pointer-events:none;}
+  .syncdot.on{opacity:.9;}
   .bgrow{display:flex;align-items:center;gap:.6rem;}
   .bgrow input[type=range]{flex:1;accent-color:var(--accent);}
   input[type=file]{font:inherit;font-size:.85rem;color:var(--muted);}
@@ -416,6 +426,7 @@
         <button class="ghost" id="catBtn" type="button">카테고리</button>
         <button class="ghost" id="bgBtn" type="button">배경 이미지</button>
       </div>
+      <button class="ghost" id="syncBtn" type="button">기기 간 동기화</button>
       <div class="row2">
         <button class="ghost" id="backupBtn" type="button">백업 저장</button>
         <button class="ghost" id="restoreBtn" type="button">불러오기</button>
@@ -487,7 +498,30 @@
 
 </head>
 <body>
-<div id="bgLayer"></div><div id="bgDim"></div>
+<div id="bgLayer"></div><div id="bgDim"></div><div class="syncdot" id="syncDot"></div>
+
+<div class="overlay" id="syncOverlay" hidden>
+  <div class="sheet" style="width:min(34rem,100%)">
+    <h2>기기 간 동기화</h2>
+    <p class="hint" style="font-size:.82rem">GitHub의 비공개 Gist에 목록을 저장해서 회사·집 PC가 같은 내용을 봅니다.
+      배경 이미지와 토큰은 이 PC에만 남고 동기화되지 않습니다.</p>
+
+    <span class="fl">GitHub 토큰</span>
+    <input type="password" class="fi" id="syTok" placeholder="ghp_ 로 시작하는 토큰" autocomplete="off">
+    <p class="hint" style="font-size:.78rem">github.com/settings/tokens → Generate new token (classic) →
+      <b>gist</b> 항목만 체크 → 만료 No expiration → 생성된 토큰을 여기 붙여넣기</p>
+
+    <label class="swrow"><input type="checkbox" id="sySwitch"> <span>이 보드(<b id="syProf">회사</b>) 동기화하기</span></label>
+    <div class="systate" id="syState"><span class="d"></span><span id="syText">꺼져 있음</span></div>
+
+    <div class="composer-row">
+      <button type="button" class="ghost danger" id="syReset">연결 해제</button>
+      <span style="flex:1"></span>
+      <button type="button" class="ghost" id="syNow">지금 맞추기</button>
+      <button type="button" class="primary" id="syClose" style="padding:.55rem 1.2rem">완료</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="catOverlay" hidden>
   <div class="sheet" style="width:min(32rem,100%)">
@@ -631,16 +665,40 @@ var HOLIDAYS = {
   var esc = function(s){ var d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
 
   /* ---------- storage ---------- */
-  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice() };
+  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), meta:{ dayAt:{}, catsAt:0 } };
+  var prevJSON = {}, prevCats = "";
+  function stampMeta(){
+    if(!store.meta) store.meta = { dayAt:{}, catsAt:0 };
+    if(!store.meta.dayAt) store.meta.dayAt = {};
+    var now = Date.now(), k, j;
+    for(k in store.days){
+      j = JSON.stringify(store.days[k]);
+      if(prevJSON[k] !== j){ store.meta.dayAt[k] = now; prevJSON[k] = j; }
+    }
+    for(k in prevJSON){ if(!store.days[k]){ delete prevJSON[k]; } }
+    j = JSON.stringify(store.cats);
+    if(prevCats && prevCats !== j) store.meta.catsAt = now;
+    prevCats = j;
+  }
+  function seedPrev(){
+    prevJSON = {}; prevCats = JSON.stringify(store.cats);
+    for(var k in store.days) prevJSON[k] = JSON.stringify(store.days[k]);
+  }
   function load(){
     try{ var raw = localStorage.getItem(KEY);
       if(raw){ var p = JSON.parse(raw);
         if(p && typeof p === "object"){ store.days = p.days || {}; store.dismissed = p.dismissed || {};
-          if(p.cats && p.cats.length) store.cats = p.cats; } }
+          if(p.cats && p.cats.length) store.cats = p.cats;
+          store.meta = p.meta || { dayAt:{}, catsAt:0 }; } }
     }catch(e){}
     if(!store.cats || !store.cats.length) store.cats = DEFAULT_CATS.slice();
+    if(!store.meta) store.meta = { dayAt:{}, catsAt:0 };
+    if(!store.meta.dayAt) store.meta.dayAt = {};
+    seedPrev();
   }
   function save(){
+    stampMeta();
+    if(typeof queuePush === "function") queuePush();
     try{ var keys = Object.keys(store.days).sort();
       while(keys.length > 90){ delete store.days[keys.shift()]; }
       localStorage.setItem(KEY, JSON.stringify(store));
@@ -670,7 +728,11 @@ var HOLIDAYS = {
     if($("wProf")) $("wProf").textContent = cfg.chip;
     try{ localStorage.setItem(PROF_KEY, profile); }catch(e){}
     loadBg();
-    if(reload){ store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice() }; load(); viewKey = todayKey; render(); }
+    if(reload){
+      store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), meta:{ dayAt:{}, catsAt:0 } };
+      load(); viewKey = todayKey; render();
+      if(typeof syncBoot === "function") syncBoot();
+    }
   }
   function fromIso(s){ var a = s.split("-"); return new Date(+a[0], +a[1]-1, +a[2]); }
 
@@ -1431,6 +1493,151 @@ var HOLIDAYS = {
     this.value = "";
   };
 
+  /* ---------- GitHub Gist 동기화 ---------- */
+  var GIST_MARK = "questboard-sync";
+  var TOK_KEY = "questboard:gh", GID_KEY = "questboard:gistid";
+  var token = "", gistId = "", syncOn = false, syncing = false, pushTimer = null, lastPull = 0;
+
+  function syncKey(){ return "questboard:sync:" + profile; }
+  function readSyncPrefs(){
+    try{
+      token  = localStorage.getItem(TOK_KEY) || "";
+      gistId = localStorage.getItem(GID_KEY) || "";
+      syncOn = localStorage.getItem(syncKey()) === "1";
+    }catch(e){ token = ""; gistId = ""; syncOn = false; }
+  }
+  function setState(cls, text){
+    var el = $("syState");
+    if(el){ el.className = "systate " + (cls||""); $("syText").textContent = text; }
+    var dot = $("syncDot");
+    if(dot) dot.classList.toggle("on", cls === "busy");
+  }
+  function fmtTime(t){
+    if(!t) return "";
+    var d = new Date(t);
+    return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+  function gh(path, opts){
+    opts = opts || {};
+    opts.headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
+    return fetch("https://api.github.com"+path, opts).then(function(r){
+      if(r.status === 401) throw new Error("토큰이 올바르지 않습니다");
+      if(r.status === 403) throw new Error("권한 부족 — gist 체크 여부를 확인하세요");
+      if(!r.ok) throw new Error("GitHub 오류 " + r.status);
+      return r.json();
+    });
+  }
+  function ensureGist(){
+    if(gistId) return Promise.resolve(gistId);
+    return gh("/gists?per_page=100").then(function(list){
+      var i;
+      for(i=0;i<list.length;i++) if(list[i].description === GIST_MARK) return list[i].id;
+      var files = {}; files["README.md"] = { content:"퀘스트 보드 동기화 데이터. 직접 수정하지 마세요." };
+      return gh("/gists", { method:"POST", body: JSON.stringify({ description:GIST_MARK, public:false, files:files }) })
+        .then(function(g){ return g.id; });
+    }).then(function(id){
+      gistId = id;
+      try{ localStorage.setItem(GID_KEY, id); }catch(e){}
+      return id;
+    });
+  }
+  function payload(){
+    return { v:3, days:store.days, dismissed:store.dismissed, cats:store.cats, meta:store.meta, at:Date.now() };
+  }
+  function mergeRemote(r){
+    if(!r || typeof r !== "object") return false;
+    var changed = false, rm = r.meta || { dayAt:{}, catsAt:0 }, rda = rm.dayAt || {};
+    var k;
+    for(k in (r.days||{})){
+      var rt = rda[k] || 0, lt = (store.meta.dayAt||{})[k] || 0;
+      if(rt > lt){ store.days[k] = r.days[k]; store.meta.dayAt[k] = rt; changed = true; }
+    }
+    if((rm.catsAt||0) > (store.meta.catsAt||0) && r.cats && r.cats.length){
+      store.cats = r.cats; store.meta.catsAt = rm.catsAt; changed = true;
+    }
+    for(k in (r.dismissed||{})) if(!store.dismissed[k]){ store.dismissed[k] = r.dismissed[k]; changed = true; }
+    return changed;
+  }
+  function localNewerThan(r){
+    var rm = (r && r.meta) || { dayAt:{}, catsAt:0 }, rda = rm.dayAt || {}, k;
+    for(k in (store.meta.dayAt||{})) if((store.meta.dayAt[k]||0) > (rda[k]||0)) return true;
+    if((store.meta.catsAt||0) > (rm.catsAt||0)) return true;
+    if(!r || !r.days) return true;
+    return false;
+  }
+  function pushNow(){
+    if(!syncOn || !token) return Promise.resolve();
+    setState("busy","올리는 중…");
+    return ensureGist().then(function(id){
+      var files = {}; files[profile + ".json"] = { content: JSON.stringify(payload()) };
+      return gh("/gists/"+id, { method:"PATCH", body: JSON.stringify({ files:files }) });
+    }).then(function(){
+      setState("ok","맞춤 완료 · " + fmtTime(Date.now()));
+    }).catch(function(e){ setState("err", e.message || "실패"); });
+  }
+  function queuePush(){
+    if(!syncOn || !token) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushNow, 2500);
+  }
+  function pullNow(force){
+    if(!syncOn || !token) return Promise.resolve();
+    if(!force && Date.now() - lastPull < 20000) return Promise.resolve();
+    lastPull = Date.now();
+    if(syncing) return Promise.resolve();
+    syncing = true;
+    setState("busy","가져오는 중…");
+    return ensureGist().then(function(id){ return gh("/gists/"+id); }).then(function(g){
+      var f = g.files && g.files[profile + ".json"];
+      var remote = null;
+      if(f && f.content){ try{ remote = JSON.parse(f.content); }catch(e){} }
+      var changed = mergeRemote(remote);
+      if(changed){
+        try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){}
+        seedPrev(); render();
+      }
+      setState("ok","맞춤 완료 · " + fmtTime(Date.now()));
+      if(localNewerThan(remote)) return pushNow();
+    }).catch(function(e){ setState("err", e.message || "실패"); })
+      .then(function(){ syncing = false; });
+  }
+  function syncBoot(){
+    readSyncPrefs();
+    if($("sySwitch")) $("sySwitch").checked = syncOn;
+    if($("syTok")) $("syTok").value = token;
+    if($("syProf")) $("syProf").textContent = (profile === "home") ? "집" : "회사";
+    if(!token) setState("", "토큰을 넣어주세요");
+    else if(!syncOn) setState("", "이 보드는 꺼져 있음");
+    else { setState("busy","연결 중…"); pullNow(true); }
+  }
+  $("syncBtn").onclick = function(){ syncBoot(); $("syncOverlay").hidden = false; };
+  $("syClose").onclick = function(){ $("syncOverlay").hidden = true; };
+  $("syncOverlay").addEventListener("mousedown", function(e){ if(e.target === $("syncOverlay")) $("syncOverlay").hidden = true; });
+  $("syTok").onchange = function(){
+    token = this.value.trim();
+    try{ localStorage.setItem(TOK_KEY, token); }catch(e){}
+    if(token && syncOn) pullNow(true); else setState("", token ? "이 보드는 꺼져 있음" : "토큰을 넣어주세요");
+  };
+  $("sySwitch").onchange = function(){
+    syncOn = this.checked;
+    try{ localStorage.setItem(syncKey(), syncOn ? "1" : "0"); }catch(e){}
+    if(syncOn){
+      if(!token){ setState("err","먼저 토큰을 넣어주세요"); this.checked = false; syncOn = false; return; }
+      pullNow(true);
+    } else setState("", "이 보드는 꺼져 있음");
+  };
+  $("syNow").onclick = function(){ pullNow(true); };
+  $("syReset").onclick = function(){
+    token = ""; gistId = ""; syncOn = false;
+    try{ localStorage.removeItem(TOK_KEY); localStorage.removeItem(GID_KEY);
+         localStorage.removeItem("questboard:sync:work"); localStorage.removeItem("questboard:sync:home"); }catch(e){}
+    $("syTok").value = ""; $("sySwitch").checked = false;
+    setState("", "연결이 해제되었습니다");
+  };
+  window.addEventListener("focus", function(){ pullNow(false); });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) pullNow(false); });
+  setInterval(function(){ pullNow(false); }, 300000);
+
   /* keep two windows in sync */
   window.addEventListener("storage", function(e){ if(e.key === KEY){ load(); render(); } });
 
@@ -1445,6 +1652,7 @@ var HOLIDAYS = {
   load(); applyMode();
   applyProfile(savedProfile || "work", false);
   render();
+  syncBoot();
   if(!savedProfile) $("profileOverlay").hidden = false;
 
   var pov = $("profileOverlay");
