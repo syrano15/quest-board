@@ -376,6 +376,25 @@
     font-size:.8rem;font-weight:600;padding:.3rem .7rem;cursor:pointer;flex:none;}
   .toast button:hover{background:var(--accent);color:var(--ink);}
   .chips.catpick button.on{color:var(--ink)!important;font-weight:700;}
+  .swatches{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .swatches button{width:1.9rem;height:1.9rem;border-radius:.45rem;cursor:pointer;
+    border:1px solid var(--line);background:var(--sc,var(--surface));transition:all .12s ease;}
+  .swatches button:hover{transform:translateY(-1px);border-color:var(--muted);}
+  .swatches button.on{outline:2px solid var(--focus);outline-offset:2px;border-color:transparent;}
+  .swatches button.none{background:var(--surface);color:var(--dim);font-size:.7rem;width:auto;padding:0 .55rem;}
+
+  /* 항목마다 고른 색 — 카드 바탕을 옅게 물들인다.
+     왼쪽 굵은 선은 긴급·연기·완료 표시가 이미 쓰고 있어 건드리지 않는다. */
+  .task[data-ic]{background:color-mix(in srgb, var(--ic) 15%, var(--surface-2));}
+  .task[data-ic]:hover{background:color-mix(in srgb, var(--ic) 24%, var(--surface-2));filter:none;}
+  .task.done[data-ic]{background:color-mix(in srgb, var(--ic) 8%, transparent);}
+  body.hasbg .task[data-ic]{
+    box-shadow:inset 0 0 0 999px color-mix(in srgb, var(--ic) 26%, rgba(var(--glass),var(--cardfade,.55)));}
+  .w-item[data-ic],.w-hero[data-ic]{background:color-mix(in srgb, var(--ic) 16%, var(--surface-2));}
+  .w-item.done[data-ic]{background:color-mix(in srgb, var(--ic) 9%, transparent);}
+  body.hasbg .w-item[data-ic],body.hasbg .w-hero[data-ic]{
+    box-shadow:inset 0 0 0 999px color-mix(in srgb, var(--ic) 26%, rgba(var(--glass),var(--cardfade,.55)));}
+  .nowcard[data-ic]{background:color-mix(in srgb, var(--ic) 14%, var(--panel));}
   .catlist{display:flex;flex-direction:column;gap:.4rem;max-height:20rem;overflow-y:auto;}
   .catrow{display:flex;align-items:center;gap:.5rem;}
   .catrow input[type=color]{flex:none;width:2.1rem;height:2.1rem;padding:0;border:1px solid var(--line);
@@ -998,6 +1017,8 @@
       </div>
       <span class="fl">카테고리</span>
       <div class="chips catpick" id="isCats"></div>
+      <span class="fl">카드 색</span>
+      <div class="swatches" id="isColors"></div>
       <span class="fl">상태</span>
       <div class="seg" id="isSeg">
         <button type="button" data-v="open">진행</button>
@@ -1042,8 +1063,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.6";
-  var APP_BUILD = "2026-09-07 20:30";
+  var APP_VERSION = "v2.7";
+  var APP_BUILD = "2026-09-07 21:40";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1440,7 +1461,31 @@ var HOLIDAYS = {
 
   /* ---------- item sheet (메모 · 연기/취소 사유) ---------- */
   var REASONS = ["선행 작업 대기","담당자 부재","우선순위 밀림","자료·정보 부족","외부 일정","범위 변경","다음 스프린트로"];
-  var sheetItem = null, sheetState = "open", sheetCat = null;
+  var sheetItem = null, sheetState = "open", sheetCat = null, sheetColor = null;
+  /* 카드에 옅게 깔리는 색이라 밝기가 비슷한 색으로 골랐다. 다크·라이트 양쪽에서 같은 인상이 나오게. */
+  var CARD_COLORS = [
+    { c:"#E0655F", n:"빨강" }, { c:"#E8A33D", n:"주황" }, { c:"#D2C04A", n:"노랑" },
+    { c:"#5FBF6A", n:"초록" }, { c:"#3FA08C", n:"청록" }, { c:"#4B9BE8", n:"파랑" },
+    { c:"#7E86EE", n:"남색" }, { c:"#A87BE8", n:"보라" }, { c:"#E87BB0", n:"분홍" },
+    { c:"#8A97A8", n:"회색" }
+  ];
+  function renderColorPick(){
+    var host = $("isColors");
+    host.innerHTML = "";
+    var none = document.createElement("button");
+    none.type = "button"; none.className = "none" + (sheetColor ? "" : " on");
+    none.textContent = "없음"; none.title = "카드 색 없음";
+    none.onclick = function(){ sheetColor = null; renderColorPick(); };
+    host.appendChild(none);
+    CARD_COLORS.forEach(function(o){
+      var b = document.createElement("button");
+      b.type = "button"; b.title = o.n;
+      b.style.setProperty("--sc", o.c);
+      if(sheetColor === o.c) b.className = "on";
+      b.onclick = function(){ sheetColor = o.c; renderColorPick(); };
+      host.appendChild(b);
+    });
+  }
   function renderCatPick(){
     var host = $("isCats");
     host.innerHTML = "";
@@ -1480,6 +1525,8 @@ var HOLIDAYS = {
     $("isSeq").value = item.seq || "";
     $("isSeqTot").value = item.seqTot || "";
     sheetCat = item.cat || null;
+    sheetColor = item.color || null;
+    renderColorPick();
     renderCatPick();
     $("isReason").value = item.reason || "";
     setSegUI();
@@ -1522,6 +1569,7 @@ var HOLIDAYS = {
         '<button class="icon js-edit" type="button" aria-label="수정">' + PENCIL + '</button>' +
         '<button class="icon js-del" type="button" aria-label="삭제">' + XMARK + '</button>' +
       '</span>';
+    if(item.color){ row.setAttribute("data-ic", ""); row.style.setProperty("--ic", item.color); }
     row.querySelector(".label").textContent = item.text;
     row.querySelector(".chk").onclick = function(){ markDone(item, !item.done); };
     row.querySelector(".open").onclick = function(){ openItemSheet(item, "edit"); };
@@ -1569,6 +1617,7 @@ var HOLIDAYS = {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "nowcard " + (n === 0 ? "lead " : "") + levelOf(r.it);
+      if(r.it.color){ b.setAttribute("data-ic",""); b.style.setProperty("--ic", r.it.color); }
       b.innerHTML = '<span class="k">' + labels[n] + (sub ? " · " + esc(sub) : "") + '</span><span class="t">' + esc(r.it.text) + '</span>';
       b.onclick = function(){ markDone(r.it, true); };
       strip.appendChild(b);
@@ -1711,6 +1760,7 @@ var HOLIDAYS = {
       var st = statusOf(r.it);
       var row = document.createElement("div");
       row.className = "w-item " + levelOf(r.it) + (r.it.pri ? " p" + r.it.pri : "") + (r.it.defer ? " defer" : "");
+      if(r.it.color){ row.setAttribute("data-ic",""); row.style.setProperty("--ic", r.it.color); }
       row.style.alignItems = "flex-start";
       var tag = r.it.defer ? "연기" : (st ? st.label : (r.it.pushed ? (r.it.pushed+1)+"일째" : (r.it.time ? r.it.time.slice(0,5) : "")));
       var c = document.createElement("button");
@@ -1740,6 +1790,7 @@ var HOLIDAYS = {
       arr.forEach(function(r){
         var row = document.createElement("div");
         row.className = "w-item " + cls + (r.it.pri ? " p" + r.it.pri : "");
+        if(r.it.color){ row.setAttribute("data-ic",""); row.style.setProperty("--ic", r.it.color); }
         row.style.alignItems = "flex-start";
         var c = document.createElement("button");
         c.type = "button"; c.className = "wchk"; c.setAttribute("aria-label","되돌리기");
@@ -2077,6 +2128,7 @@ var HOLIDAYS = {
     var newKey = $("isDate").value;
     sheetItem.note = $("isNote").value.trim();
     sheetItem.cat = sheetCat;
+    if(sheetColor) sheetItem.color = sheetColor; else delete sheetItem.color;
     var sq = parseInt($("isSeq").value, 10), st = parseInt($("isSeqTot").value, 10);
     if(sq > 0){ sheetItem.seq = sq; if(st > 0) sheetItem.seqTot = st; else delete sheetItem.seqTot; }
     else { delete sheetItem.seq; delete sheetItem.seqTot; }
