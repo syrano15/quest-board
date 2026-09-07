@@ -909,6 +909,8 @@
       <button type="button" data-f="contain">여백 두고 맞추기</button>
       <button type="button" data-f="auto">원본 크기</button>
     </div>
+    <label class="swrow" style="margin-bottom:.2rem"><input type="checkbox" id="bgShare">
+      <span>회사·집 보드에 같은 배경 쓰기</span></label>
     <span class="fl">배경 덮기 <span id="bgDimV">64%</span></span>
     <div class="bgrow"><input type="range" id="bgDimR" min="0" max="92" value="64"></div>
     <span class="fl">흐림 <span id="bgBlurV">0px</span></span>
@@ -1014,8 +1016,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.4";
-  var APP_BUILD = "2026-09-07 16:10";
+  var APP_VERSION = "v2.5";
+  var APP_BUILD = "2026-09-07 19:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1764,17 +1766,18 @@ var HOLIDAYS = {
     });
     ordered.forEach(function(r){ list.appendChild(makeRow(r.it, r.i)); });
     var unit = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    var maxByW = Math.max(1, Math.min(4, Math.floor(list.clientWidth / (23 * unit))));
-    var cols = Math.max(1, Math.min(maxByW, Math.ceil(items.length / 5)));
+    /* 칸 수는 창 너비만 보고 정한다. 항목 수에 따라 바꾸면
+       일감 5개인 집 보드는 한 줄에 하나, 16개인 회사 보드는 세 개로 카드 크기가 달라진다. */
+    var cols = Math.max(1, Math.min(4, Math.floor(list.clientWidth / (23 * unit))));
     list.style.setProperty("--cols", cols);
     var rows = Math.max(1, Math.ceil(items.length / cols));
     var avail = list.clientHeight - (rows - 1) * 0.7 * unit;
-    var rowmax = Math.max(3.9, Math.min(9, avail / rows / unit));
+    var rowmax = Math.max(3.9, Math.min(7, avail / rows / unit));
     list.style.setProperty("--rowmax", rowmax + "rem");
     /* 칸 높이에 맞춰 제목 줄 수를 정한다. 넘치면 잘리는 게 아니라 …로 접힌다 */
     list.classList.toggle("tight", rowmax < 4.1);
-    list.classList.toggle("roomy", rowmax >= 6.4);
-    list.style.setProperty("--lines", rowmax < 4.1 ? 1 : (rowmax < 6.4 ? 2 : 3));
+    list.classList.toggle("roomy", rowmax >= 6.0);
+    list.style.setProperty("--lines", rowmax < 4.1 ? 1 : (rowmax < 6.0 ? 2 : 3));
     fitRows(list);
 
     var isEmpty = items.length === 0;
@@ -2036,7 +2039,9 @@ var HOLIDAYS = {
 
   /* ---------- background image ---------- */
   var bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0, cblur:7, cfade:55 };
-  function bgKey(){ return "questboard:bg:" + profile; }
+  var BGSHARE_KEY = "questboard:bg:shared";
+  function bgShared(){ try{ return localStorage.getItem(BGSHARE_KEY) === "1"; }catch(e){ return false; } }
+  function bgKey(){ return bgShared() ? "questboard:bg:both" : ("questboard:bg:" + profile); }
   function loadBg(){
     bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0, cblur:7, cfade:55 };
     try{ var raw = localStorage.getItem(bgKey()); if(raw){ var o = JSON.parse(raw); if(o) bg = o; } }catch(e){}
@@ -2069,6 +2074,7 @@ var HOLIDAYS = {
     $("bgBlurR").value = bg.blur; $("bgBlurV").textContent = bg.blur + "px";
     $("bgCbR").value = cb; $("bgCbV").textContent = cb + "px";
     $("bgCfR").value = cf; $("bgCfV").textContent = cf + "%";
+    if($("bgShare")) $("bgShare").checked = bgShared();
     Array.prototype.forEach.call($("bgFit").children, function(b){ b.classList.toggle("on", b.dataset.f === (bg.fit || "cover")); });
     $("bgInfo").textContent = on
       ? ("현재 배경 " + (bg.w ? bg.w + "×" + bg.h + "px · " : "") + Math.round(bg.src.length/1024) + "KB")
@@ -2082,6 +2088,12 @@ var HOLIDAYS = {
   $("bgBlurR").oninput = function(){ bg.blur = +this.value; applyBg(); saveBg(); };
   $("bgCbR").oninput = function(){ bg.cblur = +this.value; applyBg(); saveBg(); };
   $("bgCfR").oninput = function(){ bg.cfade = +this.value; applyBg(); saveBg(); };
+  $("bgShare").onchange = function(){
+    var on = this.checked, cur = bg;
+    try{ localStorage.setItem(BGSHARE_KEY, on ? "1" : "0"); }catch(e){}
+    if(on){ bg = cur; saveBg(); }   /* 켤 때는 지금 배경을 공용 자리로 옮긴다 */
+    loadBg();                       /* 끌 때는 보드별로 저장돼 있던 배경으로 돌아간다 */
+  };
   Array.prototype.forEach.call($("bgFit").children, function(b){
     b.onclick = function(){ bg.fit = b.dataset.f; applyBg(); saveBg(); };
   });
