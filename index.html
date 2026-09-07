@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-  html{ font-size:clamp(12px, calc(0.55vh + 0.75vw), 22px); }
+  html{ font-size:calc(clamp(12px, calc(0.55vh + 0.75vw), 22px) * var(--fscale, 1)); }
   :root{
     --ink:#0B0F14; --panel:#10161D; --surface:#151C25; --surface-2:#1B242F;
     --line:#26313E; --line-soft:#1E2731;
@@ -68,7 +68,7 @@
   [hidden]{display:none!important;}
   body{
     margin:0;background:var(--ink);color:var(--text);
-    font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-family:var(--ui-font, "IBM Plex Sans KR"),"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
     font-size:1rem;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;
   }
   button{font:inherit;color:inherit;}
@@ -91,7 +91,7 @@
     display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none;transition:all .15s ease;}
   .nav:hover{border-color:var(--muted);color:var(--text);}
   .nav svg{width:.7rem;height:.7rem;}
-  h1{margin:0;font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:2.15rem;line-height:1.02;flex:1;}
+  h1{margin:0;font-family:var(--title-font, "Black Han Sans"),var(--ui-font, "IBM Plex Sans KR"),sans-serif;font-weight:var(--title-weight,400);font-size:2.15rem;line-height:1.02;flex:1;}
   .dow{margin:.25rem 0 0;font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;}
   .dow .sat{color:#6FA8DC;font-weight:600;}
   .dow .sun{color:#E0655F;font-weight:600;}
@@ -609,6 +609,17 @@
     .mrow{padding:.9rem 1rem;}
     .composer-row button{min-height:44px;padding:.6rem 1.1rem;}
   }
+  .fontlist{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+  .fcard{display:flex;flex-direction:column;gap:.1rem;text-align:left;cursor:pointer;
+    background:var(--surface);border:1px solid var(--line);border-radius:.6rem;
+    padding:.6rem .75rem;transition:all .15s ease;}
+  .fcard:hover{background:var(--surface-2);border-color:var(--muted);}
+  .fcard.on{border-color:var(--accent);background:var(--surface-2);
+    box-shadow:inset 0 0 0 1px var(--accent);}
+  .fcard .fn{font-size:.76rem;color:var(--muted);letter-spacing:.02em;}
+  .fcard.on .fn{color:var(--accent);}
+  .fcard .fp{font-size:1.12rem;line-height:1.3;color:var(--text);}
+  @media (max-width:520px){ .fontlist{grid-template-columns:1fr;} }
   .monly{display:none;} body.is-widget .monly{display:flex;}
   body.is-widget .dtonly{display:none;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
@@ -740,6 +751,7 @@
       <button type="button" data-t="auto">시스템</button>
     </div>
     <div class="mlist">
+      <button type="button" class="mrow" id="fontBtn"><b>글꼴 바꾸기</b><span>보드 글씨체와 크기를 고릅니다</span></button>
       <button type="button" class="mrow monly" id="mStats"><b>통계 보기</b><span>기간·카테고리별 진행 현황</span></button>
       <button type="button" class="mrow monly" id="mCats"><b>카테고리 관리</b><span>이름과 색상을 바꿉니다</span></button>
       <button type="button" class="mrow monly" id="mBg"><b>배경 이미지</b><span>보드 뒷배경을 바꿉니다</span></button>
@@ -883,6 +895,20 @@
   </div>
 </div>
 
+<div class="overlay" id="fontOverlay" hidden>
+  <div class="sheet" style="width:min(34rem,100%)">
+    <h2>글꼴</h2>
+    <p class="hint" style="font-size:.8rem">고른 글꼴은 이 기기에만 적용됩니다. 숫자·시계는 자리가 흔들리지 않게 지금 글꼴을 그대로 씁니다.</p>
+    <div class="fontlist" id="fontList"></div>
+    <span class="fl">글자 크기 <span id="fsV">100%</span></span>
+    <div class="bgrow"><input type="range" id="fsR" min="80" max="130" step="5" value="100"></div>
+    <div class="composer-row">
+      <span style="flex:1"></span>
+      <button type="button" class="primary" id="fontClose" style="padding:.55rem 1.2rem">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="catOverlay" hidden>
   <div class="sheet" style="width:min(32rem,100%)">
     <h2>카테고리 관리</h2>
@@ -1016,8 +1042,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.5";
-  var APP_BUILD = "2026-09-07 19:10";
+  var APP_VERSION = "v2.6";
+  var APP_BUILD = "2026-09-07 20:30";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1828,6 +1854,75 @@ var HOLIDAYS = {
     $("clock").textContent = (function(n){ return String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); })(new Date());
   }
 
+  /* ---------- 글꼴 ---------- */
+  /* Google Fonts 에서 고른 것만 그때그때 불러온다. 숫자용 고정폭 글꼴은 건드리지 않는다. */
+  var FONTS = [
+    { id:"plex",  name:"기본",     ui:"IBM Plex Sans KR", title:"Black Han Sans", tw:400, load:"" },
+    { id:"noto",  name:"본고딕",   ui:"Noto Sans KR",     title:"Noto Sans KR",   tw:900, load:"Noto+Sans+KR:wght@400;500;700;900" },
+    { id:"a1",    name:"고딕 A1",  ui:"Gothic A1",        title:"Gothic A1",      tw:900, load:"Gothic+A1:wght@400;500;700;900" },
+    { id:"dodum", name:"고운돋움", ui:"Gowun Dodum",      title:"Gowun Dodum",    tw:400, load:"Gowun+Dodum" },
+    { id:"myung", name:"나눔명조", ui:"Nanum Myeongjo",   title:"Nanum Myeongjo", tw:800, load:"Nanum+Myeongjo:wght@400;700;800" },
+    { id:"dohyeon",name:"도현",    ui:"Do Hyeon",         title:"Do Hyeon",       tw:400, load:"Do+Hyeon" },
+    { id:"jua",   name:"주아",     ui:"Jua",              title:"Jua",            tw:400, load:"Jua" },
+    { id:"pen",   name:"나눔펜",   ui:"Nanum Pen Script", title:"Nanum Pen Script", tw:400, load:"Nanum+Pen+Script" }
+  ];
+  var FONT_KEY = "questboard:font", FS_KEY = "questboard:fscale";
+  var fontId = "plex", fscale = 100, loaded = {}, booted = false;
+  function loadFont(f){
+    if(!f.load || loaded[f.id]) return;
+    loaded[f.id] = 1;
+    var l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = "https://fonts.googleapis.com/css2?family=" + f.load + "&display=swap";
+    document.head.appendChild(l);
+  }
+  function fontById(id){
+    for(var i = 0; i < FONTS.length; i++) if(FONTS[i].id === id) return FONTS[i];
+    return FONTS[0];
+  }
+  function applyFont(){
+    var f = fontById(fontId);
+    loadFont(f);
+    var r = document.documentElement.style;
+    r.setProperty("--ui-font", '"' + f.ui + '"');
+    r.setProperty("--title-font", '"' + f.title + '"');
+    r.setProperty("--title-weight", f.tw);
+    r.setProperty("--fscale", (fscale / 100));
+    if($("fsR")){ $("fsR").value = fscale; $("fsV").textContent = fscale + "%"; }
+    Array.prototype.forEach.call($("fontList").children, function(b){
+      b.classList.toggle("on", b.dataset.f === fontId);
+    });
+    if(booted) render();       /* 글자 크기가 바뀌면 칸 수·높이를 다시 계산해야 한다 */
+  }
+  $("fontList").innerHTML = FONTS.map(function(f){
+    return '<button type="button" class="fcard" data-f="' + f.id + '">' +
+      '<span class="fn">' + f.name + '</span>' +
+      '<span class="fp" style="font-family:\'' + f.ui + '\',sans-serif">오늘의 퀘스트 12</span></button>';
+  }).join("");
+
+  Array.prototype.forEach.call($("fontList").children, function(b){
+    b.onclick = function(){
+      fontId = b.dataset.f;
+      try{ localStorage.setItem(FONT_KEY, fontId); }catch(e){}
+      applyFont();
+    };
+  });
+  $("fsR").oninput = function(){
+    fscale = +this.value;
+    try{ localStorage.setItem(FS_KEY, String(fscale)); }catch(e){}
+    applyFont();
+  };
+  $("fontBtn").onclick = function(){
+    FONTS.forEach(loadFont);   /* 미리보기용 글꼴은 이 화면을 열 때만 받는다 (시작이 느려지지 않게) */
+    applyFont(); $("fontOverlay").hidden = false;
+  };
+  $("fontClose").onclick = function(){ $("fontOverlay").hidden = true; };
+  $("fontOverlay").addEventListener("mousedown", function(e){ if(e.target === $("fontOverlay")) $("fontOverlay").hidden = true; });
+  try{
+    fontId = localStorage.getItem(FONT_KEY) || "plex";
+    fscale = +(localStorage.getItem(FS_KEY) || 100) || 100;
+  }catch(e){}
+
   /* ---------- 화면 테마 ---------- */
   var THEME_KEY = "questboard:theme";
   var theme = "dark";
@@ -1904,6 +1999,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("fontOverlay").hidden){ $("fontOverlay").hidden = true; return; }
     if(!$("moreOverlay").hidden){ $("moreOverlay").hidden = true; return; }
     if(!$("helpOverlay").hidden){ $("helpOverlay").hidden = true; return; }
     if(!$("statsOverlay").hidden){ $("statsOverlay").hidden = true; return; }
@@ -2791,6 +2887,8 @@ var HOLIDAYS = {
   try{ savedProfile = localStorage.getItem(PROF_KEY); }catch(e){}
   applyProfile(savedProfile || "work", false);
   load();
+  applyFont();
+  booted = true;
   applyMode();
   syncBoot();
   if(!savedProfile){ refreshProfileCounts(); $("profileOverlay").hidden = false; }
