@@ -23,15 +23,47 @@
     --done:#3FA08C; --done-dim:#20514A; --focus:#7FC6FF;
   }
   body.home{ --accent:#9B8CF5; --accent-dim:#4B3F94; --on-accent:#EFEBFF; }
+
+  /* ── 라이트 테마 ── 어두운 배경 기준으로 고른 색들을 밝은 바탕용으로 다시 잡는다 */
+  body.light{
+    --ink:#EAEEF3; --panel:#FFFFFF; --surface:#F1F4F8; --surface-2:#FFFFFF;
+    --line:#CFD7E1; --line-soft:#E3E8EF;
+    --text:#17202B; --muted:#546373; --dim:#8896A6;
+    --accent:#8A5805; --accent-dim:#96620A; --on-accent:#FFFFFF;
+    --urgent:#C0392E; --urgent-dim:#E0A79F;
+    --defer:#4E627E; --defer-dim:#AEBBCC;
+    --done:#0F7A63; --done-dim:#9FCFC2; --focus:#1D6FD0;
+    --glass:255,255,255;            /* 배경 사진 위 카드 유리색 */
+    --hover:0,0,0;                  /* 마우스 올렸을 때 덧입히는 색 */
+  }
+  body.light.home{ --accent:#5444BC; --accent-dim:#5B4BC4; --on-accent:#FFFFFF; }
+  body:not(.light){ --glass:11,15,20; --hover:255,255,255; }
+
+  /* 라이트에서 카드 그림자를 살짝 줘야 흰 바탕에서 카드가 떠 보인다 */
+  body.light .task,body.light .nowcard,body.light .side,body.light .sheet,
+  body.light .w-item,body.light .w-hero{box-shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.05);}
+  body.light .sheet{box-shadow:0 12px 40px rgba(16,24,40,.18);}
+  body.light .overlay{background:rgba(24,32,44,.45);}
+  body.light .task:hover{background:#F3F6FA;}
+  body.light .stat,body.light .empty{background:var(--panel);}
+  /* 카테고리 칩: 어두운 배경용 색이라 흰 바탕에선 흐려 보인다.
+     저장된 색은 그대로 두고, 화면에 그릴 때만 연한 배경 + 진한 글자로 바꾼다. */
+  body.light .cat,body.light .w-cat{
+    background:color-mix(in srgb, var(--c) 16%, var(--surface-2));
+    color:color-mix(in srgb, var(--c) 62%, #000);
+    border-color:color-mix(in srgb, var(--c) 30%, transparent);}
+  body.light .catdot{outline:1px solid rgba(0,0,0,.12);}
   #bgLayer{position:fixed;inset:0;z-index:-2;background-size:cover;background-position:center;display:none;}
   #bgDim{position:fixed;inset:0;z-index:-1;background:var(--ink);opacity:0;display:none;}
   body.hasbg #bgLayer,body.hasbg #bgDim{display:block;}
   body.hasbg{background:transparent;}
+  /* 카드 뒤 배경을 흐리게 하는 "간유리" 효과. 0 이면 배경이 그대로 선명하게 비친다. */
   body.hasbg .task,body.hasbg .nowcard,body.hasbg .w-item,body.hasbg .w-hero,body.hasbg .quick input,
   body.hasbg .w-add input,body.hasbg .empty,body.hasbg .stat{
-    box-shadow:inset 0 0 0 999px rgba(11,15,20,.55);backdrop-filter:blur(7px);}
+    box-shadow:inset 0 0 0 999px rgba(var(--glass),var(--cardfade,.55));
+    backdrop-filter:var(--cardblur,blur(7px));}
   body.hasbg .task:hover,body.hasbg .w-item:hover,body.hasbg .nowcard:hover{
-    box-shadow:inset 0 0 0 999px rgba(11,15,20,.4);}
+    box-shadow:inset 0 0 0 999px rgba(var(--glass),calc(var(--cardfade,.55) * .72));}
   *{box-sizing:border-box;}
   [hidden]{display:none!important;}
   body{
@@ -155,7 +187,7 @@
   .task{display:flex;align-items:center;gap:.15rem;min-height:3.2rem;min-width:0;overflow:hidden;
     background:var(--surface-2);border:1px solid transparent;border-left:4px solid transparent;
     border-radius:.7rem;transition:background .15s ease,border-color .15s ease;}
-  .task:hover{background:#212B37;border-color:var(--line);}
+  .task:hover{background:var(--surface-2);filter:brightness(1.08);border-color:var(--line);}
   .task.lv-warm{border-left-color:var(--accent);}
   .task.lv-hot{border-left-color:var(--urgent);background:rgba(224,101,95,.07);}
   .task.defer{background:rgba(110,130,160,.11);border-color:var(--defer-dim);border-left-color:var(--defer);}
@@ -165,7 +197,7 @@
   .task.done{background:transparent;border-color:var(--line-soft);border-left-color:var(--done-dim);opacity:1;}
   .chk{flex:none;background:none;border:none;cursor:pointer;display:grid;place-items:center;
     padding:.7rem .45rem .7rem .8rem;align-self:stretch;border-radius:.7rem 0 0 .7rem;}
-  .chk:hover{background:rgba(255,255,255,.04);}
+  .chk:hover{background:rgba(var(--hover),.05);}
   .open{flex:1;min-width:0;min-height:0;height:100%;display:flex;align-items:center;text-align:left;overflow:hidden;
     background:none;border:none;padding:.7rem .2rem .7rem .15rem;cursor:pointer;border-radius:.7rem;}
   .box{flex:none;width:1.5rem;height:1.5rem;border-radius:.4rem;border:2px solid var(--dim);
@@ -234,10 +266,10 @@
   .chip.out{color:var(--accent);border:1px solid var(--accent-dim);}
   .chip.def{color:#0B0F14;background:var(--defer);font-weight:700;}
   .chip.cancel{color:var(--muted);border:1px solid var(--line);}
-  .cat{font-size:.7rem;font-weight:700;letter-spacing:.02em;border:1px solid currentColor;
+  .cat{color:var(--c);font-size:.7rem;font-weight:700;letter-spacing:.02em;border:1px solid currentColor;
     border-radius:.3rem;padding:0 .34rem;line-height:1.7;opacity:.95;}
   .task.done .cat,.task.canceled .cat{opacity:.6;}
-  .w-cat{display:inline-block;font-size:10px;font-weight:700;border:1px solid currentColor;border-radius:3px;
+  .w-cat{color:var(--c);display:inline-block;font-size:10px;font-weight:700;border:1px solid currentColor;border-radius:3px;
     padding:0 3px;margin-right:5px;vertical-align:1px;text-decoration:none;}
   .w-item.done .w-cat{text-decoration:none;opacity:.65;}
   .chip.push{color:var(--urgent);border:1px solid var(--urgent-dim);}
@@ -316,8 +348,16 @@
   .pcard.work:hover{border-color:#8A6224;}
   .pcard.homep{border-left-color:#9B8CF5;} .pcard.homep .pk{color:#9B8CF5;}
   .pcard.homep:hover{border-color:#4B3F94;}
-  .profbtn{display:flex;align-items:center;justify-content:center;gap:.4rem;}
-  .profbtn .dot{width:.55rem;height:.55rem;border-radius:99px;background:var(--accent);flex:none;}
+  /* 가장 자주 누르는 버튼이라 맨 위에 두고 보드 색을 입힌다 */
+  .profbtn{display:flex;align-items:center;gap:.5rem;width:100%;cursor:pointer;
+    background:var(--accent-dim);color:var(--on-accent);border:1px solid transparent;
+    border-radius:.5rem;padding:.62rem .8rem;font:inherit;font-size:.92rem;font-weight:700;
+    transition:all .15s ease;}
+  .profbtn:hover{background:var(--accent);color:var(--ink);}
+  .profbtn .dot{width:.6rem;height:.6rem;border-radius:99px;background:var(--on-accent);flex:none;opacity:.9;}
+  .profbtn:hover .dot{background:var(--ink);}
+  .profbtn .sw{margin-left:auto;font-size:.74rem;font-weight:600;opacity:.75;letter-spacing:.04em;
+    border:1px solid currentColor;border-radius:.3rem;padding:.02rem .34rem;}
   .w-prof{background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:5px;
     font-size:10px;font-weight:700;padding:2px 6px;cursor:pointer;flex:none;letter-spacing:.02em;}
   .w-prof:hover{background:var(--accent);color:var(--ink);}
@@ -398,6 +438,22 @@
 
   .swrow{display:flex;align-items:center;gap:.55rem;font-size:.92rem;cursor:pointer;user-select:none;}
   .swrow input{width:1.1rem;height:1.1rem;accent-color:var(--accent);cursor:pointer;}
+  .syboards{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+  .syb{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+    column-gap:.55rem;row-gap:.15rem;align-items:center;cursor:pointer;user-select:none;
+    background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);
+    border-radius:.6rem;padding:.7rem .8rem;transition:all .15s ease;}
+  .syb:hover{background:var(--surface-2);}
+  .syb input{width:1.15rem;height:1.15rem;cursor:pointer;grid-row:1;}
+  .syb .nm{font-size:.95rem;font-weight:600;white-space:nowrap;grid-row:1;}
+  .syb .st{grid-column:2;grid-row:2;font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    color:var(--dim);white-space:nowrap;}
+  .syb.work{border-left-color:#8A6224;} .syb.work input{accent-color:#E8A33D;}
+  .syb.homep{border-left-color:#4B3F94;} .syb.homep input{accent-color:#9B8CF5;}
+  .syb.on.work{border-color:#8A6224;background:rgba(232,163,61,.09);}
+  .syb.on.homep{border-color:#4B3F94;background:rgba(155,140,245,.09);}
+  .syb.on .st{color:var(--muted);}
+  @media (max-width:520px){ .syboards{grid-template-columns:1fr;} }
   .systate{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);}
   .systate .d{width:.5rem;height:.5rem;border-radius:99px;background:var(--dim);flex:none;}
   .systate.ok .d{background:var(--done);} .systate.err .d{background:var(--urgent);}
@@ -463,7 +519,7 @@
   .w-list::-webkit-scrollbar{width:5px;} .w-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
   .w-item{display:flex;align-items:center;gap:2px;background:var(--surface-2);border:1px solid transparent;
     border-left:3px solid transparent;border-radius:8px;flex:none;}
-  .w-item:hover{background:#212B37;}
+  .w-item:hover{background:var(--surface-2);filter:brightness(1.08);}
   .w-item.lv-hot{border-left-color:var(--urgent);}
   .w-item.lv-warm{border-left-color:var(--accent);}
   .w-item.defer{background:rgba(110,130,160,.13);border-color:var(--defer-dim);border-left-color:var(--defer);}
@@ -477,7 +533,7 @@
   .w-item.done{background:transparent;border-color:var(--line-soft);border-left-color:var(--done-dim);}
   .w-item .wchk{flex:none;background:none;border:none;cursor:pointer;display:grid;place-items:center;
     padding:8px 5px 8px 9px;align-self:stretch;}
-  .w-item .wchk:hover{background:rgba(255,255,255,.05);}
+  .w-item .wchk:hover{background:rgba(var(--hover),.06);}
   .w-item .wopen{flex:1;min-width:0;display:flex;align-items:flex-start;gap:8px;text-align:left;
     background:none;border:none;padding:8px 2px 8px 0;cursor:pointer;}
   .w-item .wb{flex:none;width:15px;height:15px;border-radius:4px;border:2px solid var(--dim);display:grid;place-items:center;}
@@ -592,8 +648,8 @@
     </div>
 
     <div class="side-foot">
-      <button class="primary" id="openComposer" type="button">＋ 여러 줄 한번에 추가</button>
-      <button class="ghost profbtn" id="profBtn" type="button"><span class="dot"></span><span id="profLabel">회사 보드</span> · 전환</button>
+      <button class="profbtn" id="profBtn" type="button"><span class="dot"></span><span id="profLabel">회사 보드</span><span class="sw">전환</span></button>
+      <button class="ghost" id="openComposer" type="button">＋ 여러 줄 한번에 추가</button>
       <div class="row2">
         <button class="ghost" id="catBtn" type="button">카테고리</button>
         <button class="ghost" id="bgBtn" type="button">배경 이미지</button>
@@ -677,6 +733,12 @@
 <div class="overlay" id="moreOverlay" hidden>
   <div class="sheet" style="width:min(30rem,100%)">
     <h2>그 외 기능</h2>
+    <span class="fl">화면 테마</span>
+    <div class="seg" id="themeSeg">
+      <button type="button" data-t="dark">어둡게</button>
+      <button type="button" data-t="light">밝게</button>
+      <button type="button" data-t="auto">시스템</button>
+    </div>
     <div class="mlist">
       <button type="button" class="mrow monly" id="mStats"><b>통계 보기</b><span>기간·카테고리별 진행 현황</span></button>
       <button type="button" class="mrow monly" id="mCats"><b>카테고리 관리</b><span>이름과 색상을 바꿉니다</span></button>
@@ -802,7 +864,14 @@
     <p class="hint" style="font-size:.78rem">github.com/settings/tokens → Generate new token (classic) →
       <b>gist</b> 항목만 체크 → 만료 No expiration → 생성된 토큰을 여기 붙여넣기</p>
 
-    <label class="swrow"><input type="checkbox" id="sySwitch"> <span>이 보드(<b id="syProf">회사</b>) 동기화하기</span></label>
+    <span class="fl">맞출 보드 고르기</span>
+    <p class="hint" style="font-size:.78rem">회사 보드와 집 보드는 서로 다른 목록입니다. 켠 보드만 다른 기기와 같아집니다.</p>
+    <div class="syboards">
+      <label class="syb work"><input type="checkbox" id="sySwWork">
+        <span class="nm">회사 보드</span><span class="st" id="syCntWork">—</span></label>
+      <label class="syb homep"><input type="checkbox" id="sySwHome">
+        <span class="nm">집 보드</span><span class="st" id="syCntHome">—</span></label>
+    </div>
     <div class="systate" id="syState"><span class="d"></span><span id="syText">꺼져 있음</span></div>
 
     <div class="composer-row">
@@ -840,10 +909,16 @@
       <button type="button" data-f="contain">여백 두고 맞추기</button>
       <button type="button" data-f="auto">원본 크기</button>
     </div>
-    <span class="fl">어둡게 <span id="bgDimV">64%</span></span>
+    <span class="fl">배경 덮기 <span id="bgDimV">64%</span></span>
     <div class="bgrow"><input type="range" id="bgDimR" min="0" max="92" value="64"></div>
     <span class="fl">흐림 <span id="bgBlurV">0px</span></span>
     <div class="bgrow"><input type="range" id="bgBlurR" min="0" max="16" value="0"></div>
+    <span class="fl">카드 뒤 흐림 <span id="bgCbV">7px</span></span>
+    <p class="hint" style="font-size:.76rem;margin:0">카드가 자기 뒤의 배경을 흐리게 만듭니다. 0 으로 두면 사진이 그대로 비칩니다.</p>
+    <div class="bgrow"><input type="range" id="bgCbR" min="0" max="14" value="7"></div>
+    <span class="fl">카드 진하기 <span id="bgCfV">55%</span></span>
+    <p class="hint" style="font-size:.76rem;margin:0">낮출수록 배경이 잘 보이고, 높일수록 글자가 또렷합니다.</p>
+    <div class="bgrow"><input type="range" id="bgCfR" min="0" max="90" value="55"></div>
     <div class="composer-row">
       <button type="button" class="ghost danger" id="bgRemove">배경 제거</button>
       <span style="flex:1"></span>
@@ -939,8 +1014,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.2";
-  var APP_BUILD = "2026-09-06 23:40";
+  var APP_VERSION = "v2.4";
+  var APP_BUILD = "2026-09-07 16:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1230,7 +1305,8 @@ var HOLIDAYS = {
   function catChip(item, cls){
     var c = catById(item.cat);
     if(!c) return "";
-    return '<span class="' + (cls||"cat") + '" style="color:' + c.color + '">' + esc(c.name) + '</span>';
+    /* 인라인 color 를 쓰면 라이트 테마에서 글자색을 덮어쓸 수 없다. 변수로 넘긴다. */
+    return '<span class="' + (cls||"cat") + '" style="--c:' + c.color + '">' + esc(c.name) + '</span>';
   }
 
   /* ---------- parsing ---------- */
@@ -1749,6 +1825,31 @@ var HOLIDAYS = {
     $("clock").textContent = (function(n){ return String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); })(new Date());
   }
 
+  /* ---------- 화면 테마 ---------- */
+  var THEME_KEY = "questboard:theme";
+  var theme = "dark";
+  var mq = window.matchMedia ? matchMedia("(prefers-color-scheme: light)") : null;
+  function applyTheme(){
+    var light = theme === "light" || (theme === "auto" && mq && mq.matches);
+    document.body.classList.toggle("light", light);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if(m) m.content = light ? "#EAEEF3" : "#0B0F14";
+    Array.prototype.forEach.call($("themeSeg").children, function(b){
+      b.classList.toggle("on", b.dataset.t === theme);
+    });
+  }
+  function setTheme(t){
+    theme = t;
+    try{ localStorage.setItem(THEME_KEY, t); }catch(e){}
+    applyTheme();
+  }
+  try{ theme = localStorage.getItem(THEME_KEY) || "dark"; }catch(e){}
+  Array.prototype.forEach.call($("themeSeg").children, function(b){
+    b.onclick = function(){ setTheme(b.dataset.t); };
+  });
+  if(mq && mq.addEventListener) mq.addEventListener("change", function(){ if(theme === "auto") applyTheme(); });
+  applyTheme();
+
   /* ---------- mode ---------- */
   var forced = /(\?|&)widget/.test(location.search) || location.hash === "#widget";
   function applyMode(){
@@ -1934,10 +2035,10 @@ var HOLIDAYS = {
   });
 
   /* ---------- background image ---------- */
-  var bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0 };
+  var bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0, cblur:7, cfade:55 };
   function bgKey(){ return "questboard:bg:" + profile; }
   function loadBg(){
-    bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0 };
+    bg = { src:"", dim:64, blur:0, fit:"cover", w:0, h:0, cblur:7, cfade:55 };
     try{ var raw = localStorage.getItem(bgKey()); if(raw){ var o = JSON.parse(raw); if(o) bg = o; } }catch(e){}
     applyBg();
   }
@@ -1961,8 +2062,13 @@ var HOLIDAYS = {
     l.style.filter = bg.blur ? "blur(" + bg.blur + "px)" : "";
     l.style.transform = bg.blur ? "scale(1.06)" : "";
     d.style.opacity = (bg.dim / 100);
+    var cb = (bg.cblur == null ? 7 : bg.cblur), cf = (bg.cfade == null ? 55 : bg.cfade);
+    document.documentElement.style.setProperty("--cardblur", cb ? "blur(" + cb + "px)" : "none");
+    document.documentElement.style.setProperty("--cardfade", (cf / 100));
     $("bgDimR").value = bg.dim; $("bgDimV").textContent = bg.dim + "%";
     $("bgBlurR").value = bg.blur; $("bgBlurV").textContent = bg.blur + "px";
+    $("bgCbR").value = cb; $("bgCbV").textContent = cb + "px";
+    $("bgCfR").value = cf; $("bgCfV").textContent = cf + "%";
     Array.prototype.forEach.call($("bgFit").children, function(b){ b.classList.toggle("on", b.dataset.f === (bg.fit || "cover")); });
     $("bgInfo").textContent = on
       ? ("현재 배경 " + (bg.w ? bg.w + "×" + bg.h + "px · " : "") + Math.round(bg.src.length/1024) + "KB")
@@ -1974,6 +2080,8 @@ var HOLIDAYS = {
   $("bgRemove").onclick = function(){ bg.src = ""; saveBg(); applyBg(); };
   $("bgDimR").oninput = function(){ bg.dim = +this.value; applyBg(); saveBg(); };
   $("bgBlurR").oninput = function(){ bg.blur = +this.value; applyBg(); saveBg(); };
+  $("bgCbR").oninput = function(){ bg.cblur = +this.value; applyBg(); saveBg(); };
+  $("bgCfR").oninput = function(){ bg.cfade = +this.value; applyBg(); saveBg(); };
   Array.prototype.forEach.call($("bgFit").children, function(b){
     b.onclick = function(){ bg.fit = b.dataset.f; applyBg(); saveBg(); };
   });
@@ -2552,9 +2660,9 @@ var HOLIDAYS = {
   }
   function syncBoot(){
     readSyncPrefs();
-    if($("sySwitch")) $("sySwitch").checked = syncOn;
+    paintBoards();
     if($("syTok")) $("syTok").value = token;
-    if($("syProf")) $("syProf").textContent = (profile === "home") ? "집" : "회사";
+
     if(!token) setState("", "토큰을 넣어주세요");
     else if(!syncOn) setState("", "이 보드는 꺼져 있음");
     else { setState("busy","연결 중…"); pullNow(true); }
@@ -2566,21 +2674,85 @@ var HOLIDAYS = {
     token = this.value.trim();
     try{ localStorage.setItem(TOK_KEY, token); }catch(e){}
     if(token && syncOn) pullNow(true); else setState("", token ? "이 보드는 꺼져 있음" : "토큰을 넣어주세요");
+    paintBoards();
   };
-  $("sySwitch").onchange = function(){
-    syncOn = this.checked;
-    try{ localStorage.setItem(syncKey(), syncOn ? "1" : "0"); }catch(e){}
-    if(syncOn){
-      if(!token){ setState("err","먼저 토큰을 넣어주세요"); this.checked = false; syncOn = false; return; }
-      pullNow(true);
-    } else setState("", "이 보드는 꺼져 있음");
-  };
-  $("syNow").onclick = function(){ pullNow(true); };
+  /* 두 보드의 켜짐 상태와 이 PC에 들어 있는 항목 수를 함께 보여준다.
+     "집 보드: 꺼짐"이 눈에 보여야 한쪽만 켜놓고 헤매지 않는다. */
+  function boardOn(p){ try{ return localStorage.getItem("questboard:sync:" + p) === "1"; }catch(e){ return false; } }
+  function boardCount(p){
+    try{
+      var raw = localStorage.getItem(PROFILES[p].key); if(!raw) return 0;
+      var d = (JSON.parse(raw) || {}).days || {}, n = 0, k;
+      for(k in d) n += d[k].length;
+      return n;
+    }catch(e){ return 0; }
+  }
+  function paintBoards(){
+    ["work","home"].forEach(function(p){
+      var cb = $(p === "work" ? "sySwWork" : "sySwHome");
+      if(!cb) return;
+      var on = boardOn(p), n = boardCount(p);
+      cb.checked = on;
+      cb.closest(".syb").classList.toggle("on", on);
+      $(p === "work" ? "syCntWork" : "syCntHome").textContent =
+        (on ? "맞추는 중" : "꺼짐") + " · 이 PC " + n + "건";
+    });
+  }
+  function toggleBoard(p, on){
+    if(on && !token){ setState("err","먼저 토큰을 넣어주세요"); paintBoards(); return; }
+    try{ localStorage.setItem("questboard:sync:" + p, on ? "1" : "0"); }catch(e){}
+    if(p === profile){
+      syncOn = on;
+      if(on) pullNow(true); else setState("", "이 보드는 꺼져 있음");
+    } else if(on){
+      /* 보고 있지 않은 보드는 화면을 건드리지 않고 뒤에서 받아만 둔다 */
+      setState("busy", (p === "work" ? "회사" : "집") + " 보드 가져오는 중…");
+      pullOther(p);
+    }
+    paintBoards();
+  }
+  $("sySwWork").onchange = function(){ toggleBoard("work", this.checked); };
+  $("sySwHome").onchange = function(){ toggleBoard("home", this.checked); };
+  /* 지금 보고 있지 않은 보드를 Gist에서 받아 그 보드의 저장소에만 넣는다 */
+  function pullOther(p){
+    if(!token) return Promise.resolve();
+    var KEY2 = PROFILES[p].key;
+    return ensureGist().then(function(id){ return gh("/gists/" + id); }).then(function(g){
+      var f = g.files && g.files[p + ".json"], remote = null;
+      if(f && f.content){ try{ remote = JSON.parse(f.content); }catch(e){} }
+      if(!remote || !remote.days){ setState("ok", (p==="work"?"회사":"집") + " 보드: 서버에 아직 자료가 없습니다"); paintBoards(); return; }
+      var cur = {};
+      try{ cur = JSON.parse(localStorage.getItem(KEY2) || "{}") || {}; }catch(e){}
+      cur.days = cur.days || {}; cur.tomb = cur.tomb || {}; cur.meta = cur.meta || { dayAt:{}, catsAt:0 };
+      var k, id2, n = 0;
+      for(id2 in (remote.tomb || {})){
+        if(!cur.tomb[id2] || (remote.tomb[id2].at||0) > (cur.tomb[id2].at||0)) cur.tomb[id2] = remote.tomb[id2];
+      }
+      for(k in remote.days){
+        if(!cur.days[k] || !cur.days[k].length){ cur.days[k] = remote.days[k]; }
+        else {
+          var have = {}, i;
+          for(i=0;i<cur.days[k].length;i++) have[cur.days[k][i].id] = 1;
+          remote.days[k].forEach(function(it){ if(it && it.id && !have[it.id]) cur.days[k].push(it); });
+        }
+        n += remote.days[k].length;
+      }
+      if(remote.cats && remote.cats.length) cur.cats = remote.cats;
+      cur.meta = remote.meta || cur.meta;
+      try{ localStorage.setItem(KEY2, JSON.stringify(cur)); }catch(e){}
+      setState("ok", (p==="work"?"회사":"집") + " 보드 " + n + "건을 이 PC로 가져왔습니다");
+      paintBoards();
+    }).catch(function(e){ setState("err", e.message || "실패"); });
+  }
+  $("syNow").onclick = function(){ pullNow(true).then(function(){
+    var other = profile === "work" ? "home" : "work";
+    if(boardOn(other)) return pullOther(other);
+  }); };
   $("syReset").onclick = function(){
     token = ""; gistId = ""; syncOn = false;
     try{ localStorage.removeItem(TOK_KEY); localStorage.removeItem(GID_KEY);
          localStorage.removeItem("questboard:sync:work"); localStorage.removeItem("questboard:sync:home"); }catch(e){}
-    $("syTok").value = ""; $("sySwitch").checked = false;
+    $("syTok").value = ""; paintBoards();
     setState("", "연결이 해제되었습니다");
   };
   /* 디버그·점검용 창구 (콘솔에서 QB.pullNow(true) 등으로 확인) */
