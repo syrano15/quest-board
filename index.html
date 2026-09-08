@@ -199,8 +199,10 @@
     border-radius:.7rem;padding:.95rem 1.1rem;cursor:pointer;transition:background .15s ease,border-color .15s ease;}
   .nowcard:hover{background:var(--surface-2);}
   .nowcard .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.18em;color:var(--dim);}
-  .nowcard .t{font-size:1.15rem;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .nowcard.lead .t{font-size:1.55rem;}
+  /* 긴 제목을 한 줄로 자르면 뒷부분을 못 읽는다. 두 줄까지 펼치고 그 다음에만 접는다. */
+  .nowcard .t{font-size:1.02rem;font-weight:600;line-height:1.3;word-break:keep-all;overflow:hidden;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;}
+  .nowcard.lead .t{font-size:1.55rem;-webkit-line-clamp:2;}
   .nowcard.lv-hot{border-left-color:var(--urgent);background:rgba(224,101,95,.08);}
   .nowcard.lv-hot .k{color:var(--urgent);}
   .nowcard.lv-warm{border-left-color:var(--accent);background:rgba(232,163,61,.07);}
@@ -686,22 +688,59 @@
   .ghost .cnt{display:inline-block;min-width:1.15rem;margin-left:.3rem;padding:0 .3rem;border-radius:99px;
     background:var(--surface-2);color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;}
   .ghost .cnt.has{background:var(--accent-dim);color:var(--on-accent);}
-  .wishlist{display:flex;flex-direction:column;gap:.35rem;max-height:46vh;overflow-y:auto;}
-  .wrow{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--line-soft);
-    border-left:3px solid var(--line);border-radius:.5rem;padding:.5rem .6rem;}
-  .wrow .wt{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .wrow .byq{display:flex;gap:.25rem;flex:none;}
-  .wrow .byq button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--dim);
-    font-size:.7rem;padding:.12rem .45rem;cursor:pointer;transition:all .12s ease;}
-  .wrow .byq button:hover{border-color:var(--muted);color:var(--text);}
-  .wrow .byq button.on{background:var(--accent-dim);border-color:var(--accent-dim);color:var(--on-accent);}
-  .wrow .pull{flex:none;background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:.4rem;
-    font-size:.76rem;font-weight:600;padding:.3rem .6rem;cursor:pointer;}
+  /* ---- 언젠가 목록 ---- 많이 담아둬도 한눈에 보이도록 카드 격자 + 검색·정렬 */
+  .wishsheet{width:min(58rem,100%);max-height:90vh;}
+  .quick .ft{flex:1;min-width:0;resize:vertical;}
+  .wtools{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+  .wtools .fi{flex:1;min-width:9rem;}
+  .wtools .clr{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.9rem;padding:.2rem .3rem;}
+  .wtools .clr:hover{color:var(--text);}
+  .wsort{display:flex;gap:.25rem;flex:none;}
+  .wsort button{background:var(--surface-2);border:1px solid var(--line);border-radius:.45rem;color:var(--muted);
+    font-size:.78rem;font-weight:600;padding:.34rem .6rem;cursor:pointer;transition:all .12s ease;}
+  .wsort button:hover{color:var(--text);}
+  .wsort button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+  .wfilters{display:flex;gap:.3rem;flex-wrap:wrap;}
+  .wfilters button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
+    font-size:.76rem;padding:.2rem .55rem;cursor:pointer;transition:all .12s ease;}
+  .wfilters button:hover{border-color:var(--muted);color:var(--text);}
+  .wfilters button.on{background:var(--surface-2);border-color:currentColor;font-weight:700;}
+  .wfilters button .fc{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--dim);margin-left:.25rem;}
+  .wishlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:.4rem;
+    max-height:56vh;overflow-y:auto;align-content:start;padding-right:.2rem;}
+  .wishlist::-webkit-scrollbar{width:6px;} .wishlist::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
+  .wghead{grid-column:1/-1;display:flex;align-items:center;gap:.4rem;margin:.4rem 0 -.1rem;
+    font-size:.76rem;letter-spacing:.1em;color:var(--dim);font-family:"IBM Plex Mono",monospace;}
+  .wghead:first-child{margin-top:0;}
+  .wghead b{font-family:var(--ui-font,"IBM Plex Sans KR"),sans-serif;font-size:.86rem;letter-spacing:0;color:var(--muted);}
+  /* 제목은 카드 폭을 전부 쓰고, 조작 단추는 아래 오른쪽에 한 줄로 모은다.
+     기한은 버튼 하나를 눌러 없음→이번 달→올해로 돌린다. */
+  .wrow{display:flex;flex-direction:column;gap:.2rem;
+    background:var(--surface);border:1px solid var(--line-soft);
+    border-left:3px solid var(--line);border-radius:.5rem;padding:.45rem .55rem;min-width:0;}
+  .wrow:hover{background:var(--surface-2);}
+  .wrow .wt{font-size:.95rem;line-height:1.35;word-break:keep-all;min-width:0;
+    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .wrow .wact{display:flex;align-items:center;gap:.2rem;align-self:flex-end;}
+  .wrow .byb{background:none;border:1px dashed var(--line);border-radius:99px;color:var(--dim);
+    font-family:"IBM Plex Mono",monospace;font-size:.66rem;padding:.14rem .45rem;cursor:pointer;
+    white-space:nowrap;transition:all .12s ease;}
+  .wrow .byb:hover{border-color:var(--muted);color:var(--text);}
+  .wrow .byb.on{border-style:solid;border-color:var(--accent-dim);color:var(--accent);}
+  .wrow .pull{flex:none;background:var(--accent-dim);color:var(--on-accent);border:none;
+    border-radius:.4rem;font-size:.74rem;font-weight:600;padding:.24rem .5rem;cursor:pointer;}
   .wrow .pull:hover{background:var(--accent);color:var(--ink);}
-  .wrow .del{flex:none;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.9rem;padding:0 .2rem;}
+  .wrow .del{flex:none;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.86rem;padding:0 .15rem;}
   .wrow .del:hover{color:var(--urgent);}
   .wrow.soon{border-left-color:var(--accent);}
-  .wempty{color:var(--dim);font-size:.86rem;padding:.8rem 0;text-align:center;}
+  .wempty{grid-column:1/-1;color:var(--dim);font-size:.86rem;padding:.8rem 0;text-align:center;}
+  @media (pointer:coarse){
+    .wrow{padding:.5rem .6rem;}
+    .wrow .byb{padding:.3rem .6rem;font-size:.74rem;}
+    .wrow .pull{padding:.4rem .7rem;font-size:.8rem;}
+    .wrow .del{font-size:1rem;padding:0 .35rem;}
+    .wishlist{grid-template-columns:1fr;max-height:46vh;}
+  }
 
   /* 보드 빈 자리에 올라오는 제안 카드 */
   .task.wish{background:none;border:1px dashed var(--line);border-left:1px dashed var(--line);
@@ -713,7 +752,12 @@
   .task.wish:hover .wl{color:var(--text);}
   .task.wish .wbody{display:flex;flex-direction:column;gap:.18rem;min-width:0;padding:.6rem .8rem;flex:1;}
   body.hasbg .task.wish{box-shadow:none;backdrop-filter:none;}
-  .fontlist{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+  .fontlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.45rem;
+    max-height:56vh;overflow-y:auto;align-content:start;padding-right:.2rem;}
+  .fontlist::-webkit-scrollbar{width:6px;} .fontlist::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
+  .fgroup{grid-column:1/-1;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;
+    color:var(--dim);margin:.35rem 0 -.1rem;}
+  .fgroup:first-child{margin-top:0;}
   .fcard{display:flex;flex-direction:column;gap:.1rem;text-align:left;cursor:pointer;
     background:var(--surface);border:1px solid var(--line);border-radius:.6rem;
     padding:.6rem .75rem;transition:all .15s ease;}
@@ -722,8 +766,8 @@
     box-shadow:inset 0 0 0 1px var(--accent);}
   .fcard .fn{font-size:.76rem;color:var(--muted);letter-spacing:.02em;}
   .fcard.on .fn{color:var(--accent);}
-  .fcard .fp{font-size:1.12rem;line-height:1.3;color:var(--text);}
-  @media (max-width:520px){ .fontlist{grid-template-columns:1fr;} }
+  .fcard .fp{font-size:1.12rem;line-height:1.35;color:var(--text);min-height:1.5rem;}
+  @media (max-width:520px){ .fontlist{grid-template-columns:1fr 1fr;} }
   .monly{display:none;} body.is-widget .monly{display:flex;}
   body.is-widget .dtonly{display:none;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
@@ -1052,13 +1096,24 @@
 </div>
 
 <div class="overlay" id="wishOverlay" hidden>
-  <div class="sheet" style="width:min(40rem,100%)">
+  <div class="sheet wishsheet">
     <h2>언젠가 목록</h2>
-    <p class="hint" style="font-size:.8rem">날짜를 못 정한 일을 모아둡니다. 보드에 빈 자리가 생기면 점선 카드로 슬쩍 올라옵니다.</p>
-    <form class="quick" id="wishForm">
-      <input type="text" class="fi" id="wishInput" placeholder="예: #취미 사이버펑크 시즌2 · #자기개발 정보처리기사" maxlength="140" autocomplete="off">
-      <button class="primary" type="submit">담기</button>
+    <p class="hint" style="font-size:.8rem">생각나는 대로 쭉 담아두세요. 보드에 빈 자리가 생기면 점선 카드로 올라오고, "오늘로"를 누르면 바로 그 날 보드로 갑니다.
+      여러 줄을 붙여넣어도 한 줄에 하나씩 담깁니다. (Ctrl + Enter 로도 담기)</p>
+    <form class="quick" id="wishForm" style="align-items:flex-start">
+      <textarea class="ft sm" id="wishInput" placeholder="예: #취미 사이버펑크 시즌2 · #자기개발 정보처리기사" maxlength="1200" style="min-height:2.9rem"></textarea>
+      <button class="primary" type="submit" style="padding:0 1.1rem">담기</button>
     </form>
+    <div class="wtools">
+      <input type="text" class="fi" id="wishFind" placeholder="검색 — 이름으로 찾기" autocomplete="off">
+      <button type="button" class="clr" id="wishFindClr" title="검색 지우기" hidden>✕</button>
+      <div class="wsort" id="wishSort">
+        <button type="button" data-s="ord">담은 순</button>
+        <button type="button" data-s="by">기한 순</button>
+        <button type="button" data-s="cat">카테고리</button>
+      </div>
+    </div>
+    <div class="wfilters" id="wishFilters"></div>
     <div class="wishlist" id="wishList"></div>
     <div class="composer-row">
       <span class="hint" style="flex:1;font-size:.78rem" id="wishCount"></span>
@@ -1068,7 +1123,7 @@
 </div>
 
 <div class="overlay" id="fontOverlay" hidden>
-  <div class="sheet" style="width:min(34rem,100%)">
+  <div class="sheet" style="width:min(44rem,100%)">
     <h2>글꼴</h2>
     <p class="hint" style="font-size:.8rem">고른 글꼴은 이 기기에만 적용됩니다. 숫자·시계는 자리가 흔들리지 않게 지금 글꼴을 그대로 씁니다.</p>
     <div class="fontlist" id="fontList"></div>
@@ -1226,8 +1281,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.5";
-  var APP_BUILD = "2026-09-09 00:40";
+  var APP_VERSION = "v3.6";
+  var APP_BUILD = "2026-09-08 20:30";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1773,6 +1828,10 @@ var HOLIDAYS = {
       '</span>';
     if(item.color){ row.setAttribute("data-ic", ""); row.style.setProperty("--ic", item.color); }
     row.querySelector(".label").textContent = item.text;
+    /* 카드가 작아 제목이 접히는 날에도 마우스만 올리면 전문을 읽을 수 있게 */
+    row.querySelector(".open").title = item.text +
+      (item.note ? "\n메모 · " + item.note : "") +
+      (item.reason ? "\n↳ " + item.reason : "");
     row.querySelector(".chk").onclick = function(){ markDone(item, !item.done); };
     row.querySelector(".open").onclick = function(){ openItemSheet(item, "edit"); };
     row.querySelector(".js-pri").onclick = function(){ item.pri = ((item.pri||0)+1)%3; save(); render(); };
@@ -1821,6 +1880,7 @@ var HOLIDAYS = {
       b.className = "nowcard " + (n === 0 ? "lead " : "") + levelOf(r.it);
       if(r.it.color){ b.setAttribute("data-ic",""); b.style.setProperty("--ic", r.it.color); }
       b.innerHTML = '<span class="k">' + labels[n] + (sub ? " · " + esc(sub) : "") + '</span><span class="t">' + esc(r.it.text) + '</span>';
+      b.title = r.it.text + (r.it.note ? "\n메모 · " + r.it.note : "") + "\n(누르면 완료)";
       b.onclick = function(){ markDone(r.it, true); };
       strip.appendChild(b);
     });
@@ -2027,48 +2087,129 @@ var HOLIDAYS = {
     var n = wishLive().length, el = $("wishN");
     if(el){ el.textContent = n; el.classList.toggle("has", n > 0); }
   }
+  /* 담아둔 게 수십 건이 되면 한 줄 목록으로는 찾을 수 없다.
+     검색 · 정렬 · 카테고리 걸러보기를 붙이고 카드 격자로 펼친다. */
+  var wishFind = "", wishSort = "ord", wishCat = "__all";
+  function catIndex(id){
+    for(var i = 0; i < store.cats.length; i++) if(store.cats[i].id === id) return i;
+    return 999;                                  /* 태그 없음은 맨 뒤 */
+  }
+  function wishVisible(){
+    var q = wishFind.trim().toLowerCase();
+    var arr = wishLive().filter(function(it){
+      if(wishCat === "__none"){ if(it.cat) return false; }
+      else if(wishCat !== "__all" && it.cat !== wishCat) return false;
+      if(!q) return true;
+      var c = catById(it.cat);
+      return String(it.text || "").toLowerCase().indexOf(q) >= 0 ||
+             (c && c.name.toLowerCase().indexOf(q) >= 0);
+    });
+    if(wishSort === "by"){
+      arr.sort(function(a, b){
+        var da = daysLeft(a.by), db = daysLeft(b.by);
+        if(da === null && db === null) return (b.ord || 0) - (a.ord || 0);
+        if(da === null) return 1;
+        if(db === null) return -1;
+        return da - db || (b.ord || 0) - (a.ord || 0);
+      });
+    } else if(wishSort === "cat"){
+      arr.sort(function(a, b){
+        return catIndex(a.cat) - catIndex(b.cat) || (b.ord || 0) - (a.ord || 0);
+      });
+    } else {
+      arr.sort(function(a, b){ return (b.ord || 0) - (a.ord || 0); });   /* 최근에 담은 것이 위 */
+    }
+    return arr;
+  }
+  function renderWishFilters(all){
+    var host = $("wishFilters"), use = {}, none = 0;
+    all.forEach(function(it){ if(it.cat && catById(it.cat)) use[it.cat] = (use[it.cat] || 0) + 1; else none++; });
+    host.innerHTML = "";
+    function chip(id, name, n, color){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = '<span class="fx"></span><span class="fc">' + n + '</span>';
+      b.querySelector(".fx").textContent = name;
+      if(color) b.style.color = safeCatColor(color);
+      b.classList.toggle("on", wishCat === id);
+      b.onclick = function(){ wishCat = id; renderWishSheet(); };
+      host.appendChild(b);
+    }
+    chip("__all", "전체", all.length, null);
+    store.cats.forEach(function(c){ if(use[c.id]) chip(c.id, c.name, use[c.id], c.color); });
+    if(none) chip("__none", "태그 없음", none, null);
+  }
+  function wishRow(it){
+    var row = document.createElement("div");
+    var d = daysLeft(it.by);
+    row.className = "wrow" + (d !== null && d <= 31 ? " soon" : "");
+    if(it.color) row.style.borderLeftColor = it.color;
+    row.innerHTML =
+      '<span class="wt"></span>' +
+      '<span class="wact">' +
+        '<button type="button" class="byb"></button>' +
+        '<button type="button" class="pull" title="이 날 보드로 가져오기">오늘로</button>' +
+        '<button type="button" class="del" title="지우기">✕</button>' +
+      '</span>';
+    var t = row.querySelector(".wt");
+    t.innerHTML = catChip(it);
+    t.appendChild(document.createTextNode(" " + it.text));
+    t.title = it.text;
+    /* 기한 버튼 — 누를 때마다 없음 → 이번 달 → 올해 → 없음 */
+    var cur = it.by === endOfMonth() ? "month" : (it.by === endOfYear() ? "year" : (it.by ? "date" : ""));
+    var byb = row.querySelector(".byb");
+    byb.textContent = it.by ? byLabel(it) : "기한";
+    byb.classList.toggle("on", !!it.by);
+    byb.title = it.by ? ("목표 " + it.by + " · 눌러서 바꾸기") : "목표 시기 정하기 (이번 달 / 올해)";
+    byb.onclick = function(){
+      if(cur === "") it.by = endOfMonth();
+      else if(cur === "month") it.by = endOfYear();
+      else delete it.by;
+      save(); renderWishSheet(); render();
+    };
+    row.querySelector(".pull").onclick = function(){ pullWish(it); renderWishSheet(); paintWishCount(); };
+    row.querySelector(".del").onclick = function(){
+      var a = wishes(), i = a.indexOf(it); if(i >= 0) a.splice(i, 1);
+      save(); renderWishSheet(); paintWishCount(); render();
+    };
+    return row;
+  }
   function renderWishSheet(){
-    var host = $("wishList"), arr = wishLive();
+    var host = $("wishList"), all = wishLive(), arr = wishVisible();
+    renderWishFilters(all);
+    Array.prototype.forEach.call($("wishSort").children, function(b){
+      b.classList.toggle("on", b.dataset.s === wishSort);
+    });
+    $("wishFindClr").hidden = !wishFind;
     host.innerHTML = "";
     if(!arr.length){
-      host.innerHTML = '<div class="wempty">아직 담아둔 게 없습니다. 위에 적어서 담아보세요.</div>';
+      host.innerHTML = '<div class="wempty">' +
+        (all.length ? "조건에 맞는 항목이 없습니다." : "아직 담아둔 게 없습니다. 위에 적어서 담아보세요.") + '</div>';
     }
-    arr.slice().sort(function(a,b){ return (a.ord||0) - (b.ord||0); }).forEach(function(it){
-      var row = document.createElement("div");
-      var d = daysLeft(it.by);
-      row.className = "wrow" + (d !== null && d <= 31 ? " soon" : "");
-      if(it.color) row.style.borderLeftColor = it.color;
-      row.innerHTML =
-        '<span class="wt"></span>' +
-        (byLabel(it) ? '<span class="time">' + byLabel(it) + '</span>' : '') +
-        '<span class="byq">' +
-          '<button type="button" data-b="month">이번 달</button>' +
-          '<button type="button" data-b="year">올해</button>' +
-          '<button type="button" data-b="">없음</button>' +
-        '</span>' +
-        '<button type="button" class="pull">오늘로</button>' +
-        '<button type="button" class="del" title="지우기">✕</button>';
-      var t = row.querySelector(".wt");
-      t.innerHTML = catChip(it);
-      t.appendChild(document.createTextNode(" " + it.text));
-      var cur = it.by === endOfMonth() ? "month" : (it.by === endOfYear() ? "year" : "");
-      Array.prototype.forEach.call(row.querySelector(".byq").children, function(b){
-        b.classList.toggle("on", b.dataset.b === cur);
-        b.onclick = function(){
-          if(b.dataset.b === "month") it.by = endOfMonth();
-          else if(b.dataset.b === "year") it.by = endOfYear();
-          else delete it.by;
-          save(); renderWishSheet(); render();
-        };
-      });
-      row.querySelector(".pull").onclick = function(){ pullWish(it); renderWishSheet(); paintWishCount(); };
-      row.querySelector(".del").onclick = function(){
-        var a = wishes(), i = a.indexOf(it); if(i >= 0) a.splice(i, 1);
-        save(); renderWishSheet(); paintWishCount(); render();
-      };
-      host.appendChild(row);
+    var counts = {}, lastG = null;
+    if(wishSort === "cat") arr.forEach(function(it){
+      var g = (it.cat && catById(it.cat)) ? it.cat : "__none";
+      counts[g] = (counts[g] || 0) + 1;
     });
-    $("wishCount").textContent = arr.length ? (arr.length + "건 담겨 있습니다") : "";
+    arr.forEach(function(it){
+      if(wishSort === "cat"){
+        var c = catById(it.cat), g = c ? c.id : "__none";
+        if(g !== lastG){
+          lastG = g;
+          var h = document.createElement("p");
+          h.className = "wghead";
+          h.innerHTML = '<b></b><span>' + counts[g] + '건</span>';
+          h.querySelector("b").textContent = c ? c.name : "태그 없음";
+          if(c) h.querySelector("b").style.color = safeCatColor(c.color);
+          host.appendChild(h);
+        }
+      }
+      host.appendChild(wishRow(it));
+    });
+    $("wishCount").textContent = all.length
+      ? ((arr.length === all.length) ? (all.length + "건 담겨 있습니다")
+                                     : (arr.length + "건 보임 · 전체 " + all.length + "건"))
+      : "";
     paintWishCount();
   }
   function openWish(){ renderWishSheet(); $("wishOverlay").hidden = false; setTimeout(function(){ $("wishInput").focus(); }, 30); }
@@ -2098,13 +2239,13 @@ var HOLIDAYS = {
     } else {
       var rows = Math.max(1, Math.ceil(n / cols));
       var avail = list.clientHeight - (rows - 1) * 0.7 * unit;
-      rowmax = Math.max(3.9, Math.min(7, avail / rows / unit));
+      rowmax = Math.max(3.9, Math.min(10, avail / rows / unit));
     }
     list.style.setProperty("--rowmax", rowmax + "rem");
-    /* 칸 높이에 맞춰 제목 줄 수를 정한다. 넘치면 잘리는 게 아니라 …로 접힌다 */
+    /* 칸 높이에 맞춰 제목 줄 수의 상한을 준다. 실제 줄 수는 fitRows 가 재보고 정한다. */
     list.classList.toggle("tight", rowmax < 4.1);
     list.classList.toggle("roomy", rowmax >= 6.0);
-    list.style.setProperty("--lines", rowmax < 4.1 ? 1 : (rowmax < 6.0 ? 2 : 3));
+    list.style.setProperty("--lines", rowmax < 4.1 ? 2 : (rowmax < 6.0 ? 3 : 5));
     fillWishes(list, cols, rowmax, unit);
     fitRows(list);
   }
@@ -2120,7 +2261,7 @@ var HOLIDAYS = {
     var visRows = Math.max(1, Math.floor((list.clientHeight + 0.7 * unit) / rowH));
     var free = cols * visRows - n;
     if(free <= 0) return;
-    wishPick(Math.min(free, 3)).forEach(function(it){
+    wishPick(Math.min(free, 4)).forEach(function(it){
       var b = document.createElement("button");
       b.type = "button";
       b.className = "task wish";
@@ -2136,12 +2277,16 @@ var HOLIDAYS = {
 
   /* 카드마다 실제로 재보고, 넘치면 제목 줄 수를 줄이고 그래도 넘치면 메모를 접는다.
      칸 높이만 보고 어림잡으면 제목·메모·사유 조합에 따라 글자가 카드 밖으로 삐져나간다. */
-  function overflows(r, body){
-    /* body 는 세로 가운데 정렬이라 넘치면 카드 위아래로 삐져나온다. 높이로 직접 잰다. */
+  /* 카드에 허락된 높이(cap)와 내용 높이를 비교한다.
+     예전에는 카드의 실제 높이와 비교했는데, "자동" 높이에서는 칸이 내용만큼 늘어나므로
+     이 비교가 늘 "넘쳤다"로 나왔다. 그래서 자리가 남아도 제목이 언제나 한 줄로 접혔다. */
+  function overflows(r, body, cap){
     var pad = 1.0 * (parseFloat(getComputedStyle(r.querySelector(".open")).paddingTop) || 0);
-    return body.getBoundingClientRect().height > r.getBoundingClientRect().height - pad * 2 - 1;
+    return body.getBoundingClientRect().height > cap - pad * 2 - 1;
   }
   function fitRows(list){
+    var unit = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    var cap = (parseFloat(list.style.getPropertyValue("--rowmax")) || 6.2) * unit;
     var rows = list.children, start = +list.style.getPropertyValue("--lines") || 2;
     for(var i = 0; i < rows.length; i++){
       var r = rows[i], body = r.querySelector(".body");
@@ -2149,12 +2294,13 @@ var HOLIDAYS = {
       var note = r.querySelector(".note"), n = start;
       if(note) note.hidden = false;
       r.style.setProperty("--lines", n);
-      while(n > 1 && overflows(r, body)){ n--; r.style.setProperty("--lines", n); }
-      if(note && overflows(r, body)) note.hidden = true;      /* 그래도 넘치면 메모를 접고 */
-      var dt = r.querySelector(".donetime");                   /* 완료 시각을 접고 */
-      if(dt){ dt.hidden = false; if(overflows(r, body)) dt.hidden = true; }
-      var rs2 = r.querySelector(".rsn");                        /* 그래도 넘치면 사유를 접는다 (상세에서 볼 수 있다) */
-      if(rs2){ rs2.hidden = false; if(overflows(r, body)) rs2.hidden = true; }
+      /* 들어갈 수 있는 만큼 제목 줄을 쓰고, 넘칠 때만 한 줄씩 줄인다 */
+      while(n > 1 && overflows(r, body, cap)){ n--; r.style.setProperty("--lines", n); }
+      if(note && overflows(r, body, cap)) note.hidden = true;      /* 그래도 넘치면 메모를 접고 */
+      var dt = r.querySelector(".donetime");                        /* 완료 시각을 접고 */
+      if(dt){ dt.hidden = false; if(overflows(r, body, cap)) dt.hidden = true; }
+      var rs2 = r.querySelector(".rsn");                            /* 그래도 넘치면 사유를 접는다 (상세에서 볼 수 있다) */
+      if(rs2){ rs2.hidden = false; if(overflows(r, body, cap)) rs2.hidden = true; }
       /* 카테고리는 어떤 경우에도 감추지 않는다.
          예전에는 마지막 수단으로 태그를 지웠는데, 카드가 작아지면 태그가 통째로 사라져 버렸다.
          메타 줄은 CSS 로 한 줄에 묶어두므로 줄바꿈 때문에 높이가 늘어나지도 않는다. */
@@ -2414,15 +2560,35 @@ var HOLIDAYS = {
 
   /* ---------- 글꼴 ---------- */
   /* Google Fonts 에서 고른 것만 그때그때 불러온다. 숫자용 고정폭 글꼴은 건드리지 않는다. */
+  /* adj — 글자가 유난히 작거나 큰 글꼴의 크기를 보정한다 (글자 크기 %와 곱해진다) */
   var FONTS = [
-    { id:"plex",  name:"기본",     ui:"IBM Plex Sans KR", title:"Black Han Sans", tw:400, load:"" },
-    { id:"noto",  name:"본고딕",   ui:"Noto Sans KR",     title:"Noto Sans KR",   tw:900, load:"Noto+Sans+KR:wght@400;500;700;900" },
-    { id:"a1",    name:"고딕 A1",  ui:"Gothic A1",        title:"Gothic A1",      tw:900, load:"Gothic+A1:wght@400;500;700;900" },
-    { id:"dodum", name:"고운돋움", ui:"Gowun Dodum",      title:"Gowun Dodum",    tw:400, load:"Gowun+Dodum" },
-    { id:"myung", name:"나눔명조", ui:"Nanum Myeongjo",   title:"Nanum Myeongjo", tw:800, load:"Nanum+Myeongjo:wght@400;700;800" },
-    { id:"dohyeon",name:"도현",    ui:"Do Hyeon",         title:"Do Hyeon",       tw:400, load:"Do+Hyeon" },
-    { id:"jua",   name:"주아",     ui:"Jua",              title:"Jua",            tw:400, load:"Jua" },
-    { id:"pen",   name:"나눔펜",   ui:"Nanum Pen Script", title:"Nanum Pen Script", tw:400, load:"Nanum+Pen+Script" }
+    { id:"plex",  name:"기본",     g:"고딕", ui:"IBM Plex Sans KR", title:"Black Han Sans", tw:400, load:"" },
+    { id:"noto",  name:"본고딕",   g:"고딕", ui:"Noto Sans KR",     title:"Noto Sans KR",   tw:900, load:"Noto+Sans+KR:wght@400;500;700;900" },
+    { id:"a1",    name:"고딕 A1",  g:"고딕", ui:"Gothic A1",        title:"Gothic A1",      tw:900, load:"Gothic+A1:wght@400;500;700;900" },
+    { id:"nanum", name:"나눔고딕", g:"고딕", ui:"Nanum Gothic",     title:"Nanum Gothic",   tw:800, load:"Nanum+Gothic:wght@400;700;800" },
+    { id:"sun",   name:"선플라워", g:"고딕", ui:"Sunflower",        title:"Sunflower",      tw:700, load:"Sunflower:wght@300;500;700" },
+    { id:"black", name:"검은고딕", g:"고딕", ui:"Black Han Sans",   title:"Black Han Sans", tw:400, load:"Black+Han+Sans", adj:0.96 },
+
+    { id:"myung", name:"나눔명조", g:"명조", ui:"Nanum Myeongjo",   title:"Nanum Myeongjo", tw:800, load:"Nanum+Myeongjo:wght@400;700;800" },
+    { id:"serif", name:"본명조",   g:"명조", ui:"Noto Serif KR",    title:"Noto Serif KR",  tw:900, load:"Noto+Serif+KR:wght@400;500;700;900" },
+    { id:"batang",name:"고운바탕", g:"명조", ui:"Gowun Batang",     title:"Gowun Batang",   tw:700, load:"Gowun+Batang:wght@400;700" },
+    { id:"song",  name:"송명",     g:"명조", ui:"Song Myung",       title:"Song Myung",     tw:400, load:"Song+Myung" },
+
+    { id:"dodum", name:"고운돋움", g:"둥근·디자인", ui:"Gowun Dodum",  title:"Gowun Dodum",  tw:400, load:"Gowun+Dodum" },
+    { id:"dohyeon",name:"도현",    g:"둥근·디자인", ui:"Do Hyeon",     title:"Do Hyeon",     tw:400, load:"Do+Hyeon" },
+    { id:"jua",   name:"주아",     g:"둥근·디자인", ui:"Jua",          title:"Jua",          tw:400, load:"Jua" },
+    { id:"yeon",  name:"연성",     g:"둥근·디자인", ui:"Yeon Sung",    title:"Yeon Sung",    tw:400, load:"Yeon+Sung" },
+    { id:"stylish",name:"스타일리시",g:"둥근·디자인", ui:"Stylish",    title:"Stylish",      tw:400, load:"Stylish" },
+    { id:"dongle",name:"동글",     g:"둥근·디자인", ui:"Dongle",       title:"Dongle",       tw:700, load:"Dongle:wght@300;400;700", adj:1.32 },
+
+    { id:"pen",   name:"나눔펜",   g:"손글씨", ui:"Nanum Pen Script",   title:"Nanum Pen Script",   tw:400, load:"Nanum+Pen+Script", adj:1.14 },
+    { id:"brush", name:"나눔붓",   g:"손글씨", ui:"Nanum Brush Script", title:"Nanum Brush Script", tw:400, load:"Nanum+Brush+Script", adj:1.14 },
+    { id:"gaegu", name:"개구",     g:"손글씨", ui:"Gaegu",              title:"Gaegu",              tw:700, load:"Gaegu:wght@300;400;700", adj:1.06 },
+    { id:"melody",name:"하이멜로디",g:"손글씨", ui:"Hi Melody",         title:"Hi Melody",          tw:400, load:"Hi+Melody", adj:1.08 },
+    { id:"poor",  name:"푸어스토리",g:"손글씨", ui:"Poor Story",        title:"Poor Story",         tw:400, load:"Poor+Story", adj:1.06 },
+    { id:"single",name:"싱글데이", g:"손글씨", ui:"Single Day",         title:"Single Day",         tw:400, load:"Single+Day", adj:1.08 },
+
+    { id:"coding",name:"나눔고딕코딩", g:"고정폭", ui:"Nanum Gothic Coding", title:"Nanum Gothic Coding", tw:700, load:"Nanum+Gothic+Coding:wght@400;700" }
   ];
   var FONT_KEY = "questboard:font", FS_KEY = "questboard:fscale";
   var fontId = "plex", fscale = 100, loaded = {}, booted = false;
@@ -2445,26 +2611,48 @@ var HOLIDAYS = {
     r.setProperty("--ui-font", '"' + f.ui + '"');
     r.setProperty("--title-font", '"' + f.title + '"');
     r.setProperty("--title-weight", f.tw);
-    r.setProperty("--fscale", (fscale / 100));
+    r.setProperty("--fscale", (fscale / 100) * (f.adj || 1));
     if($("fsR")){ $("fsR").value = fscale; $("fsV").textContent = fscale + "%"; }
-    Array.prototype.forEach.call($("fontList").children, function(b){
+    Array.prototype.forEach.call($("fontList").querySelectorAll(".fcard"), function(b){
       b.classList.toggle("on", b.dataset.f === fontId);
     });
     if(booted) render();       /* 글자 크기가 바뀌면 칸 수·높이를 다시 계산해야 한다 */
   }
-  $("fontList").innerHTML = FONTS.map(function(f){
-    return '<button type="button" class="fcard" data-f="' + f.id + '">' +
-      '<span class="fn">' + f.name + '</span>' +
-      '<span class="fp" style="font-family:\'' + f.ui + '\',sans-serif">오늘의 퀘스트 12</span></button>';
-  }).join("");
-
-  Array.prototype.forEach.call($("fontList").children, function(b){
-    b.onclick = function(){
-      fontId = b.dataset.f;
-      try{ localStorage.setItem(FONT_KEY, fontId); }catch(e){}
-      applyFont();
-    };
-  });
+  /* 글꼴이 20종이 넘어서 미리보기를 한꺼번에 받으면 이 창이 한참 멈춘다.
+     화면에 들어온 카드의 글꼴만 그때 받는다. */
+  var fontSeen = window.IntersectionObserver ? new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting) return;
+      loadFont(fontById(e.target.dataset.f));
+      fontSeen.unobserve(e.target);
+    });
+  }, { rootMargin:"250px" }) : null;
+  (function buildFontList(){
+    var host = $("fontList"), lastG = "";
+    host.innerHTML = "";
+    FONTS.forEach(function(f){
+      if(f.g !== lastG){
+        lastG = f.g;
+        var h = document.createElement("p");
+        h.className = "fgroup"; h.textContent = f.g;
+        host.appendChild(h);
+      }
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "fcard"; b.dataset.f = f.id;
+      b.innerHTML = '<span class="fn"></span><span class="fp"></span>';
+      b.querySelector(".fn").textContent = f.name;
+      var p = b.querySelector(".fp");
+      p.textContent = "오늘의 퀘스트 12";
+      p.style.fontFamily = '"' + f.ui + '", sans-serif';
+      b.onclick = function(){
+        fontId = f.id;
+        try{ localStorage.setItem(FONT_KEY, fontId); }catch(e){}
+        applyFont();
+      };
+      host.appendChild(b);
+      if(fontSeen) fontSeen.observe(b);
+    });
+  })();
   $("fsR").oninput = function(){
     fscale = +this.value;
     try{ localStorage.setItem(FS_KEY, String(fscale)); }catch(e){}
@@ -2514,10 +2702,31 @@ var HOLIDAYS = {
     $("wishInput").value = "";
     save(); renderWishSheet(); render();
   });
+  /* Enter 로 바로 담고, 여러 줄을 쓰거나 붙여넣을 때는 Shift + Enter 로 줄을 바꾼다 */
+  $("wishInput").addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    if(e.shiftKey) return;
+    e.preventDefault(); $("wishForm").requestSubmit();
+  });
+  $("wishFind").addEventListener("input", function(){ wishFind = this.value; renderWishSheet(); });
+  $("wishFind").addEventListener("keydown", function(e){
+    if(e.key === "Escape"){ e.stopPropagation(); this.value = ""; wishFind = ""; renderWishSheet(); }
+  });
+  $("wishFindClr").onclick = function(){ $("wishFind").value = ""; wishFind = ""; renderWishSheet(); $("wishFind").focus(); };
+  Array.prototype.forEach.call($("wishSort").children, function(b){
+    b.onclick = function(){ wishSort = b.dataset.s; renderWishSheet(); };
+  });
 
   $("fontBtn").onclick = function(){
-    FONTS.forEach(loadFont);   /* 미리보기용 글꼴은 이 화면을 열 때만 받는다 (시작이 느려지지 않게) */
     applyFont(); $("fontOverlay").hidden = false;
+    /* 지금 눈에 보이는 카드의 글꼴만 먼저 받는다. 나머지는 스크롤하면서 따라온다. */
+    setTimeout(function(){
+      var box = $("fontList").getBoundingClientRect();
+      Array.prototype.forEach.call($("fontList").querySelectorAll(".fcard"), function(b){
+        var r = b.getBoundingClientRect();
+        if(r.bottom > box.top - 80 && r.top < box.bottom + 80) loadFont(fontById(b.dataset.f));
+      });
+    }, 30);
   };
   $("fontClose").onclick = function(){ $("fontOverlay").hidden = true; };
   $("fontOverlay").addEventListener("mousedown", function(e){ if(e.target === $("fontOverlay")) $("fontOverlay").hidden = true; });
