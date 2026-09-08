@@ -181,6 +181,16 @@
     border:1px solid var(--accent-dim);border-radius:.6rem;padding:.55rem .75rem;flex:none;}
   .banner p{margin:0;flex:1;font-size:.88rem;}
   .banner .primary{padding:.4rem .8rem;font-size:.82rem;}
+  .banner.warn{background:rgba(224,101,95,.1);border-color:var(--urgent-dim);}
+  .banner.warn .primary{background:var(--urgent);color:var(--ink);}
+  .banner.warn .primary:hover{filter:brightness(1.12);}
+  .tagfill{display:flex;flex-direction:column;gap:.4rem;max-height:44vh;overflow-y:auto;}
+  .tfrow{display:flex;align-items:center;gap:.5rem;background:var(--surface);
+    border:1px solid var(--line-soft);border-radius:.5rem;padding:.45rem .6rem;flex-wrap:wrap;}
+  .tfrow .tt{font-size:.92rem;font-weight:500;min-width:9rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tfrow .tn{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--dim);flex:none;}
+  .tfrow .chips{flex:none;}
+  .tfrow .chips button{font-size:.74rem;padding:.18rem .5rem;}
 
   /* NOW strip */
   .nowstrip{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.7rem;flex:none;}
@@ -774,6 +784,13 @@
   </aside>
 
   <main class="board">
+    <div class="banner warn" id="tagBanner" hidden>
+      <p id="tagText"></p>
+      <button class="primary" id="tagFixBtn" type="button">태그 채우기</button>
+      <button class="icon" id="tagDismiss" type="button" aria-label="닫기">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
     <div class="banner" id="carryBanner" hidden>
       <p id="carryText"></p>
       <button class="primary" id="carryBtn" type="button">가져오기</button>
@@ -1001,6 +1018,19 @@
   </div>
 </div>
 
+<div class="overlay" id="tagOverlay" hidden>
+  <div class="sheet" style="width:min(44rem,100%)">
+    <h2>태그 채우기</h2>
+    <p class="hint" style="font-size:.82rem" id="tagHint"></p>
+    <button class="primary" type="button" id="tagAuto" hidden style="align-self:flex-start;padding:.45rem .9rem">예전 기록에서 자동으로 채우기</button>
+    <div class="tagfill" id="tagFill"></div>
+    <div class="composer-row">
+      <span style="flex:1"></span>
+      <button type="button" class="primary" id="tagClose" style="padding:.55rem 1.2rem">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="wtOverlay" hidden>
   <div class="sheet" style="width:min(30rem,100%)">
     <h2>몸무게 기록</h2>
@@ -1192,8 +1222,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.2";
-  var APP_BUILD = "2026-09-08 22:20";
+  var APP_VERSION = "v3.3";
+  var APP_BUILD = "2026-09-08 23:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1755,6 +1785,80 @@ var HOLIDAYS = {
     });
   }
 
+  /* ---------- 태그 채우기 ----------
+     태그가 빈 항목을 이름별로 묶어서 한 번에 지정한다.
+     같은 이름은 어느 날짜에 있든 함께 채워진다. */
+  function blankGroups(){
+    var g = {}, k, i, arr, it, key;
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.cat || !it.text) continue;
+        key = String(it.text).replace(/\s+/g, "").toLowerCase();
+        if(!g[key]) g[key] = { text:it.text, n:0 };
+        g[key].n++;
+      }
+    }
+    var out = [], x;
+    for(x in g) out.push(g[x]);
+    out.sort(function(a, b){ return b.n - a.n; });
+    return out;
+  }
+  function assignByText(text, catId){
+    var key = String(text).replace(/\s+/g, "").toLowerCase(), n = 0, k, i, arr, it;
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.cat || !it.text) continue;
+        if(String(it.text).replace(/\s+/g, "").toLowerCase() === key){ it.cat = catId; n++; }
+      }
+    }
+    if(n) save();
+    return n;
+  }
+  function renderTagFill(){
+    var host = $("tagFill"), groups = blankGroups(), sc = blankScan();
+    var total = groups.reduce(function(a, g){ return a + g.n; }, 0);
+    $("tagHint").textContent = total
+      ? ("태그가 비어 있는 항목 " + total + "건 · 이름 " + groups.length + "가지. 태그를 누르면 같은 이름 전부에 붙습니다.")
+      : "태그가 비어 있는 항목이 없습니다.";
+    var auto = $("tagAuto");
+    auto.hidden = sc.fixable === 0;
+    auto.textContent = "예전 기록에서 자동으로 채우기 (" + sc.fixable + "건)";
+    host.innerHTML = "";
+    groups.forEach(function(g){
+      var row = document.createElement("div");
+      row.className = "tfrow";
+      row.innerHTML = '<span class="tt"></span><span class="tn">' + g.n + '건</span><span class="chips catpick"></span>';
+      row.querySelector(".tt").textContent = g.text;
+      var chips = row.querySelector(".chips");
+      store.cats.forEach(function(c){
+        var bt = document.createElement("button");
+        bt.type = "button"; bt.textContent = c.name;
+        bt.style.color = c.color; bt.style.borderColor = c.color;
+        bt.onclick = function(){
+          assignByText(g.text, c.id);
+          renderTagFill(); render();
+        };
+        chips.appendChild(bt);
+      });
+      host.appendChild(row);
+    });
+  }
+  function openTagFill(){ renderTagFill(); $("tagOverlay").hidden = false; }
+  var tagBannerOff = false;
+  function paintTagBanner(){
+    var b = $("tagBanner");
+    if(!b) return;
+    var sc = blankScan();
+    if(tagBannerOff || sc.miss === 0){ b.hidden = true; return; }
+    b.hidden = false;
+    $("tagText").textContent = "태그가 비어 있는 항목이 " + sc.miss + "건 있습니다" +
+      (sc.fixable ? (" · " + sc.fixable + "건은 예전 기록으로 자동 복구 가능") : "");
+  }
+
   /* ---------- 몸무게 (집 보드 전용) ----------
      store.weights = { "2026-09-08": {v:72.4, at:169...} }
      날짜별로 나중에 적은 값이 이기게 해서 기기끼리 부딪히지 않는다. */
@@ -2218,6 +2322,7 @@ var HOLIDAYS = {
     renderNow();
     paintWishCount();
     renderWeight();
+    paintTagBanner();
 
     var d = fromIso(viewKey);
     $("dateLine").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
@@ -2318,6 +2423,15 @@ var HOLIDAYS = {
     fscale = +this.value;
     try{ localStorage.setItem(FS_KEY, String(fscale)); }catch(e){}
     applyFont();
+  };
+  $("tagFixBtn").onclick = openTagFill;
+  $("tagDismiss").onclick = function(){ tagBannerOff = true; paintTagBanner(); };
+  $("tagClose").onclick = function(){ $("tagOverlay").hidden = true; };
+  $("tagOverlay").addEventListener("mousedown", function(e){ if(e.target === $("tagOverlay")) $("tagOverlay").hidden = true; });
+  $("tagAuto").onclick = function(){
+    var n = fixBlanks();
+    renderTagFill(); render();
+    toast(n ? (n + "건의 태그를 되살렸습니다") : "되살릴 기록을 찾지 못했습니다", null);
   };
   $("wtBox").onclick = openWt;
   $("wtClose").onclick = function(){ $("wtOverlay").hidden = true; };
@@ -2463,6 +2577,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("tagOverlay").hidden){ $("tagOverlay").hidden = true; return; }
     if(!$("wishOverlay").hidden){ $("wishOverlay").hidden = true; return; }
     if(!$("fontOverlay").hidden){ $("fontOverlay").hidden = true; return; }
     if(!$("moreOverlay").hidden){ $("moreOverlay").hidden = true; return; }
