@@ -1088,7 +1088,8 @@
       <div class="dbtns">
         <button class="ghost" type="button" id="catFixOrphan" hidden>기본 카테고리 되살리기</button>
         <button class="primary" type="button" id="catFixBlank" hidden>예전 기록으로 태그 되살리기</button>
-        <button class="ghost" type="button" id="catDiagCopy">진단 정보 보기</button>
+        <button class="ghost" type="button" id="catFixColor">태그 색 되살리기</button>
+      <button class="ghost" type="button" id="catDiagCopy">진단 정보 보기</button>
       </div>
       <textarea class="ft" id="catDiagText" readonly hidden style="font-family:'IBM Plex Mono',monospace;font-size:.72rem;min-height:6rem"></textarea>
     </div>
@@ -1222,8 +1223,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.3";
-  var APP_BUILD = "2026-09-08 23:10";
+  var APP_VERSION = "v3.4";
+  var APP_BUILD = "2026-09-08 23:55";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1511,12 +1512,49 @@ var HOLIDAYS = {
     for(i=0;i<store.cats.length;i++){ c = store.cats[i]; if(c.name.toLowerCase().indexOf(n) === 0) return c; }
     return null;
   }
+  /* 저장된 색이 검정이거나 카드 배경색과 같으면 태그가 눈에서 사라진다.
+     어떤 값이 들어와도 읽히도록 대비를 재서 필요한 만큼 밝히거나 어둡게 한다. */
+  function hx2rgb(h){
+    h = String(h == null ? "" : h).trim();
+    var m = /^#?([0-9a-fA-F]{6})$/.exec(h);
+    if(m){ var n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+    m = /^#?([0-9a-fA-F]{3})$/.exec(h);
+    if(m){ return m[1].split("").map(function(c){ return parseInt(c + c, 16); }); }
+    return null;
+  }
+  function relLum(c){
+    var f = function(v){ v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+  }
+  function ratio(a, b){
+    var x = relLum(a), y = relLum(b), t;
+    if(x < y){ t = x; x = y; y = t; }
+    return (x + 0.05) / (y + 0.05);
+  }
+  function toHex(c){
+    return "#" + c.map(function(v){
+      return ("0" + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2);
+    }).join("");
+  }
+  var CAT_FALLBACK = "#8A97A8";
+  function safeCatColor(hex){
+    var c = hx2rgb(hex);
+    if(!c) c = hx2rgb(CAT_FALLBACK);
+    var isLight = document.body.classList.contains("light");
+    var bg = isLight ? [255, 255, 255] : [27, 36, 47];   /* --surface-2 */
+    var to = isLight ? [0, 0, 0] : [255, 255, 255];
+    var g = 0;
+    while(ratio(c, bg) < 3.2 && g++ < 30){
+      c = [0, 1, 2].map(function(i){ return c[i] + (to[i] - c[i]) * 0.1; });
+    }
+    return toHex(c);
+  }
   function catChip(item, cls){
     var c = catById(item.cat);
     if(!c) return "";
     /* 인라인 color 를 쓰면 라이트 테마에서 글자색을 덮어쓸 수 없다. 변수로 넘긴다. */
     var nm = String(c.name || "").trim() || "이름없음";   /* 빈 이름이면 칩이 안 보여서 태그가 사라진 것처럼 된다 */
-    return '<span class="' + (cls||"cat") + '" style="--c:' + (c.color || "#8A97A8") + '">' + esc(nm) + '</span>';
+    return '<span class="' + (cls||"cat") + '" style="--c:' + safeCatColor(c.color) + '">' + esc(nm) + '</span>';
   }
 
   /* ---------- parsing ---------- */
@@ -2508,6 +2546,7 @@ var HOLIDAYS = {
     Array.prototype.forEach.call($("themeSeg").children, function(b){
       b.classList.toggle("on", b.dataset.t === theme);
     });
+    if(booted) render();          /* 태그 색은 테마 기준으로 계산하므로 다시 그려야 한다 */
   }
   function setTheme(t){
     theme = t;
@@ -2767,7 +2806,9 @@ var HOLIDAYS = {
       row.innerHTML = '<input type="color"><input type="text" maxlength="12">' +
         '<button class="icon" type="button" aria-label="삭제">' + XMARK + '</button>';
       var col = row.querySelector('input[type=color]'), nm = row.querySelector('input[type=text]');
-      col.value = c.color; nm.value = c.name;
+      col.value = hx2rgb(c.color) ? toHex(hx2rgb(c.color)) : CAT_FALLBACK;
+      if(col.value !== String(c.color).toLowerCase()){ c.color = col.value; }
+      nm.value = c.name;
       var u = document.createElement("span");
       u.className = "catuse"; u.textContent = (use[c.id] || 0) + "건";
       row.insertBefore(u, row.querySelector(".icon"));
@@ -2805,12 +2846,37 @@ var HOLIDAYS = {
     renderCatList(); render();
     toast(n ? (n + "건의 태그를 되살렸습니다") : "되살릴 기록을 찾지 못했습니다", null);
   };
+  /* 색이 배경에 묻힌 카테고리를 기본값으로 되돌린다. 기본 목록에 없는 id 는 보조 팔레트에서 준다 */
+  var SPARE = ["#3987E5","#9085E9","#C98500","#22A884","#D55181","#2FA3B6","#6E9C22","#B8722B","#DC4C4C","#8A97A8"];
+  $("catFixColor").onclick = function(){
+    var n = 0;
+    var used = {}, j;
+    store.cats.forEach(function(c){                       /* 기본 색을 먼저 확보해두고 */
+      for(j = 0; j < DEFAULT_CATS.length; j++)
+        if(DEFAULT_CATS[j].id === c.id) used[DEFAULT_CATS[j].color.toLowerCase()] = 1;
+    });
+    store.cats.forEach(function(c){
+      var want = null, k;
+      for(k = 0; k < DEFAULT_CATS.length; k++) if(DEFAULT_CATS[k].id === c.id) want = DEFAULT_CATS[k].color;
+      if(!want){                                          /* 새로 만든 카테고리는 안 쓰는 색을 골라 준다 */
+        for(k = 0; k < SPARE.length; k++) if(!used[SPARE[k].toLowerCase()]){ want = SPARE[k]; break; }
+        if(!want) want = SPARE[k % SPARE.length];
+        used[want.toLowerCase()] = 1;
+      }
+      if(String(c.color).toLowerCase() !== want.toLowerCase()){ c.color = want; n++; }
+    });
+    store.meta.catsAt = Date.now();
+    save(); renderCatList(); render();
+    toast(n ? (n + "개 카테고리의 색을 되살렸습니다") : "색은 이미 정상입니다", null);
+  };
   $("catDiagCopy").onclick = function(){
     var t = $("catDiagText"), use = catUsage(), sc = blankScan(), k;
     if(!t.hidden){ t.hidden = true; return; }
     var days = Object.keys(store.days).length;
     var lines = ["보드=" + profile + " 버전=" + APP_VERSION + " 날짜수=" + days,
-                 "cats=" + JSON.stringify(store.cats.map(function(c){ return c.id + ":" + c.name; })),
+                 "cats=" + JSON.stringify(store.cats.map(function(c){
+                   return c.id + ":" + c.name + ":" + c.color + "→" + safeCatColor(c.color);
+                 })),
                  "사용=" + JSON.stringify(use),
                  "태그없음=" + sc.miss + " 되살림가능=" + sc.fixable];
     var sample = [], kk = Object.keys(store.days).sort().reverse();
