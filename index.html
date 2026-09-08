@@ -102,8 +102,8 @@
   .backtoday{background:none;border:none;padding:0;color:var(--accent);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
   .who{margin:.15rem 0 0;font-size:.75rem;color:var(--dim);}
 
-  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:.6rem;}
-  .ring{position:relative;width:9.6rem;height:9.6rem;}
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:.55rem;}
+  .ring{position:relative;width:8.2rem;height:8.2rem;}
   .ring svg{width:100%;height:100%;transform:rotate(-90deg);}
   .ring .track{fill:none;stroke:var(--surface-2);stroke-width:8;}
   .ring .seg{fill:none;stroke-width:8;transition:stroke-dashoffset .4s ease;}
@@ -117,9 +117,61 @@
   .ring-mid.on .ring-hov{display:flex;}
   .ring-hov b{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
   .ring-hov i{font-style:normal;font-size:.82rem;color:var(--muted);line-height:1.25;word-break:keep-all;}
-  .ring-mid .n{font-family:"IBM Plex Mono",monospace;font-size:2.3rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
-  .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--dim);letter-spacing:.08em;}
-  .clock{font-family:"IBM Plex Mono",monospace;font-size:1.4rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;}
+  .ring-mid .n{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
+  .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--dim);letter-spacing:.08em;}
+  .clock{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;}
+
+  /* 창을 세로로 줄여 쓰면 사이드바가 넘쳐서 스크롤해야 했다.
+     낮은 창에서는 링과 버튼을 단계적으로 줄여 한 화면에 다 들어오게 한다. */
+  @media (max-height:860px){
+    .side{padding:.9rem .95rem;gap:.7rem;}
+    .ring{width:7rem;height:7rem;}
+    .ring-mid .n{font-size:1.7rem;}
+    .ring-hov b{font-size:1.5rem;}
+    .clock{font-size:1.15rem;}
+    h1{font-size:1.95rem;}
+  }
+  @media (max-height:720px){
+    .side{padding:.75rem .8rem;gap:.5rem;}
+    .ring-wrap{gap:.35rem;}
+    .ring{width:5.8rem;height:5.8rem;}
+    .ring-mid .n{font-size:1.45rem;}
+    .ring-mid .of{font-size:.62rem;}
+    .ring-hov b{font-size:1.25rem;}
+    .ring-hov i{font-size:.72rem;}
+    .clock{font-size:1rem;}
+    h1{font-size:1.7rem;}
+    .dow{font-size:.82rem;}
+    .stats{gap:.2rem;margin-top:.25rem;}
+    .stat{padding:.2rem .42rem;}
+    .stat .sl{font-size:.66rem;}
+    .stat .sv{font-size:.88rem;}
+    .side-foot{gap:.35rem;}
+    .primary{padding:.45rem;font-size:.84rem;}
+    .ghost{padding:.32rem .5rem;font-size:.73rem;}
+    .profbtn{padding:.48rem .7rem;font-size:.86rem;}
+    body.home .wtbox:not([hidden]){padding:.26rem .45rem .22rem;}
+  }
+  @media (max-height:620px){
+    .side{padding:.6rem .7rem;gap:.4rem;}
+    .ring{width:4.2rem;height:4.2rem;}
+    .ring-mid .n{font-size:1.1rem;}
+    .ring-mid .of{display:none;}
+    .clock{font-size:.85rem;}
+    h1{font-size:1.35rem;}
+    .dow{font-size:.74rem;margin-top:.15rem;}
+    .datenav .nav{width:1.45rem;height:1.45rem;}
+    .eyebrow{display:none;}          /* 낮은 창에서는 장식부터 뺀다 */
+    .who{display:none;}
+    .stats{margin-top:.18rem;}
+    .stat{padding:.16rem .38rem;}
+    .side-foot{gap:.28rem;}
+    .primary{padding:.38rem;font-size:.8rem;}
+    .ghost{padding:.26rem .45rem;font-size:.7rem;}
+    .profbtn{padding:.38rem .6rem;font-size:.8rem;}
+    .footline{padding-top:0;}
+    body.home .wtbox:not([hidden]){padding:.2rem .42rem .18rem;}
+  }
 
   /* 4줄이 자리를 많이 먹어서 2x2 로 줄였다 */
   .stats{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:.28rem;margin-top:.4rem;}
@@ -144,6 +196,13 @@
   .wtbox .wtspark path{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;
     vector-effect:non-scaling-stroke;}
   .wtbox .wtspark circle{fill:var(--accent);}
+  /* 잠겼을 때는 숫자를 흐리게 가린다. 긁어서 읽지 못하게 선택도 막는다. */
+  .wtbox.lock .wtv,.wtbox.lock .wtd,.wtbox.lock .wtspark{
+    filter:blur(6px);user-select:none;-webkit-user-select:none;pointer-events:none;}
+  .wtbox.lock .wtl{color:var(--dim);}
+  .pinbox{display:flex;gap:.4rem;align-items:center;}
+  .pinbox .fi{flex:1;min-width:0;font-family:"IBM Plex Mono",monospace;letter-spacing:.4em;
+    font-size:1.2rem;text-align:center;}
   .side-foot{display:flex;flex-direction:column;gap:.5rem;}
   .primary{background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:.5rem;font-weight:600;
     font-size:.88rem;padding:.6rem;cursor:pointer;transition:background .15s ease;}
@@ -1065,6 +1124,10 @@
 <div class="overlay" id="statsOverlay" hidden>
   <div class="sheet statsheet">
     <h2 id="stTitle">통계</h2>
+    <div class="seg" id="stTabs">
+      <button type="button" data-t="task">할 일</button>
+      <button type="button" data-t="wish">언젠가</button>
+    </div>
     <div class="seg periods" id="stPeriods">
       <button type="button" data-r="week">이번 주</button>
       <button type="button" data-r="prev">지난 주</button>
@@ -1072,6 +1135,25 @@
     </div>
     <p class="hint" id="stRange" style="font-size:.8rem"></p>
 
+    <div id="stWishPane" hidden>
+      <div class="tiles">
+        <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">지금 대기 중</span></div>
+        <div class="tile"><span class="tn" id="wsPull">0</span><span class="tl">꺼내 실행</span></div>
+        <div class="tile done"><span class="tn" id="wsDone">0</span><span class="tl">완료</span></div>
+        <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일+ 묵음</span></div>
+      </div>
+      <p class="hint" id="wsNote" style="font-size:.78rem;margin-top:.5rem"></p>
+      <div class="stbox" style="margin-top:.6rem">
+        <h3>대기 중 — 오래 묵은 것부터</h3>
+        <div style="overflow-x:auto;max-height:22rem;overflow-y:auto"><table class="sttable" id="wsWaitTable"></table></div>
+      </div>
+      <div class="stbox" style="margin-top:.7rem">
+        <h3>이 기간에 꺼낸 것</h3>
+        <div style="overflow-x:auto;max-height:20rem;overflow-y:auto"><table class="sttable" id="wsPullTable"></table></div>
+      </div>
+    </div>
+
+    <div id="stTaskPane">
     <div class="tiles">
       <div class="tile done"><span class="tn" id="tDone">0</span><span class="tl">완료</span></div>
       <div class="tile rest"><span class="tn" id="tRest">0</span><span class="tl">남음</span></div>
@@ -1112,6 +1194,7 @@
         <h3 style="margin:.9rem 0 .5rem;font-size:.78rem;letter-spacing:.14em;color:var(--dim);font-family:'IBM Plex Mono',monospace">시리즈 진행</h3>
         <div style="overflow-x:auto"><table class="sttable" id="stSerTable"></table></div>
       </div>
+    </div>
     </div>
 
     <div class="composer-row">
@@ -1162,6 +1245,24 @@
       <span style="flex:1"></span>
       <button type="button" class="primary" id="tagClose" style="padding:.55rem 1.2rem">닫기</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="pinOverlay" hidden>
+  <div class="sheet" style="width:min(22rem,100%)">
+    <h2>몸무게 보기</h2>
+    <p class="hint" style="font-size:.82rem">비밀번호를 입력하면 이 창을 닫을 때까지 보입니다. 앱을 다시 켜면 또 잠깁니다.</p>
+    <form id="pinForm">
+      <div class="pinbox">
+        <input type="password" class="fi" id="pinInput" inputmode="numeric" maxlength="8"
+               autocomplete="off" placeholder="● ● ● ●">
+      </div>
+      <div class="composer-row" style="margin-top:.7rem">
+        <span class="hint" id="pinMsg" style="flex:1;color:var(--urgent)"></span>
+        <button type="button" class="ghost" id="pinCancel">취소</button>
+        <button type="submit" class="primary" style="padding:.55rem 1.2rem">확인</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1383,8 +1484,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.7";
-  var APP_BUILD = "2026-09-08 21:30";
+  var APP_VERSION = "v3.8";
+  var APP_BUILD = "2026-09-08 22:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1616,6 +1717,7 @@ var HOLIDAYS = {
     profile = (p === "home") ? "home" : "work";
     var cfg = PROFILES[profile];
     KEY = cfg.key;
+    wtUnlocked = false;                       /* 보드를 바꾸면 몸무게는 다시 잠긴다 */
     document.body.classList.toggle("home", profile === "home");
     document.title = cfg.title;
     setFavicon(cfg.color);
@@ -2088,12 +2190,25 @@ var HOLIDAYS = {
     return out;
   }
   function fmtKg(v){ return (Math.round(v * 10) / 10).toFixed(1); }
+  /* 몸무게 가리기 — 비밀번호를 넣을 때까지 숫자를 흐리게 둔다.
+     비밀번호는 소스에 그대로 적지 않고 아래 간단한 셈값으로만 확인한다. */
+  var wtUnlocked = false;
+  var WT_PIN_SUM = 1596860;
+  function pinOk(s){
+    var h = 0, i;
+    s = String(s).trim();
+    for(i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return h === WT_PIN_SUM;
+  }
   function renderWeight(){
     var box = $("wtBox");
     if(!box) return;
     if(profile !== "home"){ box.hidden = true; return; }   /* 회사 보드에서는 아예 안 그린다 */
     var arr = wtSorted();
     box.hidden = false;
+    box.classList.toggle("lock", !wtUnlocked);
+    box.querySelector(".wtl").textContent = wtUnlocked ? "몸무게" : "몸무게 · 잠김";
+    box.title = wtUnlocked ? "기록 보기" : "눌러서 비밀번호 입력";
     if(!arr.length){
       $("wtVal").textContent = "—";
       $("wtDelta").textContent = "기록 없음";
@@ -2326,10 +2441,18 @@ var HOLIDAYS = {
     paintWishBar();
     layoutList();        /* 목록 높이가 바뀌었으니 칸 크기를 다시 잡는다 */
   }
+  /* 담은 지 며칠 됐는지 — ord 는 담은 시각(밀리초). 옛 데이터는 순번만 들어 있어 셈에서 뺀다. */
+  function waitDays(it){
+    if(!it || !it.ord || it.ord < 1e12) return null;
+    return Math.max(0, Math.round((fromIso(todayKey) - midnight(new Date(it.ord))) / 864e5));
+  }
   function pullWish(it){
     var arr = wishes(), i = arr.indexOf(it);
     if(i >= 0) arr.splice(i, 1);
     delete it.by;
+    /* 언젠가에서 꺼냈다는 표시 — 통계에서 실행·완료를 세는 근거가 된다 */
+    it.wsrc = todayKey;
+    if(it.ord && it.ord >= 1e12) it.wadd = iso(new Date(it.ord));
     day(viewKey).push(it);
     save(); render();
     toast('"' + it.text + '" 을(를) 오늘 보드로 가져왔습니다', null);
@@ -2897,7 +3020,26 @@ var HOLIDAYS = {
     renderTagFill(); render();
     toast(n ? (n + "건의 태그를 되살렸습니다") : "되살릴 기록을 찾지 못했습니다", null);
   };
-  $("wtBox").onclick = openWt;
+  $("wtBox").onclick = function(){
+    if(wtUnlocked){ openWt(); return; }
+    $("pinInput").value = ""; $("pinMsg").textContent = "";
+    $("pinOverlay").hidden = false;
+    setTimeout(function(){ $("pinInput").focus(); }, 30);
+  };
+  $("pinCancel").onclick = function(){ $("pinOverlay").hidden = true; };
+  $("pinOverlay").addEventListener("mousedown", function(e){ if(e.target === $("pinOverlay")) $("pinOverlay").hidden = true; });
+  $("pinForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!pinOk($("pinInput").value)){
+      $("pinMsg").textContent = "비밀번호가 다릅니다";
+      $("pinInput").value = ""; $("pinInput").focus();
+      return;
+    }
+    wtUnlocked = true;
+    $("pinOverlay").hidden = true;
+    renderWeight();
+    openWt();
+  });
   $("wtClose").onclick = function(){ $("wtOverlay").hidden = true; };
   $("wtOverlay").addEventListener("mousedown", function(e){ if(e.target === $("wtOverlay")) $("wtOverlay").hidden = true; });
   $("wtForm").addEventListener("submit", function(e){
@@ -3081,6 +3223,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("pinOverlay").hidden){ $("pinOverlay").hidden = true; return; }
     if(!$("habOverlay").hidden){ $("habOverlay").hidden = true; render(); return; }
     if(!$("tagOverlay").hidden){ $("tagOverlay").hidden = true; return; }
     if(!$("wishOverlay").hidden){ $("wishOverlay").hidden = true; return; }
@@ -3560,7 +3703,7 @@ var HOLIDAYS = {
   }
 
   /* ---------- 통계 ---------- */
-  var stRange = "week";
+  var stRange = "week", stTab = "task";
   function mondayOf(d){
     var x = new Date(d); x.setHours(0,0,0,0);
     var diff = (x.getDay() + 6) % 7;
@@ -3620,6 +3763,83 @@ var HOLIDAYS = {
     mid.classList.remove("on");
   }
 
+  /* ---------- 통계: 언젠가 탭 ----------
+     "담아두고 잊은 것"이 보이게 하는 게 목적이다.
+     꺼낸 항목에는 wsrc(꺼낸 날)·wadd(담은 날)가 붙어 있어 실행·완료를 셀 수 있다. */
+  function catCell(cid){
+    var c = catById(cid);
+    return c ? '<span class="cat" style="--c:' + safeCatColor(c.color) + '">' + esc(c.name) + '</span>'
+             : '<span class="z">·</span>';
+  }
+  function renderWishStats(keys){
+    var live = wishLive(), inRange = {}, i, k, arr, j, it;
+    for(i = 0; i < keys.length; i++) inRange[keys[i]] = 1;
+    var pulled = [];
+    for(k in store.days){
+      if(k === SOMEDAY || !inRange[k]) continue;
+      arr = store.days[k] || [];
+      for(j = 0; j < arr.length; j++){ it = arr[j]; if(it && it.wsrc) pulled.push(it); }
+    }
+    var doneN = 0, cancelN = 0, waitSum = 0, waitCnt = 0;
+    pulled.forEach(function(x){
+      if(x.canceled) cancelN++;
+      else if(x.done) doneN++;
+      if(x.wadd && x.wsrc){
+        var d = Math.round((fromIso(x.wsrc) - fromIso(x.wadd)) / 864e5);
+        if(d >= 0){ waitSum += d; waitCnt++; }
+      }
+    });
+    var oldN = 0;
+    live.forEach(function(x){ var w = waitDays(x); if(w !== null && w >= 30) oldN++; });
+    $("wsWait").textContent = live.length;
+    $("wsPull").textContent = pulled.length;
+    $("wsDone").textContent = doneN;
+    $("wsOld").textContent = oldN;
+    var liveP = pulled.length - cancelN;      /* 취소한 것은 처리율에서 뺀다 */
+    $("wsNote").innerHTML =
+      (pulled.length ? ("꺼낸 " + pulled.length + "건 중 완료 " + doneN + "건 · 처리율 " +
+        (liveP ? Math.round(doneN / liveP * 100) : 0) + "%" + (cancelN ? " · 취소 " + cancelN + "건" : "") +
+        (waitCnt ? " · 담아둔 뒤 평균 " + Math.round(waitSum / waitCnt) + "일 만에 꺼냈습니다" : ""))
+        : "이 기간에 꺼낸 것이 없습니다.") +
+      "<br>꺼낸 기록은 그 항목이 보드에 남아 있는 동안(약 90일) 집계됩니다. v3.8 이전에 꺼낸 것은 표시가 없어 세지 않습니다.";
+
+    /* 대기 중 — 오래 묵은 것부터 */
+    var head = '<thead><tr><th>대기 중인 것</th><th>태그</th><th>담은 지</th><th>기한</th></tr></thead>', body = "";
+    /* 오래 묵은 것부터. 담은 날을 알 수 없는 옛 항목은 맨 아래로. */
+    live.slice().sort(function(a, b){
+      var wa = waitDays(a), wb = waitDays(b);
+      if(wa === null && wb === null) return 0;
+      if(wa === null) return 1;
+      if(wb === null) return -1;
+      return wb - wa;
+    }).forEach(function(x){
+      var w = waitDays(x);
+      body += '<tr><td>' + esc(x.text) + '</td><td>' + catCell(x.cat) + '</td>' +
+        '<td class="' + (w !== null && w >= 30 ? "bad" : "z") + '">' + (w === null ? "·" : w + "일") + '</td>' +
+        '<td class="' + (x.by ? "df" : "z") + '">' + (byLabel(x) || "·") + '</td></tr>';
+    });
+    $("wsWaitTable").innerHTML = head + "<tbody>" +
+      (live.length ? body : '<tr><td colspan="4" class="z">대기 중인 것이 없습니다</td></tr>') + "</tbody>";
+
+    /* 이 기간에 꺼낸 것 */
+    var h2 = '<thead><tr><th>꺼낸 것</th><th>태그</th><th>꺼낸 날</th><th>기다린 기간</th><th>상태</th></tr></thead>', b2 = "";
+    pulled.slice().sort(function(a, b){ return (b.wsrc || "") < (a.wsrc || "") ? -1 : 1; }).forEach(function(x){
+      var wd = (x.wadd && x.wsrc) ? Math.round((fromIso(x.wsrc) - fromIso(x.wadd)) / 864e5) : null;
+      /* 꺼낸 지 일주일이 넘었는데 아직 안 끝난 것만 붉게 — 또 미루고 있다는 신호 */
+      var stale = x.wsrc && Math.round((fromIso(todayKey) - fromIso(x.wsrc)) / 864e5) > 7;
+      var st = x.canceled ? '<span class="cx">취소</span>'
+             : (x.done ? '<span class="ok">완료</span>'
+             : (x.defer ? '<span class="df">연기</span>'
+             : '<span class="' + (stale ? "bad" : "") + '">진행 중</span>'));
+      b2 += '<tr><td>' + esc(x.text) + '</td><td>' + catCell(x.cat) + '</td>' +
+        '<td class="z">' + (x.wsrc ? x.wsrc.slice(5).replace("-", "/") : "·") + '</td>' +
+        '<td class="z">' + (wd === null ? "·" : wd + "일") + '</td>' +
+        '<td>' + st + '</td></tr>';
+    });
+    $("wsPullTable").innerHTML = h2 + "<tbody>" +
+      (pulled.length ? b2 : '<tr><td colspan="5" class="z">이 기간에 꺼낸 것이 없습니다</td></tr>') + "</tbody>";
+  }
+
   /* 기간 안의 성공·실패 건수. 기록이 없는 날은 세지 않는다. */
   function renderHabStats(keys){
     var wrap = $("stHabWrap"), hs = habSorted();
@@ -3663,6 +3883,11 @@ var HOLIDAYS = {
     $("stRange").textContent = (fs.getMonth()+1)+"/"+fs.getDate()+" ~ "+(fe.getMonth()+1)+"/"+fe.getDate()+
       " · 카테고리는 완료된 항목만 셉니다";
     Array.prototype.forEach.call($("stPeriods").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
+    Array.prototype.forEach.call($("stTabs").children, function(b){ b.classList.toggle("on", b.dataset.t === stTab); });
+    $("stTaskPane").hidden = stTab !== "task";
+    $("stWishPane").hidden = stTab !== "task" ? false : true;
+    $("stDetail").hidden = stTab !== "task";
+    if(stTab === "wish"){ renderWishStats(keys); return; }
 
     var done = 0, rest = 0, defer = 0, cancel = 0;
     var byCat = {}, byDay = {}, log = [], detail = {};
@@ -3874,6 +4099,9 @@ var HOLIDAYS = {
   $("statsOverlay").addEventListener("mousedown", function(e){ if(e.target === $("statsOverlay")) $("statsOverlay").hidden = true; });
   Array.prototype.forEach.call($("stPeriods").children, function(b){
     b.onclick = function(){ stRange = b.dataset.r; renderStats(); };
+  });
+  Array.prototype.forEach.call($("stTabs").children, function(b){
+    b.onclick = function(){ stTab = b.dataset.t; renderStats(); };
   });
 
   /* ---------- GitHub Gist 동기화 ---------- */
