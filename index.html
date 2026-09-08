@@ -568,7 +568,8 @@
     border-radius:.4rem;color:var(--text);font:inherit;font-size:.92rem;padding:.42rem .6rem;}
   /* ---- 통계 ---- */
   .statsheet{width:min(58rem,100%);max-height:88vh;overflow-y:auto;}
-  .seg.periods button{font-weight:600;}
+  .seg.periods{flex-wrap:wrap;}
+  .seg.periods button{font-weight:600;flex:1 1 6.5rem;}
   .seg.periods button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .stgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:1.1rem;}
   .stbox{background:var(--surface);border:1px solid var(--line-soft);border-radius:.7rem;padding:.9rem 1rem;
@@ -1058,6 +1059,14 @@
       <button type="button" data-r="l">크게</button>
       <button type="button" data-r="auto">자동</button>
     </div>
+    <span class="fl">칸 수 (세로 줄)</span>
+    <div class="seg" id="colSeg">
+      <button type="button" data-c="auto">자동</button>
+      <button type="button" data-c="2">2줄</button>
+      <button type="button" data-c="3">3줄</button>
+      <button type="button" data-c="4">4줄</button>
+    </div>
+    <p class="hint" style="font-size:.76rem;margin:0">고정하면 창 크기를 바꿔도 줄 수가 그대로 유지됩니다.</p>
     <div class="mlist">
       <button type="button" class="mrow" id="fontBtn"><b>글꼴 바꾸기</b><span>보드 글씨체와 크기를 고릅니다</span></button>
       <button type="button" class="mrow" id="mHab"><b>성공·실패 항목</b><span>매일 성공/실패로 남길 것을 정합니다</span></button>
@@ -1132,6 +1141,9 @@
       <button type="button" data-r="week">이번 주</button>
       <button type="button" data-r="prev">지난 주</button>
       <button type="button" data-r="m30">최근 30일</button>
+      <button type="button" data-r="month">이번 달</button>
+      <button type="button" data-r="year">올해</button>
+      <button type="button" data-r="y12">최근 12개월</button>
     </div>
     <p class="hint" id="stRange" style="font-size:.8rem"></p>
 
@@ -1180,8 +1192,9 @@
       </div>
 
       <div class="stbox">
-        <h3>날짜별 완료</h3>
+        <h3 id="stBarsH">날짜별 완료</h3>
         <div class="bars" id="stBars"></div>
+        <p class="hint" id="stAvg" style="font-size:.78rem;margin:0"></p>
         <h3 style="margin-top:.4rem">완료 기록</h3>
         <div class="log" id="stLog"></div>
       </div>
@@ -1225,6 +1238,7 @@
         <span class="nm">집 보드</span><span class="st" id="syCntHome">—</span></label>
     </div>
     <div class="systate" id="syState"><span class="d"></span><span id="syText">꺼져 있음</span></div>
+    <p class="hint" id="sySize" style="font-size:.76rem;margin:0"></p>
 
     <div class="composer-row">
       <button type="button" class="ghost danger" id="syReset">연결 해제</button>
@@ -1484,8 +1498,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.8";
-  var APP_BUILD = "2026-09-08 22:10";
+  var APP_VERSION = "v3.9";
+  var APP_BUILD = "2026-09-08 23:00";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1581,6 +1595,9 @@ var HOLIDAYS = {
   var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, meta:{ dayAt:{}, catsAt:0 } };
   var prevJSON = {}, prevCats = "", prevSig = {}, prevWhere = {};
   var TOMB_TTL = 60 * 864e5;
+  /* 할 일을 며칠치 보관할지. 1년치면 하루 12건을 꽉 채워 써도 자료가 700KB 정도라
+     동기화(Gist는 1MB를 넘으면 잘린다) 안쪽에 들어온다. */
+  var KEEP_DAYS = 365;
   /* 항목 하나의 "내용 지문". at(수정시각)은 빼고 비교해야 무한 갱신을 막는다. */
   function sig(it){
     var o = {}, k;
@@ -1687,14 +1704,28 @@ var HOLIDAYS = {
   function save(){
     stampMeta();
     if(typeof queuePush === "function") queuePush();
-    try{ var keys = Object.keys(store.days).sort();
-      while(keys.length > 90){
+    try{
+      var keys = Object.keys(store.days).filter(function(x){ return x !== SOMEDAY; }).sort();
+      var ei, ek;
+      /* 날짜만 넘겨봐도 빈 칸이 생긴다. 그 빈 칸이 보관 정원을 차지하지 않게 먼저 치운다.
+         오늘과 앞날은 지금 쓰고 있을 수 있으니 남긴다. */
+      for(ei = keys.length - 1; ei >= 0; ei--){
+        ek = keys[ei];
+        if(ek >= todayKey) continue;
+        if((store.days[ek] || []).length === 0){
+          delete store.days[ek]; delete prevJSON[ek];
+          if(store.meta && store.meta.dayAt) delete store.meta.dayAt[ek];
+          keys.splice(ei, 1);
+        }
+      }
+      while(keys.length > KEEP_DAYS){
         var old = keys.shift();
-        /* 90일 넘은 날은 로컬에서만 비운다. 묘비를 남기면 다른 기기 기록까지 지워버린다. */
+        /* 보관 기간이 지난 날은 로컬에서만 비운다. 묘비를 남기면 다른 기기 기록까지 지워버린다. */
         (store.days[old] || []).forEach(function(it){
           if(it && it.id){ delete prevSig[it.id]; delete prevWhere[it.id]; }
         });
         delete store.days[old]; delete prevJSON[old];
+        if(store.meta && store.meta.dayAt) delete store.meta.dayAt[old];
       }
       /* 성공·실패 기록은 훨씬 오래 남긴다 (통계용). 400일이 넘으면 오래된 날부터 비운다. */
       var hk = Object.keys(store.hres || {}).sort();
@@ -2589,9 +2620,9 @@ var HOLIDAYS = {
   function openWish(){ renderWishSheet(); $("wishOverlay").hidden = false; setTimeout(function(){ $("wishInput").focus(); }, 30); }
 
   /* ---------- 칸 배치 ---------- */
-  var ROWSIZE_KEY = "questboard:rowsize";
+  var ROWSIZE_KEY = "questboard:rowsize", COLS_KEY = "questboard:cols";
   var ROWSIZES = { s:4.4, m:5.6, l:7.2 };
-  var rowSize = "auto", layoutTries = 0;
+  var rowSize = "auto", colFix = "auto", layoutTries = 0;
   function layoutList(){
     var list = $("list");
     if(!list || list.hidden) return;
@@ -2603,8 +2634,10 @@ var HOLIDAYS = {
     layoutTries = 0;
     var n = list.children.length;
     var unit = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    /* 칸 수는 창 너비만 보고 정한다. 항목 수에 따라 바꾸면 보드마다 카드 크기가 달라진다. */
+    /* 칸 수는 창 너비만 보고 정한다. 항목 수에 따라 바꾸면 보드마다 카드 크기가 달라진다.
+       사용자가 줄 수를 골라두면 창 너비와 상관없이 그 값을 쓴다. */
     var cols = Math.max(1, Math.min(4, Math.floor(list.clientWidth / (23 * unit))));
+    if(colFix !== "auto") cols = Math.max(1, Math.min(4, +colFix || 3));
     list.style.setProperty("--cols", cols);
     var rowmax;
     list.classList.toggle("fixedrows", rowSize !== "auto" && !!ROWSIZES[rowSize]);
@@ -3140,6 +3173,22 @@ var HOLIDAYS = {
   });
   try{ rowSize = localStorage.getItem(ROWSIZE_KEY) || "auto"; }catch(e){}
   paintRowSeg();
+
+  /* ---------- 칸 수 (세로 줄) ---------- */
+  function paintColSeg(){
+    Array.prototype.forEach.call($("colSeg").children, function(b){
+      b.classList.toggle("on", b.dataset.c === colFix);
+    });
+  }
+  Array.prototype.forEach.call($("colSeg").children, function(b){
+    b.onclick = function(){
+      colFix = b.dataset.c;
+      try{ localStorage.setItem(COLS_KEY, colFix); }catch(e){}
+      paintColSeg(); layoutList();
+    };
+  });
+  try{ colFix = localStorage.getItem(COLS_KEY) || "auto"; }catch(e){}
+  paintColSeg();
 
   /* ---------- 화면 테마 ---------- */
   var THEME_KEY = "questboard:theme";
@@ -3709,13 +3758,18 @@ var HOLIDAYS = {
     var diff = (x.getDay() + 6) % 7;
     x.setDate(x.getDate() - diff); return x;
   }
+  /* 지난 기록을 보는 기간. 이번 달·올해는 앞날까지 세면 "기록한 날" 같은 숫자가
+     엉뚱해지므로 오늘까지로 끊는다. */
   function rangeOf(kind){
-    var end = new Date(); end.setHours(0,0,0,0);
-    var start;
-    if(kind === "week"){ start = mondayOf(end); end = new Date(start); end.setDate(start.getDate()+6); }
+    var today = new Date(); today.setHours(0,0,0,0);
+    var end = new Date(today), start;
+    if(kind === "week"){ start = mondayOf(today); end = new Date(start); end.setDate(start.getDate()+6); }
     else if(kind === "prev"){ start = mondayOf(new Date()); start.setDate(start.getDate()-7);
                               end = new Date(start); end.setDate(start.getDate()+6); }
-    else { start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-29); }
+    else if(kind === "month"){ start = new Date(today.getFullYear(), today.getMonth(), 1); }
+    else if(kind === "year"){ start = new Date(today.getFullYear(), 0, 1); }
+    else if(kind === "y12"){ start = new Date(today); start.setDate(start.getDate() - 364); }
+    else { start = new Date(today); start.setDate(start.getDate() - 29); }
     return { start:start, end:end };
   }
   function daysIn(r){
@@ -3801,7 +3855,7 @@ var HOLIDAYS = {
         (liveP ? Math.round(doneN / liveP * 100) : 0) + "%" + (cancelN ? " · 취소 " + cancelN + "건" : "") +
         (waitCnt ? " · 담아둔 뒤 평균 " + Math.round(waitSum / waitCnt) + "일 만에 꺼냈습니다" : ""))
         : "이 기간에 꺼낸 것이 없습니다.") +
-      "<br>꺼낸 기록은 그 항목이 보드에 남아 있는 동안(약 90일) 집계됩니다. v3.8 이전에 꺼낸 것은 표시가 없어 세지 않습니다.";
+      "<br>꺼낸 기록은 그 항목이 보드에 남아 있는 동안(1년) 집계됩니다. v3.8 이전에 꺼낸 것은 표시가 없어 세지 않습니다.";
 
     /* 대기 중 — 오래 묵은 것부터 */
     var head = '<thead><tr><th>대기 중인 것</th><th>태그</th><th>담은 지</th><th>기한</th></tr></thead>', body = "";
@@ -3880,7 +3934,11 @@ var HOLIDAYS = {
     var r = rangeOf(stRange), keys = daysIn(r);
     $("stTitle").textContent = (profile === "home" ? "집 보드" : "회사 보드") + " 통계";
     var fs = fromIso(keys[0]), fe = fromIso(keys[keys.length-1]);
-    $("stRange").textContent = (fs.getMonth()+1)+"/"+fs.getDate()+" ~ "+(fe.getMonth()+1)+"/"+fe.getDate()+
+    var longRange = keys.length > 45;
+    $("stRange").textContent =
+      (longRange ? (fs.getFullYear()+"."+(fs.getMonth()+1)+"."+fs.getDate()+" ~ "+
+                    fe.getFullYear()+"."+(fe.getMonth()+1)+"."+fe.getDate()+" (" + keys.length + "일)")
+                 : ((fs.getMonth()+1)+"/"+fs.getDate()+" ~ "+(fe.getMonth()+1)+"/"+fe.getDate())) +
       " · 카테고리는 완료된 항목만 셉니다";
     Array.prototype.forEach.call($("stPeriods").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
     Array.prototype.forEach.call($("stTabs").children, function(b){ b.classList.toggle("on", b.dataset.t === stTab); });
@@ -3954,30 +4012,63 @@ var HOLIDAYS = {
       });
     }
 
-    /* --- 날짜별 막대 --- */
+    /* --- 완료 막대 --- 기간이 길면 날짜별은 의미가 없어 월별로 묶는다 */
     var bars = $("stBars");
     bars.innerHTML = "";
-    var maxV = 1;
-    keys.forEach(function(k){ if(byDay[k] > maxV) maxV = byDay[k]; });
-    var show = (keys.length > 14) ? keys.slice(-14) : keys;
-    show.forEach(function(k){
-      var d = fromIso(k), wd = d.getDay(), hol = holidayOf(k);
-      var col = document.createElement("div");
-      col.className = "bcol" + ((hol || wd === 0) ? " sun" : (wd === 6 ? " sat" : "")) + (k === todayKey ? " today" : "");
-      var h = Math.round(byDay[k] / maxV * 74);
-      col.innerHTML = '<span class="bv">' + (byDay[k] || "") + '</span>' +
-        '<span class="bk" style="height:' + (byDay[k] ? Math.max(h,4) : 2) + 'px' +
-        (byDay[k] ? '' : ';background:var(--line)') + '"></span>' +
-        '<span class="bl">' + (keys.length > 14 ? (d.getMonth()+1)+"/"+d.getDate() : DAYS[wd]) + '</span>';
-      col.title = (d.getMonth()+1)+"/"+d.getDate()+" · 완료 " + byDay[k] + "건";
-      bars.appendChild(col);
-    });
+    $("stBarsH").textContent = longRange ? "월별 완료" : "날짜별 완료";
+    var maxV = 1, avg = keys.length ? (done / keys.length) : 0;
+    $("stAvg").textContent = keys.length
+      ? ("하루 평균 " + (Math.round(avg * 10) / 10) + "건 완료" + (longRange ? " · 총 " + done + "건" : ""))
+      : "";
+    if(longRange){
+      var mk = [], mv = {};
+      keys.forEach(function(k){
+        var m = k.slice(0, 7);
+        if(mv[m] === undefined){ mv[m] = 0; mk.push(m); }
+        mv[m] += (byDay[k] || 0);
+      });
+      mk.forEach(function(m){ if(mv[m] > maxV) maxV = mv[m]; });
+      var prevY = "";
+      mk.slice(-14).forEach(function(m){
+        var col = document.createElement("div");
+        col.className = "bcol" + (m === todayKey.slice(0, 7) ? " today" : "");
+        var h = Math.round(mv[m] / maxV * 74);
+        /* 해를 넘기면 같은 "9월"이 두 번 나와 헷갈린다. 연도가 바뀌는 곳에만 연도를 붙인다. */
+        var y = m.slice(0, 4);
+        var lbl = (prevY && prevY !== y ? "'" + y.slice(2) + " " : "") + (+m.slice(5)) + "월";
+        prevY = y;
+        col.innerHTML = '<span class="bv">' + (mv[m] || "") + '</span>' +
+          '<span class="bk" style="height:' + (mv[m] ? Math.max(h, 4) : 2) + 'px' +
+          (mv[m] ? '' : ';background:var(--line)') + '"></span>' +
+          '<span class="bl">' + lbl + '</span>';
+        col.title = m.replace("-", ".") + " · 완료 " + mv[m] + "건";
+        bars.appendChild(col);
+      });
+    } else {
+      keys.forEach(function(k){ if(byDay[k] > maxV) maxV = byDay[k]; });
+      var show = (keys.length > 14) ? keys.slice(-14) : keys;
+      show.forEach(function(k){
+        var d = fromIso(k), wd = d.getDay(), hol = holidayOf(k);
+        var col = document.createElement("div");
+        col.className = "bcol" + ((hol || wd === 0) ? " sun" : (wd === 6 ? " sat" : "")) + (k === todayKey ? " today" : "");
+        var h = Math.round(byDay[k] / maxV * 74);
+        col.innerHTML = '<span class="bv">' + (byDay[k] || "") + '</span>' +
+          '<span class="bk" style="height:' + (byDay[k] ? Math.max(h,4) : 2) + 'px' +
+          (byDay[k] ? '' : ';background:var(--line)') + '"></span>' +
+          '<span class="bl">' + (keys.length > 14 ? (d.getMonth()+1)+"/"+d.getDate() : DAYS[wd]) + '</span>';
+        col.title = (d.getMonth()+1)+"/"+d.getDate()+" · 완료 " + byDay[k] + "건";
+        bars.appendChild(col);
+      });
+    }
 
     /* --- 완료 기록 --- */
     var lo = $("stLog");
     lo.innerHTML = "";
     if(!log.length){ lo.innerHTML = '<p class="stempty">기록이 없습니다</p>'; return; }
     log.sort(function(a,b){ return (b.k === a.k) ? (b.at - a.at) : (b.k < a.k ? -1 : 1); });
+    /* 1년치는 수천 줄이 되어 그리는 데만 한참 걸린다. 최근 것부터 200줄까지만 */
+    var LOGMAX = 200, cut = log.length > LOGMAX;
+    if(cut) log = log.slice(0, LOGMAX);
     var curDay = "";
     log.forEach(function(e){
       if(e.k !== curDay){
@@ -3997,6 +4088,12 @@ var HOLIDAYS = {
       row.querySelector(".x").textContent = e.it.text;
       lo.appendChild(row);
     });
+    if(cut){
+      var more = document.createElement("p");
+      more.className = "logday";
+      more.textContent = "최근 " + LOGMAX + "건만 표시했습니다";
+      lo.appendChild(more);
+    }
   }
   $("moreBtn").onclick = function(){ $("moreOverlay").hidden = false; };
   $("wMore").onclick = function(){ $("moreOverlay").hidden = false; };
@@ -4278,8 +4375,17 @@ var HOLIDAYS = {
     setState("busy","가져오는 중…");
     return ensureGist().then(function(id){ return gh("/gists/"+id); }).then(function(g){
       var f = g.files && g.files[profile + ".json"];
+      /* 1MB 를 넘으면 GitHub 이 내용을 잘라서 준다. 그때는 원본 주소로 다시 받아본다.
+         그마저 막히면 조용히 반쪽 자료로 덮어쓰지 않고 오류로 알린다. */
+      if(f && f.truncated){
+        if(!f.raw_url) throw new Error("자료가 1MB를 넘어 동기화할 수 없습니다");
+        return fetch(f.raw_url).then(function(r){ return r.text(); }).then(function(t){ return { txt:t }; })
+          .catch(function(){ throw new Error("자료가 1MB를 넘어 동기화할 수 없습니다"); });
+      }
+      return { txt: (f && f.content) || "" };
+    }).then(function(o){
       var remote = null;
-      if(f && f.content){ try{ remote = JSON.parse(f.content); }catch(e){} }
+      if(o.txt){ try{ remote = JSON.parse(o.txt); }catch(e){} }
       var changed = mergeRemote(remote);
       if(changed){
         try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){}
@@ -4319,7 +4425,19 @@ var HOLIDAYS = {
       return n;
     }catch(e){ return 0; }
   }
+  /* 이 보드 자료가 얼마나 커졌는지 보여준다. Gist 는 1MB 를 넘으면 잘려서 내려온다. */
+  function paintSize(){
+    var el = $("sySize");
+    if(!el) return;
+    var kb = 0, days = 0, items = 0, k;
+    try{ kb = Math.round(JSON.stringify(payload()).length / 1024); }catch(e){}
+    for(k in store.days){ if(k === SOMEDAY) continue; days++; items += (store.days[k] || []).length; }
+    el.textContent = "이 보드 자료 " + kb + "KB · " + days + "일 " + items + "건 (보관 " + KEEP_DAYS + "일)" +
+      (kb > 900 ? " — 1MB에 가까워졌습니다. 백업을 받아두세요." : "");
+    el.style.color = kb > 900 ? "var(--urgent)" : "var(--dim)";
+  }
   function paintBoards(){
+    paintSize();
     ["work","home"].forEach(function(p){
       var cb = $(p === "work" ? "sySwWork" : "sySwHome");
       if(!cb) return;
