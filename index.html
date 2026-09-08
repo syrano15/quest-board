@@ -258,7 +258,10 @@
   .task.done .chip.hot{background:transparent;color:var(--urgent);border:1px solid var(--urgent-dim);}
   .task.done .chip.warm{background:transparent;color:var(--accent);border:1px solid var(--accent-dim);}
   .task.done .chip.def,.task.done .chip.push{opacity:.75;}
-  .meta{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;}
+  /* 줄바꿈되면 카드 높이가 늘어나 넘침 처리가 태그를 지우게 된다. 한 줄로 묶고 넘치는 꼬리만 자른다. */
+  .meta{display:flex;align-items:center;gap:.35rem;flex-wrap:nowrap;overflow:hidden;min-width:0;}
+  .meta > *{flex:none;}
+  .list.roomy .meta{flex-wrap:wrap;overflow:visible;}
   .time{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;}
   .task.done .time{color:var(--dim);}
   /* 회차 칩: 남은 회차를 배경 게이지로 같이 보여줘서 진행바를 따로 두지 않는다 */
@@ -1223,8 +1226,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.4";
-  var APP_BUILD = "2026-09-08 23:55";
+  var APP_VERSION = "v3.5";
+  var APP_BUILD = "2026-09-09 00:40";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2150,8 +2153,13 @@ var HOLIDAYS = {
       if(note && overflows(r, body)) note.hidden = true;      /* 그래도 넘치면 메모를 접고 */
       var dt = r.querySelector(".donetime");                   /* 완료 시각을 접고 */
       if(dt){ dt.hidden = false; if(overflows(r, body)) dt.hidden = true; }
-      var cc = r.querySelector(".meta .cat");                   /* 마지막으로 카테고리를 접는다 */
-      if(cc){ cc.hidden = false; if(overflows(r, body)) cc.hidden = true; }
+      var rs2 = r.querySelector(".rsn");                        /* 그래도 넘치면 사유를 접는다 (상세에서 볼 수 있다) */
+      if(rs2){ rs2.hidden = false; if(overflows(r, body)) rs2.hidden = true; }
+      /* 카테고리는 어떤 경우에도 감추지 않는다.
+         예전에는 마지막 수단으로 태그를 지웠는데, 카드가 작아지면 태그가 통째로 사라져 버렸다.
+         메타 줄은 CSS 로 한 줄에 묶어두므로 줄바꿈 때문에 높이가 늘어나지도 않는다. */
+      var cc = r.querySelector(".meta .cat");
+      if(cc) cc.hidden = false;
     }
   }
 
