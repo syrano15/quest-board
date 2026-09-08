@@ -121,12 +121,29 @@
   .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--dim);letter-spacing:.08em;}
   .clock{font-family:"IBM Plex Mono",monospace;font-size:1.4rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;}
 
-  .stats{width:100%;display:flex;flex-direction:column;gap:.3rem;margin-top:.4rem;}
-  .stat{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-    background:var(--surface);border:1px solid var(--line-soft);border-radius:.5rem;padding:.42rem .7rem;}
-  .stat .sl{font-size:.78rem;color:var(--muted);}
-  .stat .sv{font-family:"IBM Plex Mono",monospace;font-size:1rem;font-weight:600;font-variant-numeric:tabular-nums;}
+  /* 4줄이 자리를 많이 먹어서 2x2 로 줄였다 */
+  .stats{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:.28rem;margin-top:.4rem;}
+  .stat{display:flex;align-items:baseline;justify-content:space-between;gap:.3rem;
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:.45rem;padding:.3rem .5rem;}
+  .stat .sl{font-size:.7rem;color:var(--muted);white-space:nowrap;}
+  .stat .sv{font-family:"IBM Plex Mono",monospace;font-size:.95rem;font-weight:600;font-variant-numeric:tabular-nums;}
   .stat.rest .sv{color:var(--text);} .stat.def .sv{color:var(--defer);} .stat.push .sv{color:var(--urgent);}
+  /* 몸무게 — 집 보드에서만 보인다. 회사 화면에 뜨지 않게 프로필로 잠근다. */
+  .wtbox{display:none;}
+  body.home .wtbox:not([hidden]){display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;
+    column-gap:.4rem;row-gap:.1rem;align-items:baseline;width:100%;margin-top:.28rem;cursor:pointer;
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:.45rem;
+    padding:.34rem .5rem .28rem;font:inherit;text-align:left;transition:all .15s ease;}
+  body.home .wtbox:hover{border-color:var(--accent-dim);background:var(--surface-2);}
+  .wtbox .wtl{font-size:.7rem;color:var(--muted);}
+  .wtbox .wtv{font-family:"IBM Plex Mono",monospace;font-size:.95rem;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--text);text-align:right;}
+  .wtbox .wtd{grid-column:1;font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--dim);}
+  .wtbox .wtd.dn{color:var(--done);} .wtbox .wtd.up{color:var(--urgent);}
+  .wtbox .wtspark{grid-column:2;width:3.6rem;height:1.1rem;overflow:visible;}
+  .wtbox .wtspark path{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;
+    vector-effect:non-scaling-stroke;}
+  .wtbox .wtspark circle{fill:var(--accent);}
   .side-foot{display:flex;flex-direction:column;gap:.5rem;}
   .primary{background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:.5rem;font-weight:600;
     font-size:.88rem;padding:.6rem;cursor:pointer;transition:background .15s ease;}
@@ -378,6 +395,22 @@
     font-size:.8rem;font-weight:600;padding:.3rem .7rem;cursor:pointer;flex:none;}
   .toast button:hover{background:var(--accent);color:var(--ink);}
   .chips.catpick button.on{color:var(--ink)!important;font-weight:700;}
+  .wtform{display:flex;gap:.4rem;align-items:center;}
+  .wtform input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:.5rem;
+    color:var(--text);font:inherit;font-size:.9rem;padding:.45rem .55rem;color-scheme:dark;flex:none;}
+  body.light .wtform input[type=date]{color-scheme:light;}
+  .wtform .fi{flex:1;min-width:0;}
+  .wtlist{display:flex;flex-direction:column;gap:.25rem;max-height:38vh;overflow-y:auto;}
+  .wtrow{display:flex;align-items:center;gap:.6rem;background:var(--surface);border:1px solid var(--line-soft);
+    border-radius:.45rem;padding:.4rem .6rem;font-size:.9rem;}
+  .wtrow .d{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--muted);flex:none;width:5.2rem;}
+  .wtrow .v{font-family:"IBM Plex Mono",monospace;font-weight:600;font-variant-numeric:tabular-nums;}
+  .wtrow .g{flex:1;font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--dim);}
+  .wtrow .g.dn{color:var(--done);} .wtrow .g.up{color:var(--urgent);}
+  .wtrow .x{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.85rem;padding:0 .2rem;flex:none;}
+  .wtrow .x:hover{color:var(--urgent);}
+  .catuse{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--dim);flex:none;
+    min-width:2.6rem;text-align:right;}
   .swatches{display:flex;flex-wrap:wrap;gap:.4rem;}
   .swatches button{width:1.9rem;height:1.9rem;border-radius:.45rem;cursor:pointer;
     border:1px solid var(--line);background:var(--sc,var(--surface));transition:all .12s ease;}
@@ -707,6 +740,12 @@
         <div class="stat"><span class="sl">취소</span><span class="sv" id="stCancel">0</span></div>
         <div class="stat push"><span class="sl">밀린 일</span><span class="sv" id="stPush">0</span></div>
       </div>
+      <button class="wtbox" id="wtBox" type="button" hidden>
+        <span class="wtl">몸무게</span>
+        <span class="wtv" id="wtVal">—</span>
+        <span class="wtd" id="wtDelta"></span>
+        <svg class="wtspark" id="wtSpark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </button>
     </div>
 
     <div class="side-foot">
@@ -955,6 +994,23 @@
   </div>
 </div>
 
+<div class="overlay" id="wtOverlay" hidden>
+  <div class="sheet" style="width:min(30rem,100%)">
+    <h2>몸무게 기록</h2>
+    <p class="hint" style="font-size:.8rem">집 보드에서만 보입니다. 회사 보드에는 나타나지 않습니다.</p>
+    <form class="wtform" id="wtForm">
+      <input type="date" id="wtDate">
+      <input type="number" class="fi" id="wtInput" step="0.1" min="20" max="300" placeholder="kg" inputmode="decimal">
+      <button class="primary" type="submit">기록</button>
+    </form>
+    <div class="wtlist" id="wtList"></div>
+    <div class="composer-row">
+      <span style="flex:1"></span>
+      <button type="button" class="primary" id="wtClose" style="padding:.55rem 1.2rem">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="wishOverlay" hidden>
   <div class="sheet" style="width:min(40rem,100%)">
     <h2>언젠가 목록</h2>
@@ -990,6 +1046,10 @@
     <h2>카테고리 관리</h2>
     <p class="hint" style="font-size:.8rem">색 네모로 색을, 이름 칸으로 이름을 바꿉니다. 회사·집 보드가 같은 목록을 씁니다.</p>
     <div class="catlist" id="catList"></div>
+    <div class="banner" id="catOrphan" hidden>
+      <p><span></span></p>
+      <button class="primary" type="button">기본 카테고리 되살리기</button>
+    </div>
     <div class="composer-row">
       <button type="button" class="ghost" id="catAdd">＋ 카테고리 추가</button>
       <span style="flex:1"></span>
@@ -1120,8 +1180,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.9";
-  var APP_BUILD = "2026-09-08 03:20";
+  var APP_VERSION = "v3.1";
+  var APP_BUILD = "2026-09-08 21:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1214,7 +1274,7 @@ var HOLIDAYS = {
   var esc = function(s){ var d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
 
   /* ---------- storage ---------- */
-  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, meta:{ dayAt:{}, catsAt:0 } };
+  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, meta:{ dayAt:{}, catsAt:0 } };
   var prevJSON = {}, prevCats = "", prevSig = {}, prevWhere = {};
   var TOMB_TTL = 60 * 864e5;
   /* 항목 하나의 "내용 지문". at(수정시각)은 빼고 비교해야 무한 갱신을 막는다. */
@@ -1282,6 +1342,7 @@ var HOLIDAYS = {
         if(p && typeof p === "object"){ store.days = p.days || {}; store.dismissed = p.dismissed || {};
           if(p.cats && p.cats.length) store.cats = p.cats;
           store.tomb = p.tomb || {};
+          store.weights = p.weights || {};
           store.meta = p.meta || { dayAt:{}, catsAt:0 }; } }
     }catch(e){}
     if(!store.cats || !store.cats.length) store.cats = DEFAULT_CATS.slice();
@@ -1347,7 +1408,7 @@ var HOLIDAYS = {
     try{ localStorage.setItem(PROF_KEY, profile); }catch(e){}
     loadBg();
     if(reload){
-      store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, meta:{ dayAt:{}, catsAt:0 } };
+      store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, meta:{ dayAt:{}, catsAt:0 } };
       load(); viewKey = todayKey; render();
       if(typeof syncBoot === "function") syncBoot();
     }
@@ -1412,7 +1473,8 @@ var HOLIDAYS = {
     var c = catById(item.cat);
     if(!c) return "";
     /* 인라인 color 를 쓰면 라이트 테마에서 글자색을 덮어쓸 수 없다. 변수로 넘긴다. */
-    return '<span class="' + (cls||"cat") + '" style="--c:' + c.color + '">' + esc(c.name) + '</span>';
+    var nm = String(c.name || "").trim() || "이름없음";   /* 빈 이름이면 칩이 안 보여서 태그가 사라진 것처럼 된다 */
+    return '<span class="' + (cls||"cat") + '" style="--c:' + (c.color || "#8A97A8") + '">' + esc(nm) + '</span>';
   }
 
   /* ---------- parsing ---------- */
@@ -1679,6 +1741,82 @@ var HOLIDAYS = {
       b.onclick = function(){ markDone(r.it, true); };
       strip.appendChild(b);
     });
+  }
+
+  /* ---------- 몸무게 (집 보드 전용) ----------
+     store.weights = { "2026-09-08": {v:72.4, at:169...} }
+     날짜별로 나중에 적은 값이 이기게 해서 기기끼리 부딪히지 않는다. */
+  function weights(){ if(!store.weights) store.weights = {}; return store.weights; }
+  function wtSorted(){
+    var w = weights(), out = [], k;
+    for(k in w) if(w[k] && typeof w[k].v === "number") out.push({ k:k, v:w[k].v });
+    out.sort(function(a, b){ return a.k < b.k ? -1 : (a.k > b.k ? 1 : 0); });
+    return out;
+  }
+  function fmtKg(v){ return (Math.round(v * 10) / 10).toFixed(1); }
+  function renderWeight(){
+    var box = $("wtBox");
+    if(!box) return;
+    if(profile !== "home"){ box.hidden = true; return; }   /* 회사 보드에서는 아예 안 그린다 */
+    var arr = wtSorted();
+    box.hidden = false;
+    if(!arr.length){
+      $("wtVal").textContent = "—";
+      $("wtDelta").textContent = "기록 없음";
+      $("wtDelta").className = "wtd";
+      $("wtSpark").innerHTML = "";
+      return;
+    }
+    var last = arr[arr.length - 1], prev = arr.length > 1 ? arr[arr.length - 2] : null;
+    $("wtVal").textContent = fmtKg(last.v) + " kg";
+    var dl = $("wtDelta");
+    if(prev){
+      var d = last.v - prev.v;
+      dl.textContent = (d > 0 ? "+" : (d < 0 ? "−" : "±")) + fmtKg(Math.abs(d));
+      dl.className = "wtd " + (d < 0 ? "dn" : (d > 0 ? "up" : ""));
+    } else { dl.textContent = "첫 기록"; dl.className = "wtd"; }
+    /* 최근 10회 추이 */
+    var pts = arr.slice(-10), svg = $("wtSpark");
+    if(pts.length < 2){ svg.innerHTML = ""; return; }
+    var lo = Math.min.apply(null, pts.map(function(p){ return p.v; }));
+    var hi = Math.max.apply(null, pts.map(function(p){ return p.v; }));
+    var span = (hi - lo) || 1;
+    var xy = pts.map(function(p, i){
+      return [ (i / (pts.length - 1)) * 100, 19 - ((p.v - lo) / span) * 16 ];
+    });
+    var dpath = xy.map(function(c, i){ return (i ? "L" : "M") + c[0].toFixed(1) + " " + c[1].toFixed(1); }).join(" ");
+    var e = xy[xy.length - 1];
+    svg.innerHTML = '<path d="' + dpath + '"></path><circle cx="' + e[0].toFixed(1) + '" cy="' + e[1].toFixed(1) + '" r="1.8"/>';
+  }
+  function renderWtSheet(){
+    var host = $("wtList"), arr = wtSorted().slice().reverse();
+    host.innerHTML = "";
+    if(!arr.length){ host.innerHTML = '<div class="wempty">아직 기록이 없습니다.</div>'; return; }
+    arr.forEach(function(o, i){
+      var nxt = arr[i + 1];                      /* 뒤집었으니 다음 원소가 이전 기록 */
+      var d = nxt ? o.v - nxt.v : null;
+      var row = document.createElement("div");
+      row.className = "wtrow";
+      row.innerHTML = '<span class="d">' + o.k.slice(5).replace("-", "/") + '</span>' +
+        '<span class="v">' + fmtKg(o.v) + '</span>' +
+        '<span class="g' + (d === null ? "" : (d < 0 ? " dn" : (d > 0 ? " up" : ""))) + '">' +
+        (d === null ? "" : (d > 0 ? "+" : (d < 0 ? "−" : "±")) + fmtKg(Math.abs(d))) + '</span>' +
+        '<button type="button" class="x" aria-label="지우기">✕</button>';
+      row.querySelector(".x").onclick = function(){
+        delete weights()[o.k];
+        store.meta.wtAt = Date.now();
+        save(); renderWtSheet(); renderWeight();
+      };
+      host.appendChild(row);
+    });
+  }
+  function openWt(){
+    $("wtDate").value = todayKey;
+    var arr = wtSorted();
+    $("wtInput").value = arr.length ? fmtKg(arr[arr.length - 1].v) : "";
+    renderWtSheet();
+    $("wtOverlay").hidden = false;
+    setTimeout(function(){ $("wtInput").focus(); $("wtInput").select(); }, 30);
   }
 
   /* ---------- 언젠가 목록 ----------
@@ -2067,6 +2205,7 @@ var HOLIDAYS = {
     layoutList();
     renderNow();
     paintWishCount();
+    renderWeight();
 
     var d = fromIso(viewKey);
     $("dateLine").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
@@ -2168,6 +2307,19 @@ var HOLIDAYS = {
     try{ localStorage.setItem(FS_KEY, String(fscale)); }catch(e){}
     applyFont();
   };
+  $("wtBox").onclick = openWt;
+  $("wtClose").onclick = function(){ $("wtOverlay").hidden = true; };
+  $("wtOverlay").addEventListener("mousedown", function(e){ if(e.target === $("wtOverlay")) $("wtOverlay").hidden = true; });
+  $("wtForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var k = $("wtDate").value, v = parseFloat($("wtInput").value);
+    if(!k || !(v > 0)) return;
+    weights()[k] = { v: Math.round(v * 10) / 10, at: Date.now() };
+    store.meta.wtAt = Date.now();
+    save(); renderWtSheet(); renderWeight();
+    toast(k.slice(5).replace("-", "/") + " " + fmtKg(v) + "kg 기록했습니다", null);
+  });
+
   $("wishBtn").onclick = openWish;
   $("mWish").onclick = openWish;
   $("wishClose").onclick = function(){ $("wishOverlay").hidden = true; };
@@ -2403,8 +2555,22 @@ var HOLIDAYS = {
   });
 
   /* ---------- category manager ---------- */
+  /* 항목이 가리키는 카테고리 id 별 개수 — 목록에 없는 id(미아)까지 센다 */
+  function catUsage(){
+    var use = {}, k, i, arr;
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++) if(arr[i].cat) use[arr[i].cat] = (use[arr[i].cat] || 0) + 1;
+    }
+    return use;
+  }
+  function orphanCats(){
+    var use = catUsage(), out = [], id;
+    for(id in use) if(!catById(id)) out.push({ id:id, n:use[id] });
+    return out;
+  }
   function renderCatList(){
-    var host = $("catList");
+    var host = $("catList"), use = catUsage();
     host.innerHTML = "";
     store.cats.forEach(function(c, i){
       var row = document.createElement("div");
@@ -2413,17 +2579,43 @@ var HOLIDAYS = {
         '<button class="icon" type="button" aria-label="삭제">' + XMARK + '</button>';
       var col = row.querySelector('input[type=color]'), nm = row.querySelector('input[type=text]');
       col.value = c.color; nm.value = c.name;
+      var u = document.createElement("span");
+      u.className = "catuse"; u.textContent = (use[c.id] || 0) + "건";
+      row.insertBefore(u, row.querySelector(".icon"));
       col.oninput = function(){ c.color = col.value; save(); };
-      nm.oninput = function(){ c.name = nm.value; save(); };
-      nm.onchange = function(){ if(!nm.value.trim()){ c.name = "이름없음"; nm.value = c.name; save(); } };
+      /* 지우는 중에 빈 이름이 저장되면 그 카테고리 칩이 화면에서 사라져 버린다.
+         비어 있는 동안에는 저장하지 않고, 입력을 마칠 때 정리한다. */
+      nm.oninput = function(){ if(nm.value.trim()){ c.name = nm.value; save(); } };
+      nm.onchange = function(){
+        c.name = nm.value.trim() || "이름없음";
+        nm.value = c.name; save(); renderCatList();
+      };
       row.querySelector(".icon").onclick = function(){
+        var at = -1, x;
+        for(x = 0; x < store.cats.length; x++) if(store.cats[x].id === c.id){ at = x; break; }
+        if(at < 0) return;                       /* 인덱스로 지우면 두 번째 삭제부터 엉뚱한 줄이 지워진다 */
         Object.keys(store.days).forEach(function(k){
           store.days[k].forEach(function(it){ if(it.cat === c.id) it.cat = null; });
         });
-        store.cats.splice(i,1); save(); renderCatList();
+        store.cats.splice(at, 1); save(); renderCatList();
       };
       host.appendChild(row);
     });
+    var orph = orphanCats();
+    var warn = $("catOrphan");
+    if(orph.length){
+      var total = orph.reduce(function(a, o){ return a + o.n; }, 0);
+      warn.hidden = false;
+      warn.querySelector("span").textContent =
+        "목록에 없는 카테고리를 쓰는 항목이 " + total + "건 있습니다. 그 항목들은 태그가 안 보입니다.";
+      warn.querySelector("button").onclick = function(){
+        DEFAULT_CATS.forEach(function(d){
+          if(!catById(d.id)) store.cats.push({ id:d.id, name:d.name, color:d.color });
+        });
+        store.meta.catsAt = Date.now();
+        save(); renderCatList(); render();
+      };
+    } else warn.hidden = true;
   }
   $("catBtn").onclick = function(){ renderCatList(); $("catOverlay").hidden = false; };
   $("catClose").onclick = function(){ $("catOverlay").hidden = true; render(); };
@@ -2956,7 +3148,7 @@ var HOLIDAYS = {
   }
   function payload(){
     return { v:4, days:store.days, dismissed:store.dismissed, cats:store.cats,
-             tomb:store.tomb, meta:store.meta, at:Date.now() };
+             tomb:store.tomb, weights:store.weights, meta:store.meta, at:Date.now() };
   }
   var needPush = false;
   /* 양쪽 보드를 통째로 놓고 "항목 하나 = 한 자리"로 정리한다.
@@ -3023,6 +3215,12 @@ var HOLIDAYS = {
       store.cats = r.cats; store.meta.catsAt = rm.catsAt; changed = true;
     }
     for(k in (r.dismissed||{})) if(!store.dismissed[k]){ store.dismissed[k] = r.dismissed[k]; changed = true; }
+    /* 몸무게: 같은 날짜면 나중에 적은 쪽이 이긴다 */
+    var rw = r.weights || {}, lw = weights();
+    for(k in rw){
+      if(!rw[k] || typeof rw[k].v !== "number") continue;
+      if(!lw[k] || (rw[k].at || 0) > (lw[k].at || 0)){ lw[k] = rw[k]; changed = true; }
+    }
     return changed;
   }
   function localNewerThan(r){
