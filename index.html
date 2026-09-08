@@ -742,16 +742,37 @@
     .wishlist{grid-template-columns:1fr;max-height:46vh;}
   }
 
-  /* 보드 빈 자리에 올라오는 제안 카드 */
-  .task.wish{background:none;border:1px dashed var(--line);border-left:1px dashed var(--line);
-    cursor:pointer;opacity:.75;transition:all .15s ease;}
-  .task.wish:hover{opacity:1;border-color:var(--accent);border-style:solid;background:var(--surface-2);filter:none;}
-  .task.wish .wk{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.16em;color:var(--dim);}
-  .task.wish .wl{font-size:.98rem;color:var(--muted);line-height:1.3;overflow:hidden;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-  .task.wish:hover .wl{color:var(--text);}
-  .task.wish .wbody{display:flex;flex-direction:column;gap:.18rem;min-width:0;padding:.6rem .8rem;flex:1;}
-  body.hasbg .task.wish{box-shadow:none;backdrop-filter:none;}
+  /* 보드 맨 아래 "언젠가" 줄 — 눌러야 펼쳐진다. 평소에는 보드를 어지럽히지 않는다. */
+  .wishbar{display:flex;align-items:center;gap:.5rem;flex:none;width:100%;cursor:pointer;
+    background:none;border:1px dashed var(--line);border-radius:.6rem;padding:.42rem .75rem;
+    color:var(--muted);font:inherit;font-size:.84rem;text-align:left;transition:all .15s ease;}
+  .wishbar:hover{border-color:var(--accent-dim);color:var(--text);}
+  .wishbar.on{border-style:solid;border-color:var(--accent-dim);color:var(--text);}
+  .wishbar .wbn{display:inline-block;min-width:1.2rem;text-align:center;padding:0 .32rem;border-radius:99px;
+    background:var(--surface-2);color:var(--muted);font-family:"IBM Plex Mono",monospace;
+    font-size:.7rem;font-weight:600;}
+  .wishbar.on .wbn,.wishbar:hover .wbn{background:var(--accent-dim);color:var(--on-accent);}
+  .wishbar .wbx{margin-left:auto;font-size:.74rem;color:var(--dim);}
+  .wishbar .car{font-size:.7rem;color:var(--dim);transition:transform .2s ease;}
+  .wishbar.on .car{transform:rotate(180deg);}
+  .wishbar .wball{font-size:.74rem;color:var(--muted);border:1px solid var(--line);border-radius:.35rem;
+    padding:.1rem .4rem;}
+  .wishbar .wball:hover{border-color:var(--muted);color:var(--text);}
+  .wishtray{flex:none;display:grid;gap:.5rem;max-height:34vh;overflow-y:auto;padding-right:.2rem;
+    grid-template-columns:repeat(var(--wcols,3),minmax(0,1fr));align-content:start;}
+  .wishtray::-webkit-scrollbar{width:6px;} .wishtray::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
+  .wcard{display:flex;flex-direction:column;gap:.18rem;text-align:left;cursor:pointer;min-width:0;
+    background:none;border:1px dashed var(--line);border-radius:.7rem;padding:.5rem .7rem;
+    color:inherit;font:inherit;transition:all .15s ease;}
+  .wcard:hover{border-style:solid;border-color:var(--accent);background:var(--surface-2);}
+  .wcard .wk{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.14em;color:var(--dim);
+    display:flex;align-items:center;gap:.3rem;}
+  .wcard.soon .wk{color:var(--accent);}
+  .wcard .wl{font-size:.95rem;color:var(--muted);line-height:1.32;word-break:keep-all;
+    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .wcard:hover .wl{color:var(--text);}
+  body.hasbg .wcard,body.hasbg .wishbar{box-shadow:none;backdrop-filter:none;}
+  @media (pointer:coarse){ .wishbar{padding:.6rem .75rem;} .wcard{padding:.6rem .7rem;} }
   .fontlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.45rem;
     max-height:56vh;overflow-y:auto;align-content:start;padding-right:.2rem;}
   .fontlist::-webkit-scrollbar{width:6px;} .fontlist::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
@@ -861,6 +882,12 @@
     </div>
 
     <div class="list" id="list"></div>
+
+    <button class="wishbar" id="wishBar" type="button" hidden>
+      <span class="car">▾</span><span>언젠가</span><span class="wbn" id="wishBarN">0</span>
+      <span class="wbx" id="wishBarHint">눌러서 보기</span>
+    </button>
+    <div class="wishtray" id="wishTray" hidden></div>
 
     <form class="quick" id="quickForm">
       <div class="sugbox" id="sugMain" hidden></div>
@@ -1282,7 +1309,7 @@
   var profile = "work";
   var KEY = PROFILES.work.key;
   var APP_VERSION = "v3.6";
-  var APP_BUILD = "2026-09-08 20:30";
+  var APP_BUILD = "2026-09-08 21:00";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2056,24 +2083,57 @@ var HOLIDAYS = {
     if(d <= 31) return d + "일 남음";
     return it.by.slice(0,4) + "년 안에";
   }
-  /* 기한이 급한 순 → 담은 순. 매일 시작 위치를 한 칸씩 밀어 늘 같은 것만 뜨지 않게 한다. */
-  function wishPick(n){
-    var live = wishLive().slice().sort(function(a, b){
+  /* 기한이 급한 순 → 최근에 담은 순 */
+  function wishOrdered(){
+    return wishLive().slice().sort(function(a, b){
       var da = daysLeft(a.by), db = daysLeft(b.by);
-      if(da === null && db === null) return (a.ord||0) - (b.ord||0);
+      if(da === null && db === null) return (b.ord || 0) - (a.ord || 0);
       if(da === null) return 1;
       if(db === null) return -1;
-      return da - db || (a.ord||0) - (b.ord||0);
+      return da - db || (b.ord || 0) - (a.ord || 0);
     });
-    if(live.length <= n) return live;
-    var urgent = live.filter(function(x){ var d = daysLeft(x.by); return d !== null && d <= 31; });
-    var rest = live.filter(function(x){ var d = daysLeft(x.by); return !(d !== null && d <= 31); });
-    var out = urgent.slice(0, n);
-    if(out.length < n && rest.length){
-      var spin = Math.floor(fromIso(todayKey) / 864e5) % rest.length;   /* 날마다 한 칸씩 */
-      for(var i = 0; out.length < n && i < rest.length; i++) out.push(rest[(spin + i) % rest.length]);
-    }
-    return out;
+  }
+  /* ---------- 보드 하단 "언젠가" 줄 ----------
+     예전에는 빈 칸에 점선 카드가 저절로 올라왔는데, 몇 개만 보이고 보드가 어지러웠다.
+     이제는 줄을 눌러야 펼쳐지고, 펼치면 담아둔 것이 전부 보인다. */
+  var WISHOPEN_KEY = "questboard:wishopen";
+  var wishOpen = false;
+  try{ wishOpen = localStorage.getItem(WISHOPEN_KEY) === "1"; }catch(e){}
+  function renderWishTray(){
+    var tray = $("wishTray"), arr = wishOrdered();
+    tray.innerHTML = "";
+    arr.forEach(function(it){
+      var d = daysLeft(it.by);
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "wcard" + (d !== null && d <= 31 ? " soon" : "");
+      if(it.color){ b.style.borderColor = it.color; }
+      b.innerHTML = '<span class="wk">' + (catChip(it) || '<span>언젠가</span>') +
+        (byLabel(it) ? '<span>' + byLabel(it) + '</span>' : '') + '</span><span class="wl"></span>';
+      b.querySelector(".wl").textContent = it.text;
+      b.title = it.text + "\n(누르면 이 날 보드로 가져옵니다)";
+      b.onclick = function(){ pullWish(it); };
+      tray.appendChild(b);
+    });
+  }
+  function paintWishBar(){
+    var bar = $("wishBar"), tray = $("wishTray");
+    if(!bar) return;
+    var n = wishLive().length;
+    /* 담아둔 게 없거나 지난 날 보드에서는 줄 자체를 감춘다 */
+    if(!n || viewKey < todayKey){ bar.hidden = true; tray.hidden = true; return; }
+    bar.hidden = false;
+    bar.classList.toggle("on", wishOpen);
+    $("wishBarN").textContent = n;
+    $("wishBarHint").textContent = wishOpen ? "눌러서 접기" : "눌러서 보기";
+    tray.hidden = !wishOpen;
+    if(wishOpen) renderWishTray();
+  }
+  function toggleWishTray(){
+    wishOpen = !wishOpen;
+    try{ localStorage.setItem(WISHOPEN_KEY, wishOpen ? "1" : "0"); }catch(e){}
+    paintWishBar();
+    layoutList();        /* 목록 높이가 바뀌었으니 칸 크기를 다시 잡는다 */
   }
   function pullWish(it){
     var arr = wishes(), i = arr.indexOf(it);
@@ -2246,33 +2306,9 @@ var HOLIDAYS = {
     list.classList.toggle("tight", rowmax < 4.1);
     list.classList.toggle("roomy", rowmax >= 6.0);
     list.style.setProperty("--lines", rowmax < 4.1 ? 2 : (rowmax < 6.0 ? 3 : 5));
-    fillWishes(list, cols, rowmax, unit);
+    /* 아래쪽 "언젠가" 칸도 보드와 같은 열 수로 맞춘다 */
+    if($("wishTray")) $("wishTray").style.setProperty("--wcols", cols);
     fitRows(list);
-  }
-
-  /* 오늘·앞날 보드에 빈 칸이 남으면 언젠가 목록을 점선 카드로 올린다.
-     보드가 꽉 찬 날에는 하나도 나오지 않으니 방해가 되지 않는다. */
-  function fillWishes(list, cols, rowmax, unit){
-    Array.prototype.slice.call(list.querySelectorAll(".task.wish")).forEach(function(e){ e.remove(); });
-    if(viewKey < todayKey) return;
-    var n = list.children.length;
-    if(!n) return;
-    var rowH = rowmax * unit + 0.7 * unit;
-    var visRows = Math.max(1, Math.floor((list.clientHeight + 0.7 * unit) / rowH));
-    var free = cols * visRows - n;
-    if(free <= 0) return;
-    wishPick(Math.min(free, 4)).forEach(function(it){
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "task wish";
-      if(it.color) b.style.setProperty("--ic", it.color);
-      b.innerHTML = '<span class="wbody"><span class="wk">언젠가' +
-        (byLabel(it) ? " · " + byLabel(it) : "") + '</span><span class="wl"></span></span>';
-      b.querySelector(".wl").textContent = it.text;
-      b.title = "누르면 이 날 보드로 가져옵니다";
-      b.onclick = function(){ pullWish(it); };
-      list.appendChild(b);
-    });
   }
 
   /* 카드마다 실제로 재보고, 넘치면 제목 줄 수를 줄이고 그래도 넘치면 메모를 접는다.
@@ -2510,6 +2546,7 @@ var HOLIDAYS = {
     $("emptyState").hidden = !isEmpty;
     list.hidden = isEmpty;
     $("quickForm").hidden = isEmpty;
+    paintWishBar();      /* 하단 언젠가 줄 — 목록 높이에 영향을 주니 크기 재기 전에 */
     layoutList();
     renderNow();
     paintWishCount();
@@ -2682,6 +2719,7 @@ var HOLIDAYS = {
 
   $("wishBtn").onclick = openWish;
   $("mWish").onclick = openWish;
+  $("wishBar").onclick = toggleWishTray;
   $("wishClose").onclick = function(){ $("wishOverlay").hidden = true; };
   $("wishOverlay").addEventListener("mousedown", function(e){ if(e.target === $("wishOverlay")) $("wishOverlay").hidden = true; });
   $("wishForm").addEventListener("submit", function(e){
