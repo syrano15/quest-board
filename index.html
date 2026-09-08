@@ -409,6 +409,13 @@
   .wtrow .g.dn{color:var(--done);} .wtrow .g.up{color:var(--urgent);}
   .wtrow .x{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.85rem;padding:0 .2rem;flex:none;}
   .wtrow .x:hover{color:var(--urgent);}
+  .catdiag{display:flex;flex-direction:column;gap:.5rem;border-top:1px solid var(--line-soft);padding-top:.6rem;}
+  .dgrid{display:grid;grid-template-columns:1fr auto;gap:.15rem .8rem;font-size:.82rem;}
+  .dgrid .dk{color:var(--muted);}
+  .dgrid .dv{font-family:"IBM Plex Mono",monospace;font-weight:600;text-align:right;}
+  .dgrid .dv.bad{color:var(--urgent);}
+  .dbtns{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .dbtns button{font-size:.82rem;padding:.4rem .7rem;}
   .catuse{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--dim);flex:none;
     min-width:2.6rem;text-align:right;}
   .swatches{display:flex;flex-wrap:wrap;gap:.4rem;}
@@ -1046,9 +1053,14 @@
     <h2>카테고리 관리</h2>
     <p class="hint" style="font-size:.8rem">색 네모로 색을, 이름 칸으로 이름을 바꿉니다. 회사·집 보드가 같은 목록을 씁니다.</p>
     <div class="catlist" id="catList"></div>
-    <div class="banner" id="catOrphan" hidden>
-      <p><span></span></p>
-      <button class="primary" type="button">기본 카테고리 되살리기</button>
+    <div class="catdiag" id="catDiag">
+      <div class="dgrid" id="catDiagRows"></div>
+      <div class="dbtns">
+        <button class="ghost" type="button" id="catFixOrphan" hidden>기본 카테고리 되살리기</button>
+        <button class="primary" type="button" id="catFixBlank" hidden>예전 기록으로 태그 되살리기</button>
+        <button class="ghost" type="button" id="catDiagCopy">진단 정보 보기</button>
+      </div>
+      <textarea class="ft" id="catDiagText" readonly hidden style="font-family:'IBM Plex Mono',monospace;font-size:.72rem;min-height:6rem"></textarea>
     </div>
     <div class="composer-row">
       <button type="button" class="ghost" id="catAdd">＋ 카테고리 추가</button>
@@ -1180,8 +1192,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v3.1";
-  var APP_BUILD = "2026-09-08 21:10";
+  var APP_VERSION = "v3.2";
+  var APP_BUILD = "2026-09-08 22:20";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2569,6 +2581,68 @@ var HOLIDAYS = {
     for(id in use) if(!catById(id)) out.push({ id:id, n:use[id] });
     return out;
   }
+  /* 태그가 비어 있는 항목을 센다. 예전에 같은 이름으로 쓰던 태그가 있으면 되살릴 수 있다. */
+  function textCatMap(){
+    var map = {}, keys = Object.keys(store.days).sort(), i, j, arr, it, t;
+    for(i = 0; i < keys.length; i++){                 /* 날짜 오름차순 — 최근 것이 이긴다 */
+      arr = store.days[keys[i]] || [];
+      for(j = 0; j < arr.length; j++){
+        it = arr[j];
+        if(!it || !it.text || !it.cat || !catById(it.cat)) continue;
+        t = String(it.text).replace(/\s+/g, "").toLowerCase();
+        map[t] = it.cat;
+      }
+    }
+    return map;
+  }
+  function blankScan(){
+    var map = textCatMap(), miss = 0, fixable = 0, k, i, arr, it, t;
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.cat) continue;
+        miss++;
+        t = String(it.text || "").replace(/\s+/g, "").toLowerCase();
+        if(map[t]) fixable++;
+      }
+    }
+    return { miss:miss, fixable:fixable, map:map };
+  }
+  function fixBlanks(){
+    var sc = blankScan(), n = 0, k, i, arr, it, t;
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.cat) continue;
+        t = String(it.text || "").replace(/\s+/g, "").toLowerCase();
+        if(sc.map[t]){ it.cat = sc.map[t]; n++; }
+      }
+    }
+    if(n) save();
+    return n;
+  }
+  function renderCatDiag(){
+    var use = catUsage(), orph = orphanCats(), sc = blankScan();
+    var tagged = 0, id;
+    for(id in use) if(catById(id)) tagged += use[id];
+    var orphN = orph.reduce(function(a, o){ return a + o.n; }, 0);
+    var rows = [
+      ["카테고리 목록", store.cats.length + "개", false],
+      ["태그가 붙은 항목", tagged + "건", false],
+      ["태그가 비어 있는 항목", sc.miss + "건", sc.miss > 0],
+      ["목록에 없는 태그를 쓰는 항목", orphN + "건", orphN > 0]
+    ];
+    $("catDiagRows").innerHTML = rows.map(function(r){
+      return '<span class="dk">' + r[0] + '</span><span class="dv' + (r[2] ? " bad" : "") + '">' + r[1] + '</span>';
+    }).join("");
+    var bo = $("catFixOrphan"), bb = $("catFixBlank");
+    bo.hidden = orphN === 0;
+    bb.hidden = sc.fixable === 0;
+    bb.textContent = "예전 기록으로 태그 되살리기 (" + sc.fixable + "건)";
+    return sc;
+  }
   function renderCatList(){
     var host = $("catList"), use = catUsage();
     host.innerHTML = "";
@@ -2601,22 +2675,39 @@ var HOLIDAYS = {
       };
       host.appendChild(row);
     });
-    var orph = orphanCats();
-    var warn = $("catOrphan");
-    if(orph.length){
-      var total = orph.reduce(function(a, o){ return a + o.n; }, 0);
-      warn.hidden = false;
-      warn.querySelector("span").textContent =
-        "목록에 없는 카테고리를 쓰는 항목이 " + total + "건 있습니다. 그 항목들은 태그가 안 보입니다.";
-      warn.querySelector("button").onclick = function(){
-        DEFAULT_CATS.forEach(function(d){
-          if(!catById(d.id)) store.cats.push({ id:d.id, name:d.name, color:d.color });
-        });
-        store.meta.catsAt = Date.now();
-        save(); renderCatList(); render();
-      };
-    } else warn.hidden = true;
+    renderCatDiag();
   }
+  $("catFixOrphan").onclick = function(){
+    DEFAULT_CATS.forEach(function(d){
+      if(!catById(d.id)) store.cats.push({ id:d.id, name:d.name, color:d.color });
+    });
+    store.meta.catsAt = Date.now();
+    save(); renderCatList(); render();
+    toast("기본 카테고리를 되살렸습니다", null);
+  };
+  $("catFixBlank").onclick = function(){
+    var n = fixBlanks();
+    renderCatList(); render();
+    toast(n ? (n + "건의 태그를 되살렸습니다") : "되살릴 기록을 찾지 못했습니다", null);
+  };
+  $("catDiagCopy").onclick = function(){
+    var t = $("catDiagText"), use = catUsage(), sc = blankScan(), k;
+    if(!t.hidden){ t.hidden = true; return; }
+    var days = Object.keys(store.days).length;
+    var lines = ["보드=" + profile + " 버전=" + APP_VERSION + " 날짜수=" + days,
+                 "cats=" + JSON.stringify(store.cats.map(function(c){ return c.id + ":" + c.name; })),
+                 "사용=" + JSON.stringify(use),
+                 "태그없음=" + sc.miss + " 되살림가능=" + sc.fixable];
+    var sample = [], kk = Object.keys(store.days).sort().reverse();
+    for(k = 0; k < Math.min(2, kk.length); k++){
+      (store.days[kk[k]] || []).slice(0, 4).forEach(function(it){
+        sample.push(kk[k].slice(5) + " " + it.text + " cat=" + String(it.cat));
+      });
+    }
+    lines.push("표본:"); lines = lines.concat(sample);
+    t.value = lines.join("\n");
+    t.hidden = false;
+  };
   $("catBtn").onclick = function(){ renderCatList(); $("catOverlay").hidden = false; };
   $("catClose").onclick = function(){ $("catOverlay").hidden = true; render(); };
   $("catAdd").onclick = function(){
