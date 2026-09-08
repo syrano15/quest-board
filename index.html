@@ -1574,8 +1574,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v4.3";
-  var APP_BUILD = "2026-09-09 03:10";
+  var APP_VERSION = "v4.4";
+  var APP_BUILD = "2026-09-09 03:40";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1838,7 +1838,11 @@ var HOLIDAYS = {
     loadBg();
     if(reload){
       store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, meta:{ dayAt:{}, catsAt:0 } };
-      load(); viewKey = todayKey; render();
+      /* 보던 날짜는 그대로 둔다. 보드를 바꿀 때마다 오늘로 튀면
+         자정을 넘겨 어제 보드를 정리하는 중에 계속 헷갈린다. */
+      load();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(viewKey)) viewKey = todayKey;
+      render();
       if(typeof syncBoot === "function") syncBoot();
     }
   }
