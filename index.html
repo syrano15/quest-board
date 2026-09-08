@@ -630,6 +630,36 @@
     .mrow{padding:.9rem 1rem;}
     .composer-row button{min-height:44px;padding:.6rem 1.1rem;}
   }
+  .ghost .cnt{display:inline-block;min-width:1.15rem;margin-left:.3rem;padding:0 .3rem;border-radius:99px;
+    background:var(--surface-2);color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;}
+  .ghost .cnt.has{background:var(--accent-dim);color:var(--on-accent);}
+  .wishlist{display:flex;flex-direction:column;gap:.35rem;max-height:46vh;overflow-y:auto;}
+  .wrow{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--line-soft);
+    border-left:3px solid var(--line);border-radius:.5rem;padding:.5rem .6rem;}
+  .wrow .wt{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wrow .byq{display:flex;gap:.25rem;flex:none;}
+  .wrow .byq button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--dim);
+    font-size:.7rem;padding:.12rem .45rem;cursor:pointer;transition:all .12s ease;}
+  .wrow .byq button:hover{border-color:var(--muted);color:var(--text);}
+  .wrow .byq button.on{background:var(--accent-dim);border-color:var(--accent-dim);color:var(--on-accent);}
+  .wrow .pull{flex:none;background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:.4rem;
+    font-size:.76rem;font-weight:600;padding:.3rem .6rem;cursor:pointer;}
+  .wrow .pull:hover{background:var(--accent);color:var(--ink);}
+  .wrow .del{flex:none;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.9rem;padding:0 .2rem;}
+  .wrow .del:hover{color:var(--urgent);}
+  .wrow.soon{border-left-color:var(--accent);}
+  .wempty{color:var(--dim);font-size:.86rem;padding:.8rem 0;text-align:center;}
+
+  /* 보드 빈 자리에 올라오는 제안 카드 */
+  .task.wish{background:none;border:1px dashed var(--line);border-left:1px dashed var(--line);
+    cursor:pointer;opacity:.75;transition:all .15s ease;}
+  .task.wish:hover{opacity:1;border-color:var(--accent);border-style:solid;background:var(--surface-2);filter:none;}
+  .task.wish .wk{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.16em;color:var(--dim);}
+  .task.wish .wl{font-size:.98rem;color:var(--muted);line-height:1.3;overflow:hidden;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .task.wish:hover .wl{color:var(--text);}
+  .task.wish .wbody{display:flex;flex-direction:column;gap:.18rem;min-width:0;padding:.6rem .8rem;flex:1;}
+  body.hasbg .task.wish{box-shadow:none;backdrop-filter:none;}
   .fontlist{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
   .fcard{display:flex;flex-direction:column;gap:.1rem;text-align:left;cursor:pointer;
     background:var(--surface);border:1px solid var(--line);border-radius:.6rem;
@@ -686,6 +716,7 @@
         <button class="ghost" id="catBtn" type="button">카테고리</button>
         <button class="ghost" id="bgBtn" type="button">배경 이미지</button>
       </div>
+      <button class="ghost" id="wishBtn" type="button">언젠가 <span class="cnt" id="wishN">0</span></button>
       <button class="ghost" id="statsBtn" type="button">통계 보기</button>
       <button class="ghost" id="moreBtn" type="button">그 외 기능 ⋯</button>
       <input type="file" id="restoreFile" accept=".json,application/json" hidden>
@@ -780,6 +811,7 @@
     </div>
     <div class="mlist">
       <button type="button" class="mrow" id="fontBtn"><b>글꼴 바꾸기</b><span>보드 글씨체와 크기를 고릅니다</span></button>
+      <button type="button" class="mrow monly" id="mWish"><b>언젠가 목록</b><span>날짜 못 정한 일을 모아둡니다</span></button>
       <button type="button" class="mrow monly" id="mStats"><b>통계 보기</b><span>기간·카테고리별 진행 현황</span></button>
       <button type="button" class="mrow monly" id="mCats"><b>카테고리 관리</b><span>이름과 색상을 바꿉니다</span></button>
       <button type="button" class="mrow monly" id="mBg"><b>배경 이미지</b><span>보드 뒷배경을 바꿉니다</span></button>
@@ -919,6 +951,22 @@
       <span style="flex:1"></span>
       <button type="button" class="ghost" id="syNow">지금 맞추기</button>
       <button type="button" class="primary" id="syClose" style="padding:.55rem 1.2rem">완료</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="wishOverlay" hidden>
+  <div class="sheet" style="width:min(40rem,100%)">
+    <h2>언젠가 목록</h2>
+    <p class="hint" style="font-size:.8rem">날짜를 못 정한 일을 모아둡니다. 보드에 빈 자리가 생기면 점선 카드로 슬쩍 올라옵니다.</p>
+    <form class="quick" id="wishForm">
+      <input type="text" class="fi" id="wishInput" placeholder="예: #취미 사이버펑크 시즌2 · #자기개발 정보처리기사" maxlength="140" autocomplete="off">
+      <button class="primary" type="submit">담기</button>
+    </form>
+    <div class="wishlist" id="wishList"></div>
+    <div class="composer-row">
+      <span class="hint" style="flex:1;font-size:.78rem" id="wishCount"></span>
+      <button type="button" class="primary" id="wishClose" style="padding:.55rem 1.2rem">닫기</button>
     </div>
   </div>
 </div>
@@ -1072,8 +1120,8 @@
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v2.8";
-  var APP_BUILD = "2026-09-08 02:10";
+  var APP_VERSION = "v2.9";
+  var APP_BUILD = "2026-09-08 03:20";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1633,6 +1681,103 @@ var HOLIDAYS = {
     });
   }
 
+  /* ---------- 언젠가 목록 ----------
+     날짜 칸(store.days)에 "someday" 라는 이름으로 얹는다.
+     그러면 동기화·백업·묘비·카테고리 정리가 전부 그대로 적용된다. */
+  var SOMEDAY = "someday";
+  function wishes(){ return store.days[SOMEDAY] || []; }
+  function wishLive(){ return wishes().filter(function(x){ return !x.done && !x.canceled; }); }
+  function endOfMonth(){ var d = new Date(); return iso(new Date(d.getFullYear(), d.getMonth()+1, 0)); }
+  function endOfYear(){ var d = new Date(); return iso(new Date(d.getFullYear(), 11, 31)); }
+  function daysLeft(by){
+    if(!by) return null;
+    return Math.round((fromIso(by) - fromIso(todayKey)) / 864e5);
+  }
+  function byLabel(it){
+    var d = daysLeft(it.by);
+    if(d === null) return "";
+    if(d < 0) return "기한 지남";
+    if(d === 0) return "오늘까지";
+    if(d <= 31) return d + "일 남음";
+    return it.by.slice(0,4) + "년 안에";
+  }
+  /* 기한이 급한 순 → 담은 순. 매일 시작 위치를 한 칸씩 밀어 늘 같은 것만 뜨지 않게 한다. */
+  function wishPick(n){
+    var live = wishLive().slice().sort(function(a, b){
+      var da = daysLeft(a.by), db = daysLeft(b.by);
+      if(da === null && db === null) return (a.ord||0) - (b.ord||0);
+      if(da === null) return 1;
+      if(db === null) return -1;
+      return da - db || (a.ord||0) - (b.ord||0);
+    });
+    if(live.length <= n) return live;
+    var urgent = live.filter(function(x){ var d = daysLeft(x.by); return d !== null && d <= 31; });
+    var rest = live.filter(function(x){ var d = daysLeft(x.by); return !(d !== null && d <= 31); });
+    var out = urgent.slice(0, n);
+    if(out.length < n && rest.length){
+      var spin = Math.floor(fromIso(todayKey) / 864e5) % rest.length;   /* 날마다 한 칸씩 */
+      for(var i = 0; out.length < n && i < rest.length; i++) out.push(rest[(spin + i) % rest.length]);
+    }
+    return out;
+  }
+  function pullWish(it){
+    var arr = wishes(), i = arr.indexOf(it);
+    if(i >= 0) arr.splice(i, 1);
+    delete it.by;
+    day(viewKey).push(it);
+    save(); render();
+    toast('"' + it.text + '" 을(를) 오늘 보드로 가져왔습니다', null);
+  }
+  function paintWishCount(){
+    var n = wishLive().length, el = $("wishN");
+    if(el){ el.textContent = n; el.classList.toggle("has", n > 0); }
+  }
+  function renderWishSheet(){
+    var host = $("wishList"), arr = wishLive();
+    host.innerHTML = "";
+    if(!arr.length){
+      host.innerHTML = '<div class="wempty">아직 담아둔 게 없습니다. 위에 적어서 담아보세요.</div>';
+    }
+    arr.slice().sort(function(a,b){ return (a.ord||0) - (b.ord||0); }).forEach(function(it){
+      var row = document.createElement("div");
+      var d = daysLeft(it.by);
+      row.className = "wrow" + (d !== null && d <= 31 ? " soon" : "");
+      if(it.color) row.style.borderLeftColor = it.color;
+      row.innerHTML =
+        '<span class="wt"></span>' +
+        (byLabel(it) ? '<span class="time">' + byLabel(it) + '</span>' : '') +
+        '<span class="byq">' +
+          '<button type="button" data-b="month">이번 달</button>' +
+          '<button type="button" data-b="year">올해</button>' +
+          '<button type="button" data-b="">없음</button>' +
+        '</span>' +
+        '<button type="button" class="pull">오늘로</button>' +
+        '<button type="button" class="del" title="지우기">✕</button>';
+      var t = row.querySelector(".wt");
+      t.innerHTML = catChip(it);
+      t.appendChild(document.createTextNode(" " + it.text));
+      var cur = it.by === endOfMonth() ? "month" : (it.by === endOfYear() ? "year" : "");
+      Array.prototype.forEach.call(row.querySelector(".byq").children, function(b){
+        b.classList.toggle("on", b.dataset.b === cur);
+        b.onclick = function(){
+          if(b.dataset.b === "month") it.by = endOfMonth();
+          else if(b.dataset.b === "year") it.by = endOfYear();
+          else delete it.by;
+          save(); renderWishSheet(); render();
+        };
+      });
+      row.querySelector(".pull").onclick = function(){ pullWish(it); renderWishSheet(); paintWishCount(); };
+      row.querySelector(".del").onclick = function(){
+        var a = wishes(), i = a.indexOf(it); if(i >= 0) a.splice(i, 1);
+        save(); renderWishSheet(); paintWishCount(); render();
+      };
+      host.appendChild(row);
+    });
+    $("wishCount").textContent = arr.length ? (arr.length + "건 담겨 있습니다") : "";
+    paintWishCount();
+  }
+  function openWish(){ renderWishSheet(); $("wishOverlay").hidden = false; setTimeout(function(){ $("wishInput").focus(); }, 30); }
+
   /* ---------- 칸 배치 ---------- */
   var ROWSIZE_KEY = "questboard:rowsize";
   var ROWSIZES = { s:4.4, m:5.6, l:7.2 };
@@ -1665,7 +1810,33 @@ var HOLIDAYS = {
     list.classList.toggle("tight", rowmax < 4.1);
     list.classList.toggle("roomy", rowmax >= 6.0);
     list.style.setProperty("--lines", rowmax < 4.1 ? 1 : (rowmax < 6.0 ? 2 : 3));
+    fillWishes(list, cols, rowmax, unit);
     fitRows(list);
+  }
+
+  /* 오늘·앞날 보드에 빈 칸이 남으면 언젠가 목록을 점선 카드로 올린다.
+     보드가 꽉 찬 날에는 하나도 나오지 않으니 방해가 되지 않는다. */
+  function fillWishes(list, cols, rowmax, unit){
+    Array.prototype.slice.call(list.querySelectorAll(".task.wish")).forEach(function(e){ e.remove(); });
+    if(viewKey < todayKey) return;
+    var n = list.children.length;
+    if(!n) return;
+    var rowH = rowmax * unit + 0.7 * unit;
+    var visRows = Math.max(1, Math.floor((list.clientHeight + 0.7 * unit) / rowH));
+    var free = cols * visRows - n;
+    if(free <= 0) return;
+    wishPick(Math.min(free, 3)).forEach(function(it){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "task wish";
+      if(it.color) b.style.setProperty("--ic", it.color);
+      b.innerHTML = '<span class="wbody"><span class="wk">언젠가' +
+        (byLabel(it) ? " · " + byLabel(it) : "") + '</span><span class="wl"></span></span>';
+      b.querySelector(".wl").textContent = it.text;
+      b.title = "누르면 이 날 보드로 가져옵니다";
+      b.onclick = function(){ pullWish(it); };
+      list.appendChild(b);
+    });
   }
 
   /* 카드마다 실제로 재보고, 넘치면 제목 줄 수를 줄이고 그래도 넘치면 메모를 접는다.
@@ -1895,6 +2066,7 @@ var HOLIDAYS = {
     $("quickForm").hidden = isEmpty;
     layoutList();
     renderNow();
+    paintWishCount();
 
     var d = fromIso(viewKey);
     $("dateLine").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
@@ -1996,6 +2168,29 @@ var HOLIDAYS = {
     try{ localStorage.setItem(FS_KEY, String(fscale)); }catch(e){}
     applyFont();
   };
+  $("wishBtn").onclick = openWish;
+  $("mWish").onclick = openWish;
+  $("wishClose").onclick = function(){ $("wishOverlay").hidden = true; };
+  $("wishOverlay").addEventListener("mousedown", function(e){ if(e.target === $("wishOverlay")) $("wishOverlay").hidden = true; });
+  $("wishForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = $("wishInput").value.trim();
+    if(!v) return;
+    v.split(/\n/).forEach(function(line){
+      line = line.trim(); if(!line) return;
+      var p = parseLine(line);
+      if(!p || !p.text) return;
+      var it = { id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+                 text:p.text, done:false, ord:Date.now() };
+      if(p.cat) it.cat = p.cat;
+      if(p.note) it.note = p.note;
+      if(p.seq){ it.seq = p.seq; if(p.seqTot) it.seqTot = p.seqTot; }
+      day(SOMEDAY).push(it);
+    });
+    $("wishInput").value = "";
+    save(); renderWishSheet(); render();
+  });
+
   $("fontBtn").onclick = function(){
     FONTS.forEach(loadFont);   /* 미리보기용 글꼴은 이 화면을 열 때만 받는다 (시작이 느려지지 않게) */
     applyFont(); $("fontOverlay").hidden = false;
@@ -2104,6 +2299,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("wishOverlay").hidden){ $("wishOverlay").hidden = true; return; }
     if(!$("fontOverlay").hidden){ $("fontOverlay").hidden = true; return; }
     if(!$("moreOverlay").hidden){ $("moreOverlay").hidden = true; return; }
     if(!$("helpOverlay").hidden){ $("helpOverlay").hidden = true; return; }
@@ -3002,7 +3198,7 @@ var HOLIDAYS = {
   function countStore(k){
     try{
       var p = JSON.parse(localStorage.getItem(k) || "{}"), n = 0, d = p.days || {}, x;
-      for(x in d) n += (d[x] || []).length;
+      for(x in d){ if(x !== "someday") n += (d[x] || []).length; }
       return n;
     }catch(e){ return 0; }
   }
