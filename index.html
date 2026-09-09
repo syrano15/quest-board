@@ -970,7 +970,7 @@
       </div>
       <p class="dow"><span id="dowLine">—</span><span class="holi" id="holiName" hidden></span><span class="today-chip" id="todayChip" hidden>TODAY</span>
         <button class="backtoday" id="backToday" type="button" hidden>오늘로</button></p>
-      <p class="who" id="whoLine">이준희 · IT사업부</p>
+      <p class="who" id="whoLine">업무 일정</p>
     </div>
 
     <div class="ring-wrap">
@@ -1031,7 +1031,7 @@
       <h2 id="emptyTitle">오늘 할 일을 적어주세요</h2>
       <p>한 줄에 하나씩. 번호나 <span style="font-family:'IBM Plex Mono',monospace">-</span> 로 시작해도 알아서 정리합니다.</p>
       <form class="composer" id="seedForm">
-        <textarea id="seedText" placeholder="!! 09:30-11:00 디렉터님 게임 및 프로젝트 설명&#10;! 빌드 제공&#10;월 10:00 주간 회의&#10;내일 스토어 심사 자료 준비"></textarea>
+        <textarea id="seedText" placeholder="!! 09:30-11:00 기획 리뷰 회의&#10;! 배포 파일 전달&#10;월 10:00 주간 회의&#10;내일 제출 자료 정리"></textarea>
         <div class="composer-row">
           <p class="hint">Ctrl + Enter 로도 추가됩니다.</p>
           <button class="primary" type="submit" style="padding:.6rem 1.4rem">보드 만들기</button>
@@ -1092,6 +1092,9 @@
 <div class="overlay" id="moreOverlay" hidden>
   <div class="sheet" style="width:min(30rem,100%)">
     <h2>그 외 기능</h2>
+    <span class="fl">표시 이름</span>
+    <input type="text" class="fi" id="whoInput" maxlength="30" autocomplete="off" placeholder="비우면 '업무 일정'으로 표시">
+    <p class="hint" style="font-size:.76rem;margin:0">왼쪽 위에 뜨는 이름입니다. 이 기기에만 저장되고 소스나 동기화에는 들어가지 않습니다.</p>
     <span class="fl">화면 테마</span>
     <div class="seg" id="themeSeg">
       <button type="button" data-t="dark">어둡게</button>
@@ -1393,7 +1396,7 @@
     <p class="hint" style="font-size:.8rem">생각나는 대로 쭉 담아두세요. 보드에 빈 자리가 생기면 점선 카드로 올라오고, "오늘로"를 누르면 바로 그 날 보드로 갑니다.
       여러 줄을 붙여넣어도 한 줄에 하나씩 담깁니다. (Ctrl + Enter 로도 담기)</p>
     <form class="quick" id="wishForm" style="align-items:flex-start">
-      <textarea class="ft sm" id="wishInput" placeholder="예: #취미 사이버펑크 시즌2 · #자기개발 정보처리기사" maxlength="1200" style="min-height:2.9rem"></textarea>
+      <textarea class="ft sm" id="wishInput" placeholder="예: #취미 읽을 책 정리 · #자기개발 자격증 접수" maxlength="1200" style="min-height:2.9rem"></textarea>
       <button class="primary" type="submit" style="padding:0 1.1rem">담기</button>
     </form>
     <div class="wtools">
@@ -1491,7 +1494,7 @@
     <div class="pchoose">
       <button type="button" class="pcard work" data-p="work">
         <span class="pk">WORK</span><span class="pn">회사</span>
-        <span class="pd">이준희 · IT사업부 · 앰버 테마<br><b id="pcWork">—</b></span>
+        <span class="pd">업무 일정 · 앰버 테마<br><b id="pcWork">—</b></span>
       </button>
       <button type="button" class="pcard homep" data-p="home">
         <span class="pk">HOME</span><span class="pn">집</span>
@@ -1569,13 +1572,20 @@
 (function(){
   var PROF_KEY = "questboard:profile";
   var PROFILES = {
-    work: { key:"questboard:v2",      eyebrow:"퀘스트 보드", who:"이준희 · IT사업부", label:"회사 보드", chip:"회사", title:"오늘의 퀘스트 보드", color:"%23E8A33D" },
+    work: { key:"questboard:v2",      eyebrow:"퀘스트 보드", who:"업무 일정",         label:"회사 보드", chip:"회사", title:"오늘의 퀘스트 보드", color:"%23E8A33D" },
     home: { key:"questboard:v2:home", eyebrow:"개인 보드",   who:"개인 일정",         label:"집 보드",   chip:"집",   title:"집 — 퀘스트 보드",  color:"%239B8CF5" }
   };
   var profile = "work";
   var KEY = PROFILES.work.key;
-  var APP_VERSION = "v4.4";
-  var APP_BUILD = "2026-09-09 03:40";
+  /* 표시 이름은 소스에 박지 않는다. 저장소가 공개라 이름·부서가 그대로 노출된다.
+     이 기기의 localStorage 에만 두고, 없으면 보드 기본 이름을 쓴다. */
+  var WHO_KEY = "questboard:who:";
+  function whoOverride(p){
+    try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
+  }
+  function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
+  var APP_VERSION = "v4.5";
+  var APP_BUILD = "2026-09-09 11:20";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1592,7 +1602,7 @@ var HOLIDAYS = {
     { id:"c2", name:"취미",    color:"#9085E9" },
     { id:"c3", name:"쇼핑",    color:"#C98500" },
     { id:"c4", name:"자기개발", color:"#22A884" },
-    { id:"c5", name:"육아",    color:"#D55181" },
+    { id:"c5", name:"가족",    color:"#D55181" },
     { id:"c6", name:"회의",    color:"#2FA3B6" },
     { id:"c7", name:"일정",    color:"#6E9C22" },
     { id:"c8", name:"테스트",  color:"#B8722B" },
@@ -1831,7 +1841,8 @@ var HOLIDAYS = {
     document.title = cfg.title;
     setFavicon(cfg.color);
     if($("eyebrow")) $("eyebrow").textContent = cfg.eyebrow;
-    if($("whoLine")) $("whoLine").textContent = cfg.who;
+    if($("whoLine")) $("whoLine").textContent = whoName(profile);
+    if($("whoInput")) $("whoInput").value = whoOverride(profile);
     if($("profLabel")) $("profLabel").textContent = cfg.label;
     if($("wProf")) $("wProf").textContent = cfg.chip;
     try{ localStorage.setItem(PROF_KEY, profile); }catch(e){}
@@ -2388,9 +2399,9 @@ var HOLIDAYS = {
      동기화는 두 보드 파일 양쪽에 같이 실어 보내고, 날짜·항목 단위로 나중에 적은 쪽이 이긴다. */
   /* mode — "wd" 평일만(토·일과 한국 공휴일 제외) · "all" 매일. 값이 없으면 평일만으로 본다. */
   var DEFAULT_HABITS = [
-    { id:"hb1", name:"출근 버스로 하기",      ord:1, mode:"wd" },
-    { id:"hb2", name:"퇴근 자전거 30분 컷",  ord:2, mode:"wd" },
-    { id:"hb3", name:"돈 안쓰기",             ord:3, mode:"all", desc:"출퇴근 비용은 제외" }
+    { id:"hb1", name:"아침 스트레칭",  ord:1, mode:"wd" },
+    { id:"hb2", name:"계단 이용",      ord:2, mode:"wd" },
+    { id:"hb3", name:"물 2L 마시기",   ord:3, mode:"all", desc:"커피는 제외" }
   ];
   /* 성공·실패 자료는 보드(회사/집)와 상관없이 한 곳에 둔다 */
   var HAB_KEY = "questboard:habits", HRES_KEY = "questboard:hres",
@@ -2536,7 +2547,7 @@ var HOLIDAYS = {
         '</span>' +
         '<span class="catuse"></span>' +
         '<button class="icon" type="button" aria-label="삭제">' + XMARK + '</button>' +
-        '<input type="text" class="hdesc" maxlength="40" placeholder="세부 기준 (예: 출퇴근 비용은 제외)">';
+        '<input type="text" class="hdesc" maxlength="40" placeholder="세부 기준 (예: 커피는 제외)">';
       var nm = row.querySelector(".hname"), de = row.querySelector(".hdesc");
       nm.value = h.name;
       de.value = h.desc || "";
@@ -4504,6 +4515,11 @@ var HOLIDAYS = {
   $("mBg").onclick    = function(){ $("bgBtn").click(); };
   $("mHelp").onclick  = function(){ $("helpBtn").click(); };
   $("moreClose").onclick = function(){ $("moreOverlay").hidden = true; };
+  $("whoInput").addEventListener("input", function(){
+    var v = this.value.trim();
+    try{ if(v) localStorage.setItem(WHO_KEY + profile, v); else localStorage.removeItem(WHO_KEY + profile); }catch(e){}
+    $("whoLine").textContent = whoName(profile);
+  });
   $("moreOverlay").addEventListener("mousedown", function(e){ if(e.target === $("moreOverlay")) $("moreOverlay").hidden = true; });
   Array.prototype.forEach.call($("moreOverlay").querySelectorAll(".mrow"), function(b){
     b.addEventListener("click", function(){ $("moreOverlay").hidden = true; });
