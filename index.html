@@ -1584,8 +1584,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.5";
-  var APP_BUILD = "2026-09-09 11:20";
+  var APP_VERSION = "v4.6";
+  var APP_BUILD = "2026-09-09 22:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2405,16 +2405,35 @@ var HOLIDAYS = {
   ];
   /* 성공·실패 자료는 보드(회사/집)와 상관없이 한 곳에 둔다 */
   var HAB_KEY = "questboard:habits", HRES_KEY = "questboard:hres",
-      HABAT_KEY = "questboard:habat", HABSEED_KEY = "questboard:habseed";
-  var habList = null, habRes = null, habAt = 0;
+      HABAT_KEY = "questboard:habat", HABSEED_KEY = "questboard:habseed",
+      HABFRESH_KEY = "questboard:habfresh";
+  /* habFresh = 이 기기의 항목 목록이 "기본값 그대로, 사람이 손댄 적 없음" 이라는 표시.
+     이 상태에서는 (1) 원격 목록이 언제 고쳐졌든 무조건 원격이 이기고
+     (2) 내 목록을 Gist 에 올리지 않는다. 새 기기가 기본값으로 남의 목록을 덮는 사고를 막는다. */
+  var habList = null, habRes = null, habAt = 0, habFresh = false;
   function habLoad(){
-    habList = null; habRes = {}; habAt = 0;
+    habList = null; habRes = {}; habAt = 0; habFresh = false;
     try{
       var a = localStorage.getItem(HAB_KEY), b = localStorage.getItem(HRES_KEY);
       if(a){ habList = JSON.parse(a); if(!habList || !habList.length) habList = habList ? [] : null; }
       if(b) habRes = JSON.parse(b) || {};
       habAt = +(localStorage.getItem(HABAT_KEY) || 0) || 0;
-    }catch(e){ habList = null; habRes = {}; habAt = 0; }
+      habFresh = localStorage.getItem(HABFRESH_KEY) === "1";
+    }catch(e){ habList = null; habRes = {}; habAt = 0; habFresh = false; }
+    /* 표시가 없던 시절에 기본값만 깔린 기기를 뒤늦게 알아본다.
+       기본값과 한 글자도 다르지 않고 고친 흔적(habAt>1)도 없으면 손댄 적 없는 것이다. */
+    if(!habFresh && habList && (habAt || 0) <= 1 && sameAsDefaultHabits(habList)) habFresh = true;
+  }
+  function sameAsDefaultHabits(list){
+    if(!list || list.length !== DEFAULT_HABITS.length) return false;
+    var i, a, b;
+    for(i = 0; i < list.length; i++){
+      a = list[i]; b = DEFAULT_HABITS[i];
+      if(a.id !== b.id || a.name !== b.name) return false;
+      if((a.mode || "wd") !== (b.mode || "wd")) return false;
+      if((a.desc || "") !== (b.desc || "")) return false;
+    }
+    return true;
   }
   function habSave(){
     try{
@@ -2424,9 +2443,12 @@ var HOLIDAYS = {
       localStorage.setItem(HAB_KEY, JSON.stringify(habList || []));
       localStorage.setItem(HRES_KEY, JSON.stringify(habRes || {}));
       localStorage.setItem(HABAT_KEY, String(habAt || 0));
+      if(habFresh) localStorage.setItem(HABFRESH_KEY, "1");
+      else localStorage.removeItem(HABFRESH_KEY);
     }catch(e){}
   }
-  function habTouch(){ habAt = Date.now(); }
+  /* 사람이 목록을 고치면 그 순간부터 이 기기 목록이 진짜다 */
+  function habTouch(){ habAt = Date.now(); habFresh = false; }
   /* 처음 쓰는 기기에는 기본 항목을 넣어준다. 뒤에 추가된 기본 항목은 한 번만 채워 넣는다.
      habAt 를 1 로 둬서 다른 기기에서 고친 목록이 항상 이긴다. */
   function habSeedIfNeeded(){
@@ -2437,6 +2459,7 @@ var HOLIDAYS = {
         return { id:h.id, name:h.name, ord:h.ord, mode:h.mode, desc:h.desc || "" };
       });
       if(!habAt) habAt = 1;
+      habFresh = true;                 /* 기본값이므로 원격 목록에 자리를 내준다 */
       seed = DEFAULT_HABITS.length;
     } else if(seed < DEFAULT_HABITS.length){
       DEFAULT_HABITS.forEach(function(d){
@@ -4668,10 +4691,12 @@ var HOLIDAYS = {
     });
   }
   function payload(){
-    return { v:4, days:store.days, dismissed:store.dismissed, cats:store.cats,
-             tomb:store.tomb, weights:store.weights,
-             habits:habits(), hres:hres(), habAt:habAt,
-             meta:store.meta, at:Date.now() };
+    var o = { v:4, days:store.days, dismissed:store.dismissed, cats:store.cats,
+              tomb:store.tomb, weights:store.weights,
+              hres:hres(), meta:store.meta, at:Date.now() };
+    /* 기본값 그대로인 기기는 목록을 올리지 않는다. 기록(hres)만 올린다. */
+    if(!habFresh){ o.habits = habits(); o.habAt = habAt; }
+    return o;
   }
   var needPush = false;
   /* 양쪽 보드를 통째로 놓고 "항목 하나 = 한 자리"로 정리한다.
@@ -4747,8 +4772,13 @@ var HOLIDAYS = {
     /* 성공·실패 항목 목록: 나중에 고친 쪽이 이긴다 (카테고리와 같은 방식) */
     var habChanged = false;
     var rHabAt = r.habAt || (rm.habAt || 0);
-    if(rHabAt > (habAt || 0) && r.habits && r.habits.length){
-      habList = r.habits; habAt = rHabAt; habChanged = true;
+    /* 내 목록이 기본값 그대로면(habFresh) 시각을 따지지 않고 원격 목록을 받는다.
+       새 기기·새 브라우저가 기본 항목으로 진짜 목록을 덮어쓰는 사고를 막는 부분이다. */
+    if(r.habits && r.habits.length && (habFresh || rHabAt > (habAt || 0))){
+      habList = r.habits;
+      habAt = Math.max(rHabAt, habAt || 0, 1);
+      habFresh = false;
+      habChanged = true;
     }
     /* 성공·실패 기록: 날짜·항목 하나하나 나중에 적은 쪽이 이긴다 */
     if(habMergeRes(r.hres)) habChanged = true;
@@ -4759,7 +4789,12 @@ var HOLIDAYS = {
     var rm = (r && r.meta) || { dayAt:{}, catsAt:0 }, rda = rm.dayAt || {}, k;
     for(k in (store.meta.dayAt||{})) if((store.meta.dayAt[k]||0) > (rda[k]||0)) return true;
     if((store.meta.catsAt||0) > (rm.catsAt||0)) return true;
-    if((habAt||0) > (r && r.habAt ? r.habAt : (rm.habAt||0))) return true;
+    /* 원격에 목록이 없는데 내가 진짜 목록을 갖고 있으면 올려서 되살린다 */
+    if(!habFresh && habList && habList.length && !(r && r.habits && r.habits.length)) return true;
+    /* 원격이 기본값으로 덮여 있고 내 목록은 손댄 것이면 내 쪽을 올려 되살린다 */
+    if(!habFresh && habList && habList.length && r && r.habits && sameAsDefaultHabits(r.habits)
+       && !sameAsDefaultHabits(habList)) return true;
+    if(!habFresh && (habAt||0) > (r && r.habAt ? r.habAt : (rm.habAt||0))) return true;
     if(!r || !r.days) return true;
     return false;
   }
@@ -4924,7 +4959,9 @@ var HOLIDAYS = {
   }
   window.QB = { get store(){ return store; }, pullNow:pullNow, pushNow:pushNow,
                 save:save, render:render, addLines:addLines, mergeAll:mergeAll, sig:sig,
-                mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres };
+                mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres,
+                payload:payload, localNewerThan:localNewerThan,
+                get habFresh(){ return habFresh; } };
   window.addEventListener("focus", function(){ pullNow(false); });
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) pullNow(false); });
   setInterval(function(){ pullNow(false); }, 300000);
