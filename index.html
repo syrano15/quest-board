@@ -124,6 +124,12 @@
   .calfoot{margin:.5rem 0 0;font-size:.76rem;color:var(--muted);min-height:1.15rem;
     text-align:center;line-height:1.3;}
   .calfoot b{color:var(--text);}
+  .wrestore{grid-column:1/-1;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+    background:var(--surface);border:1px dashed var(--accent-dim);border-radius:.6rem;
+    padding:.65rem .8rem;font-size:.86rem;color:var(--muted);}
+  .wrestore b{color:var(--accent);}
+  .wrestore button{margin-left:auto;background:var(--accent);border:0;border-radius:.45rem;
+    color:var(--ink);font:inherit;font-weight:600;font-size:.82rem;padding:.35rem .8rem;cursor:pointer;}
   .nav{background:none;border:1px solid var(--line);border-radius:.4rem;width:1.7rem;height:1.7rem;
     display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none;transition:all .15s ease;}
   .nav:hover{border-color:var(--muted);color:var(--text);}
@@ -1624,6 +1630,7 @@
       <div class="composer-row">
         <button type="button" class="ghost danger" id="isDelete">삭제</button>
         <button type="button" class="ghost" id="isWish" title="이 일을 날짜 없는 언젠가 목록으로 되돌립니다">↓ 언젠가로</button>
+        <button type="button" class="ghost" id="isMove" title="같은 날짜로 다른 보드에 옮깁니다">→ 보드 옮기기</button>
         <span style="flex:1"></span>
         <button type="button" class="ghost" id="isClose">닫기</button>
         <button type="submit" class="primary" style="padding:.55rem 1.2rem">저장</button>
@@ -1662,8 +1669,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.12";
-  var APP_BUILD = "2026-09-10 18:20";
+  var APP_VERSION = "v4.13";
+  var APP_BUILD = "2026-09-10 19:40";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1762,6 +1769,42 @@ var HOLIDAYS = {
   /* 할 일을 며칠치 보관할지. 1년치면 하루 12건을 꽉 채워 써도 자료가 700KB 정도라
      동기화(Gist는 1MB를 넘으면 잘린다) 안쪽에 들어온다. */
   var KEEP_DAYS = 365;
+  /* 언젠가 목록은 몇 달치 아이디어가 쌓이는 곳이라 한 번 날아가면 복구할 방법이 없다.
+     마지막으로 비어 있지 않았던 목록을 따로 한 부 남겨둔다. 동기화에는 실려가지 않는다. */
+  var WBAK_KEY = "questboard:wishbak:";
+  function wbakKey(){ return WBAK_KEY + profile; }
+  function wbakSave(){
+    try{
+      var arr = store.days[SOMEDAY] || [];
+      if(!arr.length) return;                        /* 빈 목록으로는 덮지 않는다 */
+      localStorage.setItem(wbakKey(), JSON.stringify({ at:Date.now(), items:arr }));
+    }catch(e){}
+  }
+  function wbakRead(){
+    try{
+      var o = JSON.parse(localStorage.getItem(wbakKey()) || "null");
+      if(o && o.items && o.items.length) return o;
+    }catch(e){}
+    return null;
+  }
+  /* 되살릴 때는 새 아이디를 준다. 옛 아이디에 묘비가 남아 있으면 또 지워지기 때문이다. */
+  function wbakRestore(){
+    var o = wbakRead();
+    if(!o) return 0;
+    var have = {}, arr = store.days[SOMEDAY] || [], n = 0;
+    arr.forEach(function(x){ if(x) have[String(x.text || "").trim()] = 1; });
+    o.items.forEach(function(x){
+      if(!x || have[String(x.text || "").trim()]) return;
+      var c = JSON.parse(JSON.stringify(x));
+      c.id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+      c.at = Date.now();
+      arr.push(c); n++;
+    });
+    if(!n) return 0;
+    store.days[SOMEDAY] = arr;
+    save(); render();
+    return n;
+  }
   /* 항목 하나의 "내용 지문". at(수정시각)은 빼고 비교해야 무한 갱신을 막는다. */
   function sig(it){
     var o = {}, k;
@@ -1860,7 +1903,10 @@ var HOLIDAYS = {
     var k, i, arr, base, changed = false;
     for(k in store.days){
       arr = store.days[k];
-      base = (store.meta.dayAt && store.meta.dayAt[k]) || Date.parse(k + "T00:00:00") || 1;
+      /* "someday" 는 날짜가 아니라 Date.parse 가 NaN 이 된다. 그대로 두면 at 이 1 이 되어
+         어떤 묘비보다도 오래된 항목이 되고, 동기화 한 번에 통째로 사라진다. */
+      base = (store.meta.dayAt && store.meta.dayAt[k]) || Date.parse(k + "T00:00:00") ||
+             (k === SOMEDAY ? Date.now() : 1);
       for(i = 0; i < arr.length; i++){
         if(!arr[i] || !arr[i].id) continue;
         if(arr[i].ord == null){ arr[i].ord = i + 1; changed = true; }
@@ -1897,6 +1943,7 @@ var HOLIDAYS = {
       }
       localStorage.setItem(KEY, JSON.stringify(store));
     }catch(e){}
+    wbakSave();
     habSave();
   }
   function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -2214,6 +2261,9 @@ var HOLIDAYS = {
     renderColorPick();
     renderCatPick();
     $("isReason").value = item.reason || "";
+    /* 어느 보드로 가는지 버튼에 그대로 적어둔다 */
+    $("isMove").textContent = "→ " + PROFILES[otherProfile()].label + "로";
+    $("isMove").title = "이 일을 같은 날짜(" + viewKey + ")로 " + PROFILES[otherProfile()].label + "에 옮깁니다";
     setSegUI();
     $("itemOverlay").hidden = false;
     setTimeout(function(){ (sheetState === "open" ? $("isText") : $("isReason")).focus(); }, 20);
@@ -2816,6 +2866,62 @@ var HOLIDAYS = {
     toast('"' + it.text + '" 을(를) 언젠가 목록으로 보냈습니다', null);
     return true;
   }
+  /* ---------- 보드 옮기기 ----------
+     "집에서 보다가 이건 회사 가서 해야겠다" 싶은 일을 지우고 새로 적지 않게 한다.
+     보드마다 저장소가 따로라 대상 보드 자료를 직접 읽고 써야 한다. */
+  function otherProfile(){ return profile === "home" ? "work" : "home"; }
+  /* 카테고리는 보드별로 따로다. 이름이 같은 것을 찾고, 없으면 같은 이름으로 만들어 준다. */
+  function mapCatTo(cid, o, now){
+    if(!cid) return null;
+    var src = catById(cid), i;
+    if(src) for(i = 0; i < o.cats.length; i++) if(o.cats[i].name === src.name) return o.cats[i].id;
+    for(i = 0; i < o.cats.length; i++) if(o.cats[i].id === cid) return o.cats[i].id;
+    if(src){
+      o.cats.push({ id:cid, name:src.name, color:src.color });
+      o.meta.catsAt = now;
+      return cid;
+    }
+    return null;
+  }
+  function sendToBoard(it, target){
+    if(!it || !PROFILES[target] || target === profile) return false;
+    var i = idxOf(it);
+    if(i < 0) return false;
+    var key = PROFILES[target].key, o = null;
+    try{ o = JSON.parse(localStorage.getItem(key) || "null"); }catch(e){ o = null; }
+    if(!o || typeof o !== "object") o = {};
+    if(!o.days) o.days = {};
+    if(!o.dismissed) o.dismissed = {};
+    if(!o.cats || !o.cats.length) o.cats = DEFAULT_CATS.slice();
+    if(!o.tomb) o.tomb = {};
+    if(!o.weights) o.weights = {};
+    if(!o.meta) o.meta = { dayAt:{}, catsAt:0 };
+    if(!o.meta.dayAt) o.meta.dayAt = {};
+
+    var now = Date.now(), k = viewKey;
+    var copy = JSON.parse(JSON.stringify(it));
+    /* 새 아이디를 준다 — 원래 보드에 남는 묘비가 옮긴 항목을 죽이지 못하게 */
+    copy.id = "m" + now.toString(36) + Math.random().toString(36).slice(2,7);
+    copy.at = now;
+    copy.ord = now;
+    delete copy.wsrc; delete copy.wadd;
+    copy.cat = mapCatTo(it.cat, o, now);
+    if(!copy.cat) delete copy.cat;
+
+    if(!o.days[k]) o.days[k] = [];
+    o.days[k].push(copy);
+    o.meta.dayAt[k] = now;
+    try{ localStorage.setItem(key, JSON.stringify(o)); }catch(e){ return false; }
+
+    day(viewKey).splice(i, 1);        /* 원래 보드에서 빠진다 — save() 가 묘비를 남긴다 */
+    save(); render();
+    var d = fromIso(k);
+    toast('"' + it.text + '" 을(를) ' + PROFILES[target].label + ' ' +
+          (d.getMonth()+1) + '/' + d.getDate() + '로 보냈습니다',
+          function(){ applyProfile(target, true); }, "그 보드로", 12000);
+    return true;
+  }
+
   function pullWish(it){
     var arr = wishes(), i = arr.indexOf(it);
     if(i >= 0) arr.splice(i, 1);
@@ -2950,6 +3056,22 @@ var HOLIDAYS = {
     if(!arr.length){
       host.innerHTML = '<div class="wempty">' +
         (all.length ? "조건에 맞는 항목이 없습니다." : "아직 담아둔 게 없습니다. 위에 적어서 담아보세요.") + '</div>';
+    }
+    /* 목록이 비었는데 예전 목록이 남아 있으면 되살릴 길을 열어둔다 */
+    var bak = (!all.length) ? wbakRead() : null;
+    if(bak){
+      var box = document.createElement("div");
+      box.className = "wrestore";
+      var d = new Date(bak.at);
+      box.innerHTML = '<span>이전 목록 <b>' + bak.items.length + '건</b>이 남아 있습니다 · ' +
+        (d.getMonth()+1) + '/' + d.getDate() + ' 기준</span>' +
+        '<button type="button">되살리기</button>';
+      box.querySelector("button").onclick = function(){
+        var n = wbakRestore();
+        renderWishSheet();
+        if(n) toast(n + "건을 되살렸습니다", null);
+      };
+      host.appendChild(box);
     }
     var counts = {}, lastG = null;
     if(wishSort === "cat") arr.forEach(function(it){
@@ -3878,6 +4000,12 @@ var HOLIDAYS = {
     var it = sheetItem;
     closeItemSheet();
     sendToWish(it);
+  };
+  $("isMove").onclick = function(){
+    if(!sheetItem) return;
+    var it = sheetItem, t = otherProfile();
+    closeItemSheet();
+    sendToBoard(it, t);
   };
   $("isDelete").onclick = function(){
     if(!sheetItem) return;
@@ -5105,7 +5233,10 @@ var HOLIDAYS = {
     function offer(it, k){
       if(!it || !it.id) return;
       var t = store.tomb[it.id];
-      if(t && (t.at || 0) >= (it.at || 0)) return;      /* 지워진 항목은 되살리지 않는다 */
+      /* 언젠가 목록에는 묘비를 적용하지 않는다.
+         옛 버전이 남긴 묘비 하나에 몇 달치 아이디어가 통째로 날아가는 사고가 있었다.
+         지운 것이 다른 기기에서 되살아나는 쪽이, 목록이 사라지는 쪽보다 낫다. */
+      if(k !== SOMEDAY && t && (t.at || 0) >= (it.at || 0)) return;
       var cur = cand[it.id];
       if(!cur){ cand[it.id] = { it:it, k:k }; return; }
       var a = cur.it.at || 0, b = it.at || 0;
@@ -5142,6 +5273,8 @@ var HOLIDAYS = {
       for(k in next) keys[k] = 1;
       for(k in keys){
         var out = next[k] || [], loc = store.days[k] || [], rem = rdays[k] || [];
+        /* 있던 언젠가 목록이 병합 결과로 텅 비는 일은 정상이 아니다. 그럴 땐 손대지 않는다. */
+        if(k === SOMEDAY && loc.length && !out.length) continue;
         if(JSON.stringify(out) !== JSON.stringify(loc)){
           if(out.length) store.days[k] = out; else delete store.days[k];
           store.meta.dayAt[k] = Math.max((store.meta.dayAt||{})[k] || 0, rda[k] || 0, 1);
@@ -5153,6 +5286,17 @@ var HOLIDAYS = {
       /* --- 구버전 기기가 올린 데이터: 예전처럼 날짜 단위로 --- */
       for(k in rdays){
         var rt = rda[k] || 0, lt = (store.meta.dayAt||{})[k] || 0;
+        /* 언젠가 목록은 통째로 덮지 않는다. 구버전 기기 하나가 짧은 목록을 올리면
+           쌓아둔 아이디어가 전부 날아간다. 여기서는 없는 것만 더한다. */
+        if(k === SOMEDAY){
+          var have = {}, sd0 = store.days[SOMEDAY] || [], ri;
+          sd0.forEach(function(x){ if(x && x.id) have[x.id] = 1; });
+          (rdays[k] || []).forEach(function(x){
+            if(x && x.id && !have[x.id] && !store.tomb[x.id]){ sd0.push(x); changed = true; }
+          });
+          if(sd0.length) store.days[SOMEDAY] = sd0;
+          continue;
+        }
         if(rt > lt){ store.days[k] = rdays[k]; store.meta.dayAt[k] = rt; changed = true; }
       }
       needPush = true;
@@ -5406,6 +5550,15 @@ var HOLIDAYS = {
   pov.addEventListener("mousedown", function(e){
     if(e.target === pov && localStorage.getItem(PROF_KEY)) pov.hidden = true;
   });
+
+  /* 언젠가 목록이 비어 있는데 예전 목록이 남아 있으면 한 번 알려준다 (앱 열 때 한 번만) */
+  setTimeout(function(){
+    if((store.days[SOMEDAY] || []).length) return;
+    var bak = wbakRead();
+    if(!bak) return;
+    toast("언젠가 목록이 비어 있습니다 · 이전 " + bak.items.length + "건이 남아 있습니다",
+          function(){ openWish(); }, "되살리기", 30000);
+  }, 1500);
 
   setInterval(tick, 20000);
 })();
