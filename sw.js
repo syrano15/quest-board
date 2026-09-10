@@ -12,7 +12,7 @@
  *  4) 보드 화면(navigate)은 캐시를 먼저 주고 새 버전은 뒤에서 받아둔다.
  *     껍데기는 즉시 뜨고, 내 자료는 localStorage 에 있으니 바로 쓸 수 있다.
  */
-var VER   = "v4-10";
+var VER   = "v4-11";
 var CACHE = "questboard-" + VER;          /* 앱 파일 */
 var FONTS = "questboard-fonts";           /* 글꼴 — 버전과 무관하게 오래 남긴다 */
 var SHELL = "./index.html";
