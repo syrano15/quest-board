@@ -1,46 +1,129 @@
-/* 오늘의 퀘스트 보드 — 오프라인 캐시 */
-var CACHE = "questboard-v1";
-var ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+/* 오늘의 퀘스트 보드 — 오프라인 캐시
+ *
+ * 고친 이유 (2026-09-10)
+ *  1) addAll 은 하나만 실패해도 전부 실패한다. 게다가 그 실패를 조용히 삼키고 있어서
+ *     "빈 캐시로 설치 완료" 가 될 수 있었다. 그 상태로 인터넷이 끊기면 앱이 아예 안 열린다.
+ *     → 파일을 하나씩 담고, 실패한 것만 건너뛴다.
+ *  2) respondWith 에 undefined 를 넘기면 브라우저 오류 화면이 뜬다.
+ *     → 어떤 경로로 와도 반드시 Response 를 돌려준다.
+ *  3) 글꼴(fonts.googleapis.com)은 type 이 basic 이 아니라 캐시가 안 되고 있었다.
+ *     매번 네트워크를 기다렸고, DNS 가 흔들리면 여기서 한참 멈췄다.
+ *     → 글꼴은 별도 캐시에 담아두고, 있으면 그걸 먼저 준다.
+ *  4) 보드 화면(navigate)은 캐시를 먼저 주고 새 버전은 뒤에서 받아둔다.
+ *     껍데기는 즉시 뜨고, 내 자료는 localStorage 에 있으니 바로 쓸 수 있다.
+ */
+var VER   = "v4-10";
+var CACHE = "questboard-" + VER;          /* 앱 파일 */
+var FONTS = "questboard-fonts";           /* 글꼴 — 버전과 무관하게 오래 남긴다 */
+var SHELL = "./index.html";
+var ASSETS = ["./", "./index.html", "./manifest.json",
+              "./icon-192.png", "./icon-512.png", "./icon-512-maskable.png"];
 
-self.addEventListener("install", function (e) {
+function putSafe(cacheName, req, res){
+  try{
+    var copy = res.clone();
+    caches.open(cacheName).then(function(c){ c.put(req, copy).catch(function(){}); });
+  }catch(e){}
+}
+
+self.addEventListener("install", function(e){
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS).catch(function(){}); }));
-});
-
-self.addEventListener("activate", function (e) {
   e.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
-    }).then(function () { return self.clients.claim(); })
+    caches.open(CACHE).then(function(c){
+      /* 하나씩 담는다 — 한 개가 실패해도 나머지는 남는다 */
+      return Promise.all(ASSETS.map(function(u){
+        return c.add(new Request(u, { cache:"reload" })).catch(function(){});
+      }));
+    }).catch(function(){})
   );
 });
 
-self.addEventListener("fetch", function (e) {
-  var req = e.request;
-  if (req.method !== "GET") return;
+self.addEventListener("activate", function(e){
+  e.waitUntil(
+    caches.keys().then(function(keys){
+      return Promise.all(keys.map(function(k){
+        /* 글꼴 캐시는 남기고, 옛 버전 앱 캐시만 지운다 */
+        if(k === CACHE || k === FONTS) return null;
+        return caches.delete(k);
+      }));
+    }).then(function(){ return self.clients.claim(); }).catch(function(){})
+  );
+});
 
-  if (req.mode === "navigate") {
+/* 껍데기가 없을 때 마지막으로 보여줄 화면. 브라우저 오류 페이지보다는 낫다. */
+function offlinePage(){
+  return new Response(
+    '<!doctype html><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>퀘스트 보드</title>' +
+    '<body style="margin:0;display:grid;place-items:center;height:100vh;' +
+    'background:#0B0F14;color:#E6EDF3;font:15px system-ui,sans-serif;text-align:center">' +
+    '<div><p style="font-size:1.1rem;margin:0 0 .5rem">지금 인터넷에 연결되지 않았습니다</p>' +
+    '<p style="color:#8A97A8;margin:0 0 1.2rem;font-size:.9rem">' +
+    '적어둔 내용은 이 기기에 그대로 있습니다. 연결되면 그대로 열립니다.</p>' +
+    '<button onclick="location.reload()" style="background:#E8A33D;border:0;border-radius:.55rem;' +
+    'padding:.6rem 1.4rem;font:inherit;font-weight:600;color:#0B0F14;cursor:pointer">다시 시도</button>' +
+    '</div></body>',
+    { headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
+
+self.addEventListener("fetch", function(e){
+  var req = e.request;
+  if(req.method !== "GET") return;
+
+  var url;
+  try{ url = new URL(req.url); }catch(err){ return; }
+
+  /* ---- 보드 화면: 캐시 먼저, 새 버전은 뒤에서 ---- */
+  if(req.mode === "navigate"){
     e.respondWith(
-      fetch(req).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); });
-        return res;
-      }).catch(function () {
-        return caches.match(req).then(function (r) { return r || caches.match("./index.html"); });
+      caches.match(req, { ignoreSearch:true }).then(function(hit){
+        return hit || caches.match(SHELL);
+      }).then(function(hit){
+        var net = fetch(req).then(function(res){
+          if(res && res.ok) putSafe(CACHE, SHELL, res);
+          return res;
+        });
+        if(hit){
+          e.waitUntil(net.catch(function(){}));   /* 새 버전은 조용히 받아둔다 */
+          return hit;
+        }
+        return net.catch(function(){ return offlinePage(); });
+      }).catch(function(){ return offlinePage(); })
+    );
+    return;
+  }
+
+  /* ---- 글꼴: 캐시 먼저, 없으면 받아서 담아둔다 (cross-origin 이라 opaque 여도 담는다) ---- */
+  if(url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com"){
+    e.respondWith(
+      caches.match(req).then(function(hit){
+        if(hit) return hit;
+        return fetch(req).then(function(res){
+          if(res) putSafe(FONTS, req, res);
+          return res;
+        }).catch(function(){
+          /* 글꼴이 없어도 화면은 떠야 한다 — 빈 스타일시트를 준다 */
+          return new Response("", { headers: { "Content-Type":"text/css" } });
+        });
       })
     );
     return;
   }
 
+  /* ---- 그 밖의 파일: 캐시 먼저, 없으면 네트워크 ---- */
   e.respondWith(
-    caches.match(req).then(function (hit) {
-      return hit || fetch(req).then(function (res) {
-        if (res && res.status === 200 && res.type === "basic") {
-          var copy = res.clone();
-          caches.open(CACHE).then(function (c) { c.put(req, copy); });
-        }
+    caches.match(req).then(function(hit){
+      if(hit) return hit;
+      return fetch(req).then(function(res){
+        if(res && res.status === 200 && res.type === "basic") putSafe(CACHE, req, res);
         return res;
-      }).catch(function () { return hit; });
+      }).catch(function(){
+        return new Response("", { status:504, statusText:"offline" });
+      });
+    }).catch(function(){
+      return new Response("", { status:504, statusText:"offline" });
     })
   );
 });
