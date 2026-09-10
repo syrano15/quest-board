@@ -10,7 +10,11 @@
 <title>오늘의 퀘스트 보드</title>
 <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23E8A33D"/><path d="M16 34l11 11 21-25" fill="none" stroke="%230B0F14" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>'>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<!-- 글꼴은 화면을 막지 않게 나중에 붙인다. DNS·네트워크가 흔들릴 때 이 한 줄 때문에
+     보드 전체가 몇십 초 멈춰 있었다. 글꼴이 늦게 와도 기본 글꼴로 먼저 보인다. -->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"></noscript>
 <style>
   html{ font-size:calc(clamp(12px, calc(0.55vh + 0.75vw), 22px) * var(--fscale, 1)); }
   :root{
@@ -1609,8 +1613,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.9";
-  var APP_BUILD = "2026-09-10 14:10";
+  var APP_VERSION = "v4.10";
+  var APP_BUILD = "2026-09-10 16:05";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
