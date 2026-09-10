@@ -91,6 +91,39 @@
   .eyebrow{margin:0 0 .45rem;font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:500;
     letter-spacing:.24em;text-transform:uppercase;color:var(--accent);}
   .datenav{display:flex;align-items:center;gap:.35rem;margin-bottom:.15rem;}
+  /* ---------- 날짜 고르는 달력 ----------
+     화살표로 하루씩 옮기는 것만으로는 일주일 전·후를 보기 번거로웠다. */
+  #dateLine{cursor:pointer;border-radius:.3rem;transition:color .15s ease;}
+  #dateLine:hover{color:var(--accent);}
+  .calpop{position:fixed;z-index:19;width:17rem;background:var(--panel);
+    border:1px solid var(--line);border-radius:.7rem;padding:.6rem;
+    box-shadow:0 14px 36px rgba(0,0,0,.5);}
+  .calpop .ch{display:flex;align-items:center;gap:.3rem;margin-bottom:.45rem;}
+  .calpop .ch b{flex:1;text-align:center;font-size:.92rem;font-weight:600;
+    font-family:"IBM Plex Mono",monospace;letter-spacing:.02em;}
+  .calpop .ch .nav{width:1.5rem;height:1.5rem;}
+  .calpop .ch .tbtn{background:var(--surface-2);border:1px solid var(--line);border-radius:.4rem;
+    color:var(--muted);font:inherit;font-size:.74rem;padding:.2rem .5rem;cursor:pointer;flex:none;}
+  .calpop .ch .tbtn:hover{color:var(--text);border-color:var(--muted);}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .calgrid .cw{font-family:"IBM Plex Mono",monospace;font-size:.64rem;color:var(--dim);
+    text-align:center;padding:.1rem 0 .25rem;}
+  .cal-d{position:relative;aspect-ratio:1/.92;background:none;border:1px solid transparent;
+    border-radius:.35rem;color:var(--text);font:inherit;font-size:.8rem;cursor:pointer;padding:0;
+    display:grid;place-items:center;transition:background .12s ease;}
+  .cal-d:hover{background:var(--surface-2);}
+  .cal-d.oth{opacity:.38;}
+  .cal-d.sun{color:#E8735F;} .cal-d.sat{color:#6FA8DC;}
+  .cal-d.tod{border-color:var(--accent);}
+  .cal-d.sel{background:var(--accent);color:var(--ink);font-weight:700;}
+  .cal-d .bar{position:absolute;left:20%;right:20%;bottom:3px;height:2px;border-radius:2px;
+    background:var(--line);overflow:hidden;}
+  .cal-d .bar i{display:block;height:100%;background:var(--done);}
+  .cal-d.sel .bar{background:rgba(0,0,0,.28);}
+  .cal-d.sel .bar i{background:var(--ink);}
+  .calfoot{margin:.5rem 0 0;font-size:.76rem;color:var(--muted);min-height:1.15rem;
+    text-align:center;line-height:1.3;}
+  .calfoot b{color:var(--text);}
   .nav{background:none;border:1px solid var(--line);border-radius:.4rem;width:1.7rem;height:1.7rem;
     display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none;transition:all .15s ease;}
   .nav:hover{border-color:var(--muted);color:var(--text);}
@@ -982,7 +1015,7 @@
         <button class="nav" id="prevDay" type="button" aria-label="이전 날">
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2L3.5 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <h1 id="dateLine">—</h1>
+        <h1 id="dateLine" role="button" tabindex="0" title="눌러서 날짜 고르기">—</h1>
         <button class="nav" id="nextDay" type="button" aria-label="다음 날">
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -1136,6 +1169,7 @@
     </div>
     <p class="hint" style="font-size:.76rem;margin:0">고정하면 창 크기를 바꿔도 줄 수가 그대로 유지됩니다.</p>
     <div class="mlist">
+      <button type="button" class="mrow" id="mCal"><b>날짜 골라 가기</b><span>달력에서 지난 날·앞날로 바로 이동합니다</span></button>
       <button type="button" class="mrow" id="fontBtn"><b>글꼴 바꾸기</b><span>보드 글씨체와 크기를 고릅니다</span></button>
       <button type="button" class="mrow" id="mHab"><b>성공·실패 항목</b><span>매일 성공/실패로 남길 것을 정합니다</span></button>
       <button type="button" class="mrow monly" id="mWish"><b>언젠가 목록</b><span>날짜 못 정한 일을 모아둡니다</span></button>
@@ -1533,6 +1567,21 @@
   </div>
 </div>
 
+<div class="calpop" id="calPop" hidden>
+  <div class="ch">
+    <button class="nav" id="calPrev" type="button" aria-label="이전 달">
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2L3.5 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <b id="calTitle">—</b>
+    <button class="nav" id="calNext" type="button" aria-label="다음 달">
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="tbtn" id="calToday" type="button">오늘</button>
+  </div>
+  <div class="calgrid" id="calGrid"></div>
+  <p class="calfoot" id="calFoot"></p>
+</div>
+
 <div class="toast" id="toast" hidden><p id="toastText"></p><button type="button" id="toastGo">보기</button></div>
 
 <div class="overlay" id="itemOverlay" hidden>
@@ -1613,8 +1662,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.10";
-  var APP_BUILD = "2026-09-10 16:05";
+  var APP_VERSION = "v4.11";
+  var APP_BUILD = "2026-09-10 17:30";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1866,6 +1915,7 @@ var HOLIDAYS = {
     var cfg = PROFILES[profile];
     KEY = cfg.key;
     wtUnlocked = false;                       /* 보드를 바꾸면 몸무게는 다시 잠긴다 */
+    if($("calPop")) $("calPop").hidden = true;
     document.body.classList.toggle("home", profile === "home");
     document.title = cfg.title;
     setFavicon(cfg.color);
@@ -3586,6 +3636,129 @@ var HOLIDAYS = {
   $("prevDay").onclick = function(){ shift(-1); };
   $("nextDay").onclick = function(){ shift(1); };
   $("backToday").onclick = function(){ viewKey = todayKey; render(); };
+
+  /* ---------- 날짜 고르는 달력 ----------
+     하루씩 화살표로 옮기는 것만으로는 일주일 전·후를 보기 번거롭다.
+     날짜를 누르면 그 달이 뜨고, 칸마다 그 날 몇 건 중 몇 건을 끝냈는지 보여준다. */
+  function dayStat(k){
+    var arr = store.days[k] || [], i, it, all = 0, done = 0, defer = 0, cancel = 0;
+    for(i = 0; i < arr.length; i++){
+      it = arr[i];
+      if(!it) continue;
+      if(it.canceled){ cancel++; continue; }
+      all++;
+      if(it.done) done++;
+      else if(it.defer) defer++;
+    }
+    return { all:all, done:done, defer:defer, cancel:cancel };
+  }
+  function dayStatText(k){
+    var s = dayStat(k), d = fromIso(k), hol = holidayOf(k);
+    var head = (d.getMonth()+1) + "/" + d.getDate() + " (" + DAYS[d.getDay()] + ")" +
+               (hol ? " · " + hol : "");
+    if(!s.all && !s.cancel) return head + " · 적어둔 일 없음";
+    var tail = s.all ? (s.all + "건 중 " + s.done + "건 완료") : "";
+    if(s.defer) tail += (tail ? " · " : "") + "연기 " + s.defer;
+    if(s.cancel) tail += (tail ? " · " : "") + "취소 " + s.cancel;
+    return head + " · " + tail;
+  }
+  var calMonth = null;                 /* "YYYY-MM" — 달력이 보고 있는 달 */
+  function pad2(n){ return (n < 10 ? "0" : "") + n; }
+  function drawCal(){
+    var y = +calMonth.slice(0,4), m = +calMonth.slice(5,7);
+    $("calTitle").textContent = y + "년 " + m + "월";
+    var first = new Date(y, m-1, 1), start = new Date(first);
+    start.setDate(1 - first.getDay());                 /* 그 주 일요일부터 */
+    var g = $("calGrid");
+    g.innerHTML = "";
+    DAYS.forEach(function(w){
+      var h = document.createElement("div");
+      h.className = "cw";
+      h.textContent = w;
+      g.appendChild(h);
+    });
+    var i, cur = new Date(start);
+    for(i = 0; i < 42; i++){
+      var k = cur.getFullYear() + "-" + pad2(cur.getMonth()+1) + "-" + pad2(cur.getDate());
+      var wd = cur.getDay(), hol = holidayOf(k), s = dayStat(k);
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "cal-d" +
+        (cur.getMonth()+1 !== m ? " oth" : "") +
+        ((hol || wd === 0) ? " sun" : (wd === 6 ? " sat" : "")) +
+        (k === todayKey ? " tod" : "") +
+        (k === viewKey ? " sel" : "");
+      b.dataset.k = k;
+      b.textContent = cur.getDate();
+      b.title = dayStatText(k);
+      if(s.all){
+        var bar = document.createElement("span");
+        bar.className = "bar";
+        bar.innerHTML = '<i style="width:' + Math.round(s.done / s.all * 100) + '%"></i>';
+        b.appendChild(bar);
+      }
+      b.onmouseenter = function(){ $("calFoot").innerHTML = calFootHtml(this.dataset.k); };
+      b.onfocus = b.onmouseenter;
+      b.onclick = function(){ viewKey = this.dataset.k; closeCal(); render(); };
+      g.appendChild(b);
+      cur.setDate(cur.getDate()+1);
+      /* 6주째가 통째로 다음 달이면 줄을 만들지 않는다 */
+      if(i === 34 && cur.getMonth()+1 !== m) break;
+    }
+    $("calFoot").innerHTML = calFootHtml(viewKey);
+  }
+  function calFootHtml(k){
+    var s = dayStat(k), t = dayStatText(k);
+    if(!s.all) return '<span>' + esc(t) + '</span>';
+    var i = t.indexOf(" · ");
+    return esc(t.slice(0, i)) + " · <b>" + esc(t.slice(i+3)) + "</b>";
+  }
+  function placeCal(){
+    var pop = $("calPop"), a = $("dateLine").getBoundingClientRect();
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    /* 위젯 모드에서는 날짜 제목이 없다 — 그럴 때는 화면 가운데에 띄운다 */
+    if(!a.width || !a.height){
+      pop.style.left = Math.max(8, Math.round((window.innerWidth - w) / 2)) + "px";
+      pop.style.top = Math.max(8, Math.round((window.innerHeight - h) / 2)) + "px";
+      return;
+    }
+    var left = Math.min(Math.max(8, a.left), Math.max(8, window.innerWidth - w - 8));
+    var top = a.bottom + 8;
+    if(top + h > window.innerHeight - 8) top = Math.max(8, a.top - h - 8);
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+  }
+  function openCal(){
+    calMonth = viewKey.slice(0,7);
+    var pop = $("calPop");
+    pop.hidden = false;
+    pop.style.visibility = "hidden";
+    drawCal();
+    placeCal();
+    pop.style.visibility = "";
+  }
+  function closeCal(){ $("calPop").hidden = true; }
+  function calOpen(){ return !$("calPop").hidden; }
+  $("dateLine").onclick = function(){ calOpen() ? closeCal() : openCal(); };
+  $("dateLine").onkeydown = function(e){
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); this.onclick(); }
+  };
+  $("calPrev").onclick = function(){ calStep(-1); };
+  $("calNext").onclick = function(){ calStep(1); };
+  function calStep(n){
+    var y = +calMonth.slice(0,4), m = +calMonth.slice(5,7) + n;
+    var d = new Date(y, m-1, 1);
+    calMonth = d.getFullYear() + "-" + pad2(d.getMonth()+1);
+    drawCal();
+    placeCal();
+  }
+  $("calToday").onclick = function(){ viewKey = todayKey; closeCal(); render(); };
+  document.addEventListener("mousedown", function(e){
+    if(!calOpen()) return;
+    if($("calPop").contains(e.target) || e.target === $("dateLine")) return;
+    closeCal();
+  });
+  window.addEventListener("resize", function(){ if(calOpen()) placeCal(); });
   $("carryDismiss").onclick = function(){ store.dismissed[viewKey] = true; save(); render(); };
   $("clearChecks").onclick = function(){ day(viewKey).forEach(function(x){ x.done = false; }); save(); render(); };
   $("widgetBtn").onclick = function(){
@@ -3622,6 +3795,7 @@ var HOLIDAYS = {
   overlay.addEventListener("mousedown", function(e){ if(e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(!$("calPop").hidden){ $("calPop").hidden = true; return; }
     if(!$("pinOverlay").hidden){ $("pinOverlay").hidden = true; return; }
     if(!$("habOverlay").hidden){ $("habOverlay").hidden = true; render(); return; }
     if(!$("tagOverlay").hidden){ $("tagOverlay").hidden = true; return; }
@@ -4694,6 +4868,7 @@ var HOLIDAYS = {
   }
   $("moreBtn").onclick = function(){ $("moreOverlay").hidden = false; };
   $("wMore").onclick = function(){ $("moreOverlay").hidden = false; };
+  $("mCal").onclick   = function(){ $("moreOverlay").hidden = true; setTimeout(openCal, 20); };
   $("mStats").onclick = function(){ $("statsBtn").click(); };
   $("mCats").onclick  = function(){ $("catBtn").click(); };
   $("mBg").onclick    = function(){ $("bgBtn").click(); };
