@@ -528,6 +528,11 @@
   .seg button.on[data-v="open"]{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .seg button.on[data-v="defer"]{background:var(--defer);border-color:var(--defer);color:var(--ink);}
   .seg button.on[data-v="cancel"]{background:var(--line);border-color:var(--line);color:var(--text);}
+  /* 통계 제목 줄에 보드 전환을 같이 둔다. 세로 공간을 한 줄도 더 쓰지 않는다. */
+  .sthead{display:flex;align-items:center;gap:.7rem;}
+  .sthead h2{flex:1;min-width:0;}
+  .seg.tiny{flex:none;gap:.25rem;}
+  .seg.tiny button{flex:none;padding:.3rem .7rem;font-size:.8rem;}
   .chips{display:flex;flex-wrap:wrap;gap:.3rem;}
   .chips button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
     font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
@@ -673,6 +678,7 @@
   .sttable .z{color:var(--dim);}
   .sttable .ok{color:var(--done);} .sttable .df{color:var(--defer);} .sttable .cx{color:var(--dim);}
   .sttable .bad{color:var(--urgent);}
+  .sttable td.nm{max-width:24rem;overflow:hidden;text-overflow:ellipsis;}
   .stempty{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem 0;}
   @media (max-width:820px){ .stgrid{grid-template-columns:1fr;} .tiles{grid-template-columns:repeat(2,1fr);} }
 
@@ -1184,7 +1190,14 @@
 
 <div class="overlay" id="statsOverlay" hidden>
   <div class="sheet statsheet">
-    <h2 id="stTitle">통계</h2>
+    <div class="sthead">
+      <h2 id="stTitle">통계</h2>
+      <div class="seg tiny" id="stBoardSeg">
+        <button type="button" data-b="work">회사</button>
+        <button type="button" data-b="home">집</button>
+      </div>
+    </div>
+    <p class="hint" id="stBoardNote" style="font-size:.76rem;margin:0" hidden></p>
     <div class="seg" id="stTabs">
       <button type="button" data-t="task">할 일</button>
       <button type="button" data-t="wish">언젠가</button>
@@ -1276,6 +1289,12 @@
         <h3 style="margin-top:.4rem">완료 기록</h3>
         <div class="log" id="stLog"></div>
       </div>
+    </div>
+
+    <div class="stbox" style="margin-top:.7rem">
+      <h3 id="stRepH">반복 횟수 — 같은 일을 몇 번 했나</h3>
+      <div style="overflow-x:auto;max-height:20rem;overflow-y:auto"><table class="sttable" id="stRepTable"></table></div>
+      <p class="hint" id="stRepNote" style="font-size:.78rem;margin:.25rem 0 0"></p>
     </div>
 
     <div id="stDetailWrap" hidden>
@@ -1587,8 +1606,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.7";
-  var APP_BUILD = "2026-09-10 09:20";
+  var APP_VERSION = "v4.8";
+  var APP_BUILD = "2026-09-10 10:40";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -4069,6 +4088,42 @@ var HOLIDAYS = {
 
   /* ---------- 통계 ---------- */
   var stRange = "week", stTab = "task";
+  /* 통계에서만 다른 보드를 들여다본다. 앱 전체를 전환하지 않고 그 보드의 저장분만 읽어온다.
+     (통계를 끄고 → 보드 바꾸고 → 다시 통계를 켜는 왕복이 번거로워서 넣었다) */
+  var stBoard = null, stCache = {};
+  function stProfile(){ return stBoard || profile; }
+  function loadStoreOf(p){
+    var o = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, meta:{ dayAt:{}, catsAt:0 } };
+    try{
+      var raw = localStorage.getItem(PROFILES[p].key);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && typeof s === "object"){
+          o.days = s.days || {};
+          o.dismissed = s.dismissed || {};
+          o.cats = (s.cats && s.cats.length) ? s.cats : DEFAULT_CATS.slice();
+          o.weights = s.weights || {};
+          o.meta = s.meta || o.meta;
+        }
+      }
+    }catch(e){}
+    return o;
+  }
+  /* 통계가 읽을 자료 — 지금 보드면 실제 store, 다른 보드면 읽어둔 사본 */
+  function sd(){
+    var p = stProfile();
+    if(p === profile) return store;
+    if(!stCache[p]) stCache[p] = loadStoreOf(p);
+    return stCache[p];
+  }
+  function stCat(id){
+    if(!id) return null;
+    var cs = sd().cats || [], i;
+    for(i = 0; i < cs.length; i++) if(cs[i].id === id) return cs[i];
+    return null;
+  }
+  function stWishes(){ return sd().days[SOMEDAY] || []; }
+  function stWishLive(){ return stWishes().filter(function(x){ return !x.done && !x.canceled; }); }
   function mondayOf(d){
     var x = new Date(d); x.setHours(0,0,0,0);
     var diff = (x.getDay() + 6) % 7;
@@ -4137,17 +4192,17 @@ var HOLIDAYS = {
      "담아두고 잊은 것"이 보이게 하는 게 목적이다.
      꺼낸 항목에는 wsrc(꺼낸 날)·wadd(담은 날)가 붙어 있어 실행·완료를 셀 수 있다. */
   function catCell(cid){
-    var c = catById(cid);
+    var c = stCat(cid);
     return c ? '<span class="cat" style="--c:' + safeCatColor(c.color) + '">' + esc(c.name) + '</span>'
              : '<span class="z">·</span>';
   }
   function renderWishStats(keys){
-    var live = wishLive(), inRange = {}, i, k, arr, j, it;
+    var live = stWishLive(), inRange = {}, i, k, arr, j, it;
     for(i = 0; i < keys.length; i++) inRange[keys[i]] = 1;
     var pulled = [];
-    for(k in store.days){
+    for(k in sd().days){
       if(k === SOMEDAY || !inRange[k]) continue;
-      arr = store.days[k] || [];
+      arr = sd().days[k] || [];
       for(j = 0; j < arr.length; j++){ it = arr[j]; if(it && it.wsrc) pulled.push(it); }
     }
     var doneN = 0, cancelN = 0, waitSum = 0, waitCnt = 0;
@@ -4401,7 +4456,14 @@ var HOLIDAYS = {
   }
   function renderStats(){
     var r = rangeOf(stRange), keys = daysIn(r);
-    $("stTitle").textContent = (profile === "home" ? "집 보드" : "회사 보드") + " 통계";
+    var sp = stProfile();
+    $("stTitle").textContent = (sp === "home" ? "집 보드" : "회사 보드") + " 통계";
+    Array.prototype.forEach.call($("stBoardSeg").children, function(b){ b.classList.toggle("on", b.dataset.b === sp); });
+    /* 성공·실패는 두 보드 공통 자료라 보드를 가릴 필요가 없다 */
+    $("stBoardSeg").hidden = stTab === "hab";
+    var otherNote = $("stBoardNote");
+    otherNote.hidden = (stTab === "hab") || (sp === profile);
+    otherNote.textContent = "지금 쓰는 보드는 " + (profile === "home" ? "집 보드" : "회사 보드") + "입니다 — 보고만 있습니다";
     var fs = fromIso(keys[0]), fe = fromIso(keys[keys.length-1]);
     var longRange = keys.length > 45;
     $("stRange").textContent =
@@ -4426,7 +4488,7 @@ var HOLIDAYS = {
     }
     keys.forEach(function(k){
       byDay[k] = 0;
-      (store.days[k] || []).forEach(function(it){
+      (sd().days[k] || []).forEach(function(it){
         var cid = it.cat || "__none", D = bucket(cid);
         D.all++;
         if(it.pushed) D.pushed++;
@@ -4441,6 +4503,7 @@ var HOLIDAYS = {
       });
     });
     renderDetail(detail, keys);
+    renderRepeat(keys);
     $("tDone").textContent = done; $("tRest").textContent = rest;
     $("tDefer").textContent = defer; $("tCancel").textContent = cancel;
     $("stDonutN").textContent = done;
@@ -4448,7 +4511,7 @@ var HOLIDAYS = {
     /* --- 도넛 --- */
     var rows = [];
     for(var cid in byCat){
-      var c = catById(cid);
+      var c = stCat(cid);
       rows.push({ name: c ? c.name : "카테고리 없음", color: c ? c.color : "#4C5A6B", n: byCat[cid] });
     }
     rows.sort(function(a,b){ return b.n - a.n; });
@@ -4549,7 +4612,7 @@ var HOLIDAYS = {
         h.textContent = (d.getMonth()+1)+"/"+d.getDate()+" ("+DAYS[d.getDay()]+")";
         lo.appendChild(h);
       }
-      var c = catById(e.it.cat);
+      var c = stCat(e.it.cat);
       var row = document.createElement("div");
       row.className = "lgi";
       row.innerHTML = '<span class="t' + (e.at ? '' : ' nt') + '">' + (e.at ? hhmm(e.at) : "—") + '</span>' +
@@ -4599,9 +4662,9 @@ var HOLIDAYS = {
   $("helpOverlay").addEventListener("mousedown", function(e){ if(e.target === $("helpOverlay")) $("helpOverlay").hidden = true; });
   function seriesRows(keys){
     var m = {}, i, k, it;
-    for(k in store.days){
-      for(i = 0; i < store.days[k].length; i++){
-        it = store.days[k][i];
+    for(k in sd().days){
+      for(i = 0; i < sd().days[k].length; i++){
+        it = sd().days[k][i];
         if(!it.seq) continue;
         var t = String(it.text || "").trim();
         if(!m[t]) m[t] = { text:t, cat:it.cat || null, max:0, tot:0, inRange:0, lastDay:"" };
@@ -4622,7 +4685,7 @@ var HOLIDAYS = {
     if(!rows.length) return;
     var head = '<thead><tr><th>시리즈</th><th>진행</th><th>이 기간</th><th>마지막</th></tr></thead>', body = "";
     rows.forEach(function(r){
-      var c = catById(r.cat);
+      var c = stCat(r.cat);
       var d = r.lastDay ? fromIso(r.lastDay) : null;
       var pct = r.tot ? Math.round(r.max / r.tot * 100) : 0;
       body += '<tr><td>' + (c ? '<span class="cat" style="color:' + c.color + '">' + esc(c.name) + '</span> ' : '') +
@@ -4634,6 +4697,53 @@ var HOLIDAYS = {
     });
     t.innerHTML = head + "<tbody>" + body + "</tbody>";
   }
+  /* 같은 이름을 이 기간에 몇 번 완료했는가.
+     "밤 바닥 닦기 몇 번 했지" 같은 걸 세는 표다. 취소는 세지 않는다. */
+  function repeatRows(keys){
+    var m = {}, i, k, arr, j, it, t;
+    for(i = 0; i < keys.length; i++){
+      k = keys[i];
+      arr = sd().days[k] || [];
+      for(j = 0; j < arr.length; j++){
+        it = arr[j];
+        if(!it || it.canceled || !it.done) continue;
+        t = String(it.text || "").trim();
+        if(!t) continue;
+        if(!m[t]) m[t] = { text:t, n:0, cat:it.cat || null, first:k, last:k };
+        m[t].n++;
+        if(k < m[t].first) m[t].first = k;
+        if(k > m[t].last){ m[t].last = k; m[t].cat = it.cat || m[t].cat; }
+      }
+    }
+    var arr2 = [];
+    for(k in m) if(m[k].n >= 2) arr2.push(m[k]);
+    arr2.sort(function(a, b){ return b.n - a.n || (b.last < a.last ? -1 : 1); });
+    return arr2;
+  }
+  function renderRepeat(keys){
+    var rows = repeatRows(keys), t = $("stRepTable"), MAX = 40;
+    var shown = rows.slice(0, MAX);
+    var head = '<thead><tr><th>일감</th><th>카테고리</th><th>횟수</th><th>처음</th><th>마지막</th></tr></thead>';
+    var body = "";
+    function md(k){ var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
+    shown.forEach(function(x){
+      body += '<tr><td class="nm"></td><td>' + catCell(x.cat) + '</td>' +
+        '<td class="ok"><b>' + x.n + '</b>회</td>' +
+        '<td class="z">' + md(x.first) + '</td><td class="z">' + md(x.last) + '</td></tr>';
+    });
+    t.innerHTML = head + "<tbody>" +
+      (shown.length ? body : '<tr><td colspan="5" class="z">두 번 이상 한 일이 없습니다</td></tr>') + "</tbody>";
+    /* 이름은 텍스트로 넣어 따옴표·꺾쇠가 깨지지 않게 한다 */
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr .nm"), function(td, i){
+      if(shown[i]) td.textContent = shown[i].text;
+    });
+    var total = 0;
+    rows.forEach(function(x){ total += x.n; });
+    $("stRepNote").textContent = rows.length
+      ? ("두 번 이상 한 일 " + rows.length + "가지 · 합계 " + total + "회" +
+         (rows.length > MAX ? " · 많은 순으로 " + MAX + "가지만 표시" : ""))
+      : "이 기간에는 같은 일을 두 번 이상 한 기록이 없습니다";
+  }
   function renderDetail(detail, keys){
     renderSeries(keys || []);
     var t = $("stTable"), ids = [], cid;
@@ -4644,7 +4754,7 @@ var HOLIDAYS = {
     var rows = "", tot = { all:0, done:0, rest:0, defer:0, dfDone:0, cancel:0, pushed:0 };
     function cell(v, cls){ return '<td class="' + (v ? (cls || "") : "z") + '">' + (v || "·") + '</td>'; }
     ids.forEach(function(id){
-      var D = detail[id], c = catById(id);
+      var D = detail[id], c = stCat(id);
       var live = D.all - D.cancel;
       var pct = live ? Math.round(D.done / live * 100) : 0;
       ["all","done","rest","defer","dfDone","cancel","pushed"].forEach(function(k){ tot[k] += D[k]; });
@@ -4666,7 +4776,17 @@ var HOLIDAYS = {
     this.textContent = w.hidden ? "자세히 보기" : "간단히 보기";
     if(!w.hidden) setTimeout(function(){ w.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 30);
   };
-  $("statsBtn").onclick = function(){ renderStats(); $("statsOverlay").hidden = false; };
+  $("statsBtn").onclick = function(){
+    stBoard = null; stCache = {};      /* 열 때는 늘 지금 보드부터, 사본은 새로 읽는다 */
+    renderStats(); $("statsOverlay").hidden = false;
+  };
+  Array.prototype.forEach.call($("stBoardSeg").children, function(b){
+    b.onclick = function(){
+      stBoard = (b.dataset.b === profile) ? null : b.dataset.b;
+      if(stBoard) stCache[stBoard] = loadStoreOf(stBoard);   /* 누를 때마다 최신으로 */
+      renderStats();
+    };
+  });
   $("stClose").onclick = function(){ $("statsOverlay").hidden = true; };
   $("statsOverlay").addEventListener("mousedown", function(e){ if(e.target === $("statsOverlay")) $("statsOverlay").hidden = true; });
   Array.prototype.forEach.call($("stPeriods").children, function(b){
