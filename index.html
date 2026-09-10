@@ -892,6 +892,12 @@
   .wrow .wt{font-size:.95rem;line-height:1.35;word-break:keep-all;min-width:0;
     overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .wrow .wact{display:flex;align-items:center;gap:.2rem;align-self:flex-end;}
+  /* 담은 지 며칠 — 뭘 꺼낼지 고르는 화면에서 이게 안 보여 통계까지 들어가야 했다 */
+  .wrow .wage{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--dim);
+    margin-right:.25rem;flex:none;}
+  .wrow .wage.old{color:var(--urgent);}
+  .wrow .wdid{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--done);
+    margin-right:.25rem;flex:none;}
   .wrow .byb{background:none;border:1px dashed var(--line);border-radius:99px;color:var(--dim);
     font-family:"IBM Plex Mono",monospace;font-size:.66rem;padding:.14rem .45rem;cursor:pointer;
     white-space:nowrap;transition:all .12s ease;}
@@ -1215,19 +1221,15 @@
 
     <div id="stWishPane" hidden>
       <div class="tiles">
-        <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">지금 대기 중</span></div>
-        <div class="tile"><span class="tn" id="wsPull">0</span><span class="tl">꺼내 실행</span></div>
-        <div class="tile done"><span class="tn" id="wsDone">0</span><span class="tl">완료</span></div>
-        <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일+ 묵음</span></div>
+        <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">담아둔 것</span></div>
+        <div class="tile done"><span class="tn" id="wsTried">0</span><span class="tl">해본 것</span></div>
+        <div class="tile defer"><span class="tn" id="wsNever">0</span><span class="tl">한 번도 안 함</span></div>
+        <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일+ 방치</span></div>
       </div>
       <p class="hint" id="wsNote" style="font-size:.78rem;margin-top:.5rem"></p>
       <div class="stbox" style="margin-top:.6rem">
-        <h3>대기 중 — 오래 묵은 것부터</h3>
-        <div style="overflow-x:auto;max-height:22rem;overflow-y:auto"><table class="sttable" id="wsWaitTable"></table></div>
-      </div>
-      <div class="stbox" style="margin-top:.7rem">
-        <h3>이 기간에 꺼낸 것</h3>
-        <div style="overflow-x:auto;max-height:20rem;overflow-y:auto"><table class="sttable" id="wsPullTable"></table></div>
+        <h3>담아둔 것 — 안 해본 것부터</h3>
+        <div style="overflow-x:auto;max-height:26rem;overflow-y:auto"><table class="sttable" id="wsWaitTable"></table></div>
       </div>
     </div>
 
@@ -1426,6 +1428,7 @@
       <button type="button" class="clr" id="wishFindClr" title="검색 지우기" hidden>✕</button>
       <div class="wsort" id="wishSort">
         <button type="button" data-s="ord">담은 순</button>
+        <button type="button" data-s="old">오래 묵은 순</button>
         <button type="button" data-s="by">기한 순</button>
         <button type="button" data-s="cat">카테고리</button>
       </div>
@@ -1606,8 +1609,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.8";
-  var APP_BUILD = "2026-09-10 10:40";
+  var APP_VERSION = "v4.9";
+  var APP_BUILD = "2026-09-10 14:10";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2702,6 +2705,32 @@ var HOLIDAYS = {
     layoutList();        /* 목록 높이가 바뀌었으니 칸 크기를 다시 잡는다 */
   }
   /* 담은 지 며칠 됐는지 — ord 는 담은 시각(밀리초). 옛 데이터는 순번만 들어 있어 셈에서 뺀다. */
+  /* 언젠가 항목을 "보드에서 같은 이름으로 몇 번 완료했나"와 이어 붙인다.
+     목록을 그릴 때 한 번만 세고 캐시한다 (1년치를 줄마다 세면 느리다). */
+  var wishDoneMap = null;
+  function buildWishDoneMap(){
+    var m = {}, k, arr, i, it, t;
+    for(k in store.days){
+      if(k === SOMEDAY) continue;
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.canceled || !it.done) continue;
+        t = String(it.text || "").trim();
+        if(!t) continue;
+        if(!m[t]) m[t] = { n:0, last:"" };
+        m[t].n++;
+        if(k > m[t].last) m[t].last = k;
+      }
+    }
+    wishDoneMap = m;
+    return m;
+  }
+  function wishDoneCount(text){
+    var m = wishDoneMap || buildWishDoneMap();
+    var h = m[String(text || "").trim()];
+    return h ? h.n : 0;
+  }
   function waitDays(it){
     if(!it || !it.ord || it.ord < 1e12) return null;
     return Math.max(0, Math.round((fromIso(todayKey) - midnight(new Date(it.ord))) / 864e5));
@@ -2767,6 +2796,15 @@ var HOLIDAYS = {
         if(db === null) return -1;
         return da - db || (b.ord || 0) - (a.ord || 0);
       });
+    } else if(wishSort === "old"){
+      /* 오래 묵은 것부터. 담은 날을 모르는 옛 항목은 맨 아래. */
+      arr.sort(function(a, b){
+        var wa = waitDays(a), wb = waitDays(b);
+        if(wa === null && wb === null) return 0;
+        if(wa === null) return 1;
+        if(wb === null) return -1;
+        return wb - wa;
+      });
     } else if(wishSort === "cat"){
       arr.sort(function(a, b){
         return catIndex(a.cat) - catIndex(b.cat) || (b.ord || 0) - (a.ord || 0);
@@ -2802,6 +2840,8 @@ var HOLIDAYS = {
     row.innerHTML =
       '<span class="wt"></span>' +
       '<span class="wact">' +
+        '<span class="wdid"></span>' +
+        '<span class="wage"></span>' +
         '<button type="button" class="byb"></button>' +
         '<button type="button" class="pull" title="이 날 보드로 가져오기">오늘로</button>' +
         '<button type="button" class="del" title="지우기">✕</button>' +
@@ -2810,6 +2850,15 @@ var HOLIDAYS = {
     t.innerHTML = catChip(it);
     t.appendChild(document.createTextNode(" " + it.text));
     t.title = it.text;
+    /* 담은 지 / 같은 이름으로 해본 횟수 — 여기서 바로 판단할 수 있게 */
+    var w = waitDays(it), age = row.querySelector(".wage");
+    var hitN = wishDoneCount(it.text);
+    age.textContent = (w === null) ? "" : (w === 0 ? "오늘" : w + "일");
+    age.classList.toggle("old", !hitN && w !== null && w >= 30);
+    age.title = (w === null) ? "" : ("담은 지 " + w + "일");
+    var did = row.querySelector(".wdid");
+    did.textContent = hitN ? (hitN + "회 함") : "";
+    did.title = hitN ? "보드에서 같은 이름으로 완료한 횟수" : "";
     /* 기한 버튼 — 누를 때마다 없음 → 이번 달 → 올해 → 없음 */
     var cur = it.by === endOfMonth() ? "month" : (it.by === endOfYear() ? "year" : (it.by ? "date" : ""));
     var byb = row.querySelector(".byb");
@@ -2830,6 +2879,7 @@ var HOLIDAYS = {
     return row;
   }
   function renderWishSheet(){
+    buildWishDoneMap();                     /* 이번 그리기 동안 쓸 횟수 표 */
     var host = $("wishList"), all = wishLive(), arr = wishVisible();
     renderWishFilters(all);
     Array.prototype.forEach.call($("wishSort").children, function(b){
@@ -4196,73 +4246,80 @@ var HOLIDAYS = {
     return c ? '<span class="cat" style="--c:' + safeCatColor(c.color) + '">' + esc(c.name) + '</span>'
              : '<span class="z">·</span>';
   }
-  function renderWishStats(keys){
-    var live = stWishLive(), inRange = {}, i, k, arr, j, it;
-    for(i = 0; i < keys.length; i++) inRange[keys[i]] = 1;
-    var pulled = [];
+  /* 보드에서 완료된 일감을 "이름 → 횟수·마지막 날"로 모아둔다.
+     소닉처럼 하루에 안 끝나는 건 "오늘로" 버튼을 안 쓰고 그날 직접 적게 되는데,
+     그러면 꺼낸 표시(wsrc)가 없어 통계에 안 잡혔다. 이름으로 이으면 적어도 잡힌다. */
+  function doneByName(){
+    var m = {}, k, arr, i, it, t;
     for(k in sd().days){
-      if(k === SOMEDAY || !inRange[k]) continue;
+      if(k === SOMEDAY) continue;
       arr = sd().days[k] || [];
-      for(j = 0; j < arr.length; j++){ it = arr[j]; if(it && it.wsrc) pulled.push(it); }
-    }
-    var doneN = 0, cancelN = 0, waitSum = 0, waitCnt = 0;
-    pulled.forEach(function(x){
-      if(x.canceled) cancelN++;
-      else if(x.done) doneN++;
-      if(x.wadd && x.wsrc){
-        var d = Math.round((fromIso(x.wsrc) - fromIso(x.wadd)) / 864e5);
-        if(d >= 0){ waitSum += d; waitCnt++; }
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || it.canceled || !it.done) continue;
+        t = String(it.text || "").trim();
+        if(!t) continue;
+        if(!m[t]) m[t] = { n:0, last:"" };
+        m[t].n++;
+        if(k > m[t].last) m[t].last = k;
       }
+    }
+    return m;
+  }
+  /* 이 탭은 "지금 담아둔 것이 어떤 상태인가"를 보는 곳이다.
+     기간을 나눠 볼 대상이 아니므로 기간 버튼은 숨기고, 보관 기간(1년) 전체로 센다.
+     기간별 횟수는 할 일 탭의 "반복 횟수" 표가 담당한다. */
+  function renderWishStats(){
+    var live = stWishLive(), dn = doneByName();
+    function hit(x){ return dn[String(x.text || "").trim()] || null; }
+    var triedN = 0, neverN = 0, oldN = 0;
+    live.forEach(function(x){
+      var h = hit(x), w = waitDays(x);
+      if(h){ triedN++; return; }
+      neverN++;
+      if(w !== null && w >= 30) oldN++;      /* 해본 적 있으면 방치가 아니다 */
     });
-    var oldN = 0;
-    live.forEach(function(x){ var w = waitDays(x); if(w !== null && w >= 30) oldN++; });
     $("wsWait").textContent = live.length;
-    $("wsPull").textContent = pulled.length;
-    $("wsDone").textContent = doneN;
+    $("wsTried").textContent = triedN;
+    $("wsNever").textContent = neverN;
     $("wsOld").textContent = oldN;
-    var liveP = pulled.length - cancelN;      /* 취소한 것은 처리율에서 뺀다 */
-    $("wsNote").innerHTML =
-      (pulled.length ? ("꺼낸 " + pulled.length + "건 중 완료 " + doneN + "건 · 처리율 " +
-        (liveP ? Math.round(doneN / liveP * 100) : 0) + "%" + (cancelN ? " · 취소 " + cancelN + "건" : "") +
-        (waitCnt ? " · 담아둔 뒤 평균 " + Math.round(waitSum / waitCnt) + "일 만에 꺼냈습니다" : ""))
-        : "이 기간에 꺼낸 것이 없습니다.") +
-      "<br>꺼낸 기록은 그 항목이 보드에 남아 있는 동안(1년) 집계됩니다. v3.8 이전에 꺼낸 것은 표시가 없어 세지 않습니다.";
+    $("wsNote").innerHTML = live.length
+      ? ("담아둔 " + live.length + "건 중 <b>" + triedN + "건은 한 번이라도 해봤고, " + neverN +
+         "건은 아직 손도 안 댔습니다</b>" + (oldN ? " · 그중 " + oldN + "건은 담은 지 30일이 넘었습니다" : "") +
+         "<br>보드에 같은 이름으로 완료된 것을 세므로, 목록에서 꺼내지 않고 그날 직접 적어도 잡힙니다. " +
+         "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
+      : "아직 담아둔 게 없습니다.";
 
-    /* 대기 중 — 오래 묵은 것부터 */
-    var head = '<thead><tr><th>대기 중인 것</th><th>태그</th><th>담은 지</th><th>기한</th></tr></thead>', body = "";
-    /* 오래 묵은 것부터. 담은 날을 알 수 없는 옛 항목은 맨 아래로. */
-    live.slice().sort(function(a, b){
-      var wa = waitDays(a), wb = waitDays(b);
-      if(wa === null && wb === null) return 0;
-      if(wa === null) return 1;
-      if(wb === null) return -1;
-      return wb - wa;
-    }).forEach(function(x){
-      var w = waitDays(x);
-      body += '<tr><td>' + esc(x.text) + '</td><td>' + catCell(x.cat) + '</td>' +
-        '<td class="' + (w !== null && w >= 30 ? "bad" : "z") + '">' + (w === null ? "·" : w + "일") + '</td>' +
+    /* 안 해본 것 → 오래 묵은 것 순. 해본 것은 아래로 내리고 최근에 한 것부터. */
+    var head = '<thead><tr><th>담아둔 것</th><th>태그</th><th>담은 지</th>' +
+               '<th>한 횟수</th><th>마지막</th><th>기한</th></tr></thead>', body = "";
+    function md(k){ var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
+    var sorted = live.slice().sort(function(a, b){
+      var ha = hit(a), hb = hit(b);
+      if(!ha !== !hb) return ha ? 1 : -1;                 /* 안 해본 것이 위 */
+      if(!ha && !hb){                                     /* 둘 다 안 해봤으면 오래 묵은 것부터 */
+        var wa = waitDays(a), wb = waitDays(b);
+        if(wa === null) return 1;
+        if(wb === null) return -1;
+        return wb - wa;
+      }
+      return hb.last < ha.last ? -1 : 1;                  /* 해본 것은 최근에 한 것부터 */
+    });
+    sorted.forEach(function(x){
+      var h = hit(x), w = waitDays(x);
+      var stale = !h && w !== null && w >= 30;
+      body += '<tr><td class="nm"></td><td>' + catCell(x.cat) + '</td>' +
+        '<td class="' + (stale ? "bad" : "z") + '">' + (w === null ? "·" : w + "일") + '</td>' +
+        '<td class="' + (h ? "ok" : "z") + '">' + (h ? "<b>" + h.n + "</b>회" : "—") + '</td>' +
+        '<td class="z">' + (h && h.last ? md(h.last) : "·") + '</td>' +
         '<td class="' + (x.by ? "df" : "z") + '">' + (byLabel(x) || "·") + '</td></tr>';
     });
-    $("wsWaitTable").innerHTML = head + "<tbody>" +
-      (live.length ? body : '<tr><td colspan="4" class="z">대기 중인 것이 없습니다</td></tr>') + "</tbody>";
-
-    /* 이 기간에 꺼낸 것 */
-    var h2 = '<thead><tr><th>꺼낸 것</th><th>태그</th><th>꺼낸 날</th><th>기다린 기간</th><th>상태</th></tr></thead>', b2 = "";
-    pulled.slice().sort(function(a, b){ return (b.wsrc || "") < (a.wsrc || "") ? -1 : 1; }).forEach(function(x){
-      var wd = (x.wadd && x.wsrc) ? Math.round((fromIso(x.wsrc) - fromIso(x.wadd)) / 864e5) : null;
-      /* 꺼낸 지 일주일이 넘었는데 아직 안 끝난 것만 붉게 — 또 미루고 있다는 신호 */
-      var stale = x.wsrc && Math.round((fromIso(todayKey) - fromIso(x.wsrc)) / 864e5) > 7;
-      var st = x.canceled ? '<span class="cx">취소</span>'
-             : (x.done ? '<span class="ok">완료</span>'
-             : (x.defer ? '<span class="df">연기</span>'
-             : '<span class="' + (stale ? "bad" : "") + '">진행 중</span>'));
-      b2 += '<tr><td>' + esc(x.text) + '</td><td>' + catCell(x.cat) + '</td>' +
-        '<td class="z">' + (x.wsrc ? x.wsrc.slice(5).replace("-", "/") : "·") + '</td>' +
-        '<td class="z">' + (wd === null ? "·" : wd + "일") + '</td>' +
-        '<td>' + st + '</td></tr>';
+    var t = $("wsWaitTable");
+    t.innerHTML = head + "<tbody>" +
+      (live.length ? body : '<tr><td colspan="6" class="z">담아둔 것이 없습니다</td></tr>') + "</tbody>";
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr .nm"), function(td, i){
+      if(sorted[i]) td.textContent = sorted[i].text;
     });
-    $("wsPullTable").innerHTML = h2 + "<tbody>" +
-      (pulled.length ? b2 : '<tr><td colspan="5" class="z">이 기간에 꺼낸 것이 없습니다</td></tr>') + "</tbody>";
   }
 
   /* ---------- 통계: 성공·실패 탭 ----------
@@ -4472,12 +4529,15 @@ var HOLIDAYS = {
                  : ((fs.getMonth()+1)+"/"+fs.getDate()+" ~ "+(fe.getMonth()+1)+"/"+fe.getDate())) +
       " · 카테고리는 완료된 항목만 셉니다";
     Array.prototype.forEach.call($("stPeriods").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
+    /* 언젠가 탭은 "지금 담아둔 것의 상태"를 보는 곳이라 기간을 나눌 대상이 아니다 */
+    $("stPeriods").hidden = stTab === "wish";
+    $("stRange").hidden = stTab === "wish";
     Array.prototype.forEach.call($("stTabs").children, function(b){ b.classList.toggle("on", b.dataset.t === stTab); });
     $("stTaskPane").hidden = stTab !== "task";
     $("stWishPane").hidden = stTab !== "wish";
     $("stHabPane").hidden = stTab !== "hab";
     $("stDetail").hidden = stTab !== "task";
-    if(stTab === "wish"){ renderWishStats(keys); return; }
+    if(stTab === "wish"){ renderWishStats(); return; }
     if(stTab === "hab"){ renderHabStats(keys); return; }
 
     var done = 0, rest = 0, defer = 0, cancel = 0;
