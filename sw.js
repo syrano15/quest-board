@@ -12,8 +12,10 @@
  *  4) 보드 화면(navigate)은 캐시를 먼저 주고 새 버전은 뒤에서 받아둔다.
  *     껍데기는 즉시 뜨고, 내 자료는 localStorage 에 있으니 바로 쓸 수 있다.
  */
-var VER   = "v4-11";
-var CACHE = "questboard-" + VER;          /* 앱 파일 */
+/* 캐시 이름에 버전을 붙이지 않는다. 보드 화면은 열 때마다 뒤에서 새로 받아
+   이 캐시에 덮어쓰고, 새 내용이면 화면에 "새로고침" 버튼을 띄운다.
+   그래서 앱을 고칠 때 index.html 만 올리면 되고 이 파일은 손대지 않아도 된다. */
+var CACHE = "questboard-shell";           /* 앱 파일 */
 var FONTS = "questboard-fonts";           /* 글꼴 — 버전과 무관하게 오래 남긴다 */
 var SHELL = "./index.html";
 var ASSETS = ["./", "./index.html", "./manifest.json",
@@ -50,6 +52,15 @@ self.addEventListener("activate", function(e){
   );
 });
 
+/* 새 index.html 이 도착했을 때 열려 있는 화면들에 알린다 */
+function notifyClients(){
+  try{
+    self.clients.matchAll({ type:"window" }).then(function(list){
+      list.forEach(function(c){ c.postMessage({ qb:"update" }); });
+    }).catch(function(){});
+  }catch(e){}
+}
+
 /* 껍데기가 없을 때 마지막으로 보여줄 화면. 브라우저 오류 페이지보다는 낫다. */
 function offlinePage(){
   return new Response(
@@ -75,21 +86,33 @@ self.addEventListener("fetch", function(e){
   var url;
   try{ url = new URL(req.url); }catch(err){ return; }
 
-  /* ---- 보드 화면: 캐시 먼저, 새 버전은 뒤에서 ---- */
+  /* ---- 보드 화면: 캐시 먼저 주고, 새 버전은 뒤에서 받아 비교한다 ---- */
   if(req.mode === "navigate"){
     e.respondWith(
-      caches.match(req, { ignoreSearch:true }).then(function(hit){
-        return hit || caches.match(SHELL);
+      caches.match(SHELL).then(function(hit){
+        return hit || caches.match(req, { ignoreSearch:true });
       }).then(function(hit){
-        var net = fetch(req).then(function(res){
+        /* navigate 요청 객체를 그대로 fetch 에 다시 쓰면 브라우저가 거부할 수 있다.
+           주소만 넘겨 새로 받아온다. */
+        var net = fetch(req.url, { cache:"no-store", credentials:"same-origin" });
+        if(hit){
+          /* 비교용 사본은 hit 을 화면에 넘기기 전에 미리 떠 둔다.
+             넘긴 뒤에는 본문이 이미 쓰여서 clone() 이 실패한다. */
+          var before = hit.clone();
+          e.waitUntil(net.then(function(res){
+            if(!res || !res.ok) return;
+            var fresh = res.clone();
+            putSafe(CACHE, SHELL, res);
+            return Promise.all([fresh.text(), before.text()]).then(function(a){
+              if(a[0] !== a[1]) notifyClients();     /* 내용이 바뀌었으면 알린다 */
+            });
+          }).catch(function(){}));
+          return hit;                                /* 화면은 즉시 뜬다 */
+        }
+        return net.then(function(res){
           if(res && res.ok) putSafe(CACHE, SHELL, res);
           return res;
-        });
-        if(hit){
-          e.waitUntil(net.catch(function(){}));   /* 새 버전은 조용히 받아둔다 */
-          return hit;
-        }
-        return net.catch(function(){ return offlinePage(); });
+        }).catch(function(){ return offlinePage(); });
       }).catch(function(){ return offlinePage(); })
     );
     return;
