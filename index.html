@@ -1662,8 +1662,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.11";
-  var APP_BUILD = "2026-09-10 17:30";
+  var APP_VERSION = "v4.12";
+  var APP_BUILD = "2026-09-10 18:20";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -2084,14 +2084,20 @@ var HOLIDAYS = {
   }
   function fmtDay(k){ var d = fromIso(k); return (d.getMonth()+1)+"/"+d.getDate()+" ("+DAYS[d.getDay()]+")"; }
   var toastTimer = null;
-  function toast(msg, key){
+  /* act 은 날짜 문자열이면 그 날로 이동, 함수면 그대로 실행한다 */
+  function toast(msg, act, label, ms){
     var el = $("toast");
     $("toastText").textContent = msg;
-    $("toastGo").hidden = !key;
-    $("toastGo").onclick = function(){ if(key){ viewKey = key; render(); } el.hidden = true; };
+    $("toastGo").hidden = !act;
+    $("toastGo").textContent = label || "보기";
+    $("toastGo").onclick = function(){
+      el.hidden = true;
+      if(typeof act === "function") act();
+      else if(act){ viewKey = act; render(); }
+    };
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ el.hidden = true; }, 6000);
+    toastTimer = setTimeout(function(){ el.hidden = true; }, ms || 6000);
   }
   function lineOf(it){
     var c = catById(it.cat);
@@ -5355,6 +5361,7 @@ var HOLIDAYS = {
                 mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres,
                 payload:payload, localNewerThan:localNewerThan,
                 get habFresh(){ return habFresh; } };
+  window.QBtoast = toast;          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
   window.addEventListener("focus", function(){ pullNow(false); });
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) pullNow(false); });
   setInterval(function(){ pullNow(false); }, 300000);
@@ -5404,7 +5411,18 @@ var HOLIDAYS = {
 })();
 </script>
 <script>
-if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
+  /* 새 index.html 이 올라오면 서비스 워커가 알려준다 → 새로고침 버튼을 띄운다.
+     이 방식이라 앞으로는 index.html 만 올려도 반영된다 (sw.js 는 손댈 필요 없음). */
+  navigator.serviceWorker.addEventListener("message", function(e){
+    if(e.data && e.data.qb === "update" && window.QBtoast){
+      window.QBtoast("새 버전이 올라왔습니다", function(){ location.reload(); }, "새로고침", 30000);
+    }
+  });
+  /* addEventListener 로 받을 때는 이걸 불러줘야 밀린 메시지가 전달된다 (표준 규정) */
+  if(navigator.serviceWorker.startMessages) navigator.serviceWorker.startMessages();
+}
 </script>
 </body>
 </html>
