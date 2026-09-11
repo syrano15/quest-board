@@ -1678,8 +1678,8 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v4.14";
-  var APP_BUILD = "2026-09-11 01:10";
+  var APP_VERSION = "v4.15";
+  var APP_BUILD = "2026-09-11 09:30";
   var VER_KEY = "questboard:ver";
   var DAYS = ["일","월","화","수","목","금","토"];
 var HOLIDAYS = {
@@ -1924,7 +1924,9 @@ var HOLIDAYS = {
     }
     return changed;
   }
+  var touched = false;              /* 이번 세션에서 뭔가 고쳤는가 */
   function save(){
+    touched = true;
     stampMeta();
     if(typeof queuePush === "function") queuePush();
     try{
@@ -5258,12 +5260,24 @@ var HOLIDAYS = {
       return id;
     });
   }
+  /* ---------- 앱 버전 문지기 ----------
+     폰을 거의 안 켜서 버전이 크게 벌어진다. 오래된 앱이 옛 모양의 자료를 올리면
+     지금 앱이 그걸 그대로 받아 망가질 수 있다. 그래서 자료에 앱 버전을 같이 싣고,
+     나보다 오래된 앱이 쓴 자료는 "더하기만" 한다(덮어쓰기·삭제 금지). */
+  function verNum(v){
+    var m = /v?(\d+)\.(\d+)/.exec(String(v || ""));
+    return m ? (+m[1]) * 1000 + (+m[2]) : 0;
+  }
+  var MYVER = verNum(APP_VERSION);
+  var remoteNewer = false;          /* 원격이 더 새 버전이면 올리지 않는다 */
+  var verWarned = false;            /* 버전 안내는 한 번만 */
   function payload(){
     var o = { v:4, days:store.days, dismissed:store.dismissed, cats:store.cats,
               tomb:store.tomb, weights:store.weights,
               hres:hres(), meta:store.meta, at:Date.now() };
     /* 기본값 그대로인 기기는 목록을 올리지 않는다. 기록(hres)만 올린다. */
     if(!habFresh){ o.habits = habits(); o.habAt = habAt; }
+    o.app = APP_VERSION;            /* 어느 버전이 쓴 자료인지 남긴다 */
     return o;
   }
   var needPush = false;
@@ -5294,11 +5308,56 @@ var HOLIDAYS = {
     for(k in out) out[k].sort(function(a, b){ return (a.ord || 0) - (b.ord || 0); });
     return out;
   }
+  /* 원격 자료에서 "없는 항목만" 더한다. 덮거나 지우지 않는다. */
+  function addOnly(rdays, rda){
+    var changed = false, k, have, arr, i, it;
+    for(k in rdays){
+      arr = store.days[k] || [];
+      have = {};
+      for(i = 0; i < arr.length; i++) if(arr[i] && arr[i].id) have[arr[i].id] = 1;
+      for(i = 0; i < (rdays[k] || []).length; i++){
+        it = rdays[k][i];
+        if(!it || !it.id || have[it.id]) continue;
+        if(k !== SOMEDAY && store.tomb[it.id]) continue;   /* 지운 건 되살리지 않는다 */
+        arr.push(it); changed = true;
+      }
+      if(arr.length){
+        store.days[k] = arr;
+        store.meta.dayAt[k] = Math.max((store.meta.dayAt||{})[k] || 0, (rda||{})[k] || 0, 1);
+      }
+    }
+    return changed;
+  }
   function mergeRemote(r){
     needPush = false;
     if(!r || typeof r !== "object") return false;
     var changed = false, rm = r.meta || { dayAt:{}, catsAt:0 }, rda = rm.dayAt || {};
     var rdays = r.days || {}, k, id;
+
+    /* 버전 판정 — app 표시가 없으면 v4.14 이전으로 본다 */
+    var rApp = verNum(r.app);
+    var older = (rApp === 0) || (rApp < MYVER);
+    remoteNewer = rApp > MYVER;
+    if(remoteNewer){
+      /* 내 앱이 더 오래됐다. 받기만 하고 올리지 않는다(내 옛 모양으로 덮으면 안 된다). */
+      if(!verWarned){
+        verWarned = true;
+        toast("이 기기 앱이 오래됐습니다 (" + APP_VERSION + " → " + r.app + ")",
+              function(){ location.reload(); }, "새로고침", 30000);
+      }
+    }
+    if(older && rApp !== MYVER){
+      /* 구버전이 쓴 자료 — 더하기만 한다. 묘비·카테고리·덮어쓰기는 적용하지 않는다. */
+      if(addOnly(rdays, rda)) changed = true;
+      if(habMergeRes(r.hres)){ habSave(); changed = true; }
+      needPush = true;                       /* 정리된 자료를 내가 올려 바로잡는다 */
+      if(!verWarned && rApp > 0){
+        verWarned = true;
+        toast("다른 기기 앱이 오래됐습니다 (" + r.app + ") · 그 기기에서 앱을 한 번 열어주세요",
+              null, null, 20000);
+      }
+      return changed;
+    }
 
     if((r.v || 0) >= 4){
       /* --- 항목 단위 병합 --- */
@@ -5384,6 +5443,7 @@ var HOLIDAYS = {
   }
   function pushNow(){
     if(!syncOn || !token) return Promise.resolve();
+    if(remoteNewer){ setState("err","앱이 오래돼서 올리지 않았습니다"); return Promise.resolve(); }
     setState("busy","올리는 중…");
     return ensureGist().then(function(id){
       var files = {}; files[profile + ".json"] = { content: JSON.stringify(payload()) };
@@ -5546,7 +5606,8 @@ var HOLIDAYS = {
                 mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres,
                 payload:payload, localNewerThan:localNewerThan,
                 get habFresh(){ return habFresh; } };
-  window.QBtoast = toast;          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
+  window.QBtoast = toast;
+  window.QBtouched = function(){ return touched; };          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
   window.addEventListener("focus", function(){ pullNow(false); });
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) pullNow(false); });
   setInterval(function(){ pullNow(false); }, 300000);
@@ -5610,7 +5671,18 @@ if("serviceWorker" in navigator){
   /* 새 index.html 이 올라오면 서비스 워커가 알려준다 → 새로고침 버튼을 띄운다.
      이 방식이라 앞으로는 index.html 만 올려도 반영된다 (sw.js 는 손댈 필요 없음). */
   navigator.serviceWorker.addEventListener("message", function(e){
-    if(e.data && e.data.qb === "update" && window.QBtoast){
+    if(!e.data || e.data.qb !== "update") return;
+    /* 아직 아무것도 고치지 않았다면 알림 없이 바로 새 버전으로 갈아탄다.
+       오래된 앱이 옛 로직으로 동기화를 한 바퀴 돌리는 창을 없애기 위한 것이다.
+       한 세션에 한 번만 (무한 새로고침 방지). */
+    var once = false;
+    try{ once = sessionStorage.getItem("questboard:selfreload") === "1"; }catch(err){}
+    if(!once && window.QBtouched && !window.QBtouched()){
+      try{ sessionStorage.setItem("questboard:selfreload", "1"); }catch(err){}
+      location.reload();
+      return;
+    }
+    if(window.QBtoast){
       window.QBtoast("새 버전이 올라왔습니다", function(){ location.reload(); }, "새로고침", 30000);
     }
   });
