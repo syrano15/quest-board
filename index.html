@@ -344,11 +344,16 @@
   .habits .hedit{flex:none;background:none;border:1px dashed var(--line);border-radius:.4rem;color:var(--dim);
     font-size:.74rem;padding:.22rem .5rem;cursor:pointer;transition:all .12s ease;}
   .habits .hedit:hover{border-color:var(--muted);color:var(--text);border-style:solid;}
-  .hrow{display:grid;grid-template-columns:1fr auto auto auto auto;gap:.3rem .5rem;align-items:center;
+  .hrow{display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:.3rem .5rem;align-items:center;
     padding:.35rem 0;border-bottom:1px solid var(--line-soft);}
   .hrow input[type=text]{min-width:0;background:var(--surface);border:1px solid var(--line);
     border-radius:.4rem;color:var(--text);font:inherit;font-size:.92rem;padding:.42rem .6rem;}
   .hrow .hdesc{grid-column:1/-1;font-size:.82rem;padding:.3rem .55rem;color:var(--muted);}
+  /* 좁은 화면에서는 이름칸이 눌려 안 보인다 — 이름을 한 줄 차지하게 하고 단추들을 아래로 */
+  @media (max-width:600px){
+    .hrow{grid-template-columns:auto auto auto 1fr auto;}
+    .hrow .hname{grid-column:1/-1;}
+  }
   .hlist{display:flex;flex-direction:column;gap:.4rem;max-height:22rem;overflow-y:auto;}
   .hmode{display:flex;gap:.2rem;flex:none;}
   .hmode button{background:var(--surface-2);border:1px solid var(--line);border-radius:.35rem;
@@ -519,6 +524,13 @@
   .hrow .haskb{background:var(--surface-2);border:1px solid var(--line);border-radius:.35rem;color:var(--dim);
     font-size:.72rem;font-weight:600;padding:.24rem .45rem;cursor:pointer;transition:all .12s ease;white-space:nowrap;}
   .hrow .haskb.on{border-color:var(--accent-dim);color:var(--accent);}
+  .amthint{font-size:.82rem;color:var(--accent);font-weight:700;}
+  .whyt td.wa{white-space:nowrap;text-align:right;width:6.5rem;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;}
+  .whyt td.wa.z{color:var(--dim);font-weight:400;}
+  .spend{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;}
+  .spend > div{flex:1 1 8rem;border:1px solid var(--line);border-radius:.5rem;padding:.45rem .6rem;}
+  .spend b{display:block;font-family:"IBM Plex Mono",monospace;font-size:1.05rem;color:var(--accent);}
+  .spend span{font-size:.74rem;color:var(--dim);}
   .whyt{width:100%;border-collapse:collapse;}
   .whyt td{padding:.42rem .5rem;border-bottom:1px solid var(--line-soft);font-size:.86rem;vertical-align:baseline;}
   .whyt td.wd{white-space:nowrap;color:var(--dim);font-size:.8rem;width:5.2rem;}
@@ -1281,7 +1293,8 @@
     <div class="htab">
       <div class="hrow"><code>실패 · 예외</code><span>찍으면 사유를 묻습니다. 기록은 먼저 남으니 창을 그냥 닫아도 됩니다</span></div>
       <div class="hrow"><code>사유</code><span>찍힌 항목 옆 단추로 나중에 적거나 고칩니다. 자주 쓴 말이 다음부터 버튼으로 뜹니다</span></div>
-      <div class="hrow"><code>묻지 않기</code><span>항목 관리에서 <b>사유 묻기</b>를 끄면 그 항목은 안 묻습니다</span></div>
+      <div class="hrow"><code>금액</code><span>"돈 안쓰기"처럼 돈이 걸린 항목은 얼마 썼는지도 적습니다. 통계에 합계와 사유별 지출이 나옵니다</span></div>
+      <div class="hrow"><code>묻지 않기</code><span>항목 관리에서 <b>사유 묻기</b>·<b>금액</b>을 각각 끄고 켭니다</span></div>
       <div class="hrow"><code>같은 버튼 다시</code><span>잘못 눌렀을 때 — 기록이 지워집니다 (사유도 같이)</span></div>
     </div>
     <p class="hsec">게임·드라마처럼 여러 날 걸리는 것</p>
@@ -1375,6 +1388,11 @@
       <div class="stbox" style="margin-top:.6rem">
         <h3>항목별</h3>
         <div style="overflow-x:auto"><table class="sttable" id="hsTable"></table></div>
+      </div>
+      <div class="stbox" style="margin-top:.7rem" id="hsSpendBox" hidden>
+        <h3 id="hsSpendH">쓴 돈</h3>
+        <div class="spend" id="hsSpend"></div>
+        <div style="overflow-x:auto"><table class="sttable" id="hsSpendTable"></table></div>
       </div>
       <div class="stbox" style="margin-top:.7rem" id="hsWhyBox" hidden>
         <h3>실패·예외 사유</h3>
@@ -1744,6 +1762,14 @@
       <div class="chips" id="whyChips"></div>
       <span class="fl">한 줄로</span>
       <textarea class="ft sm" id="whyText" placeholder="예: 세제·휴지 떨어져서" maxlength="120"></textarea>
+      <div id="whyAmtWrap" style="display:flex;flex-direction:column;gap:.4rem">
+        <span class="fl">얼마 (모르면 비워두세요)</span>
+        <div class="fnum">
+          <input type="number" id="whyAmt" min="0" max="99999999" step="100" placeholder="0" inputmode="numeric">
+          <span>원</span>
+          <span class="amthint" id="whyAmtHint"></span>
+        </div>
+      </div>
       <div class="composer-row">
         <button type="button" class="ghost danger" id="whyClear">사유 지우기</button>
         <span style="flex:1"></span>
@@ -1829,13 +1855,17 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.2";
-  var APP_BUILD = "2026-09-13 15:10";
+  var APP_VERSION = "v5.3";
+  var APP_BUILD = "2026-09-13 16:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.3",  d:"2026-09-13", n:[
+      "사유와 함께 얼마 썼는지도 적는다 — 통계에 합계·평균과 사유별 지출 표",
+      "금액을 물을지는 항목마다 정한다 (이름에 돈·지출 같은 말이 있으면 저절로 켜짐)"
+    ]},
     { v:"v5.2",  d:"2026-09-13", n:[
       "성공·실패에 실패·예외를 찍으면 사유를 묻는다 — 내 것 사는 게 아니라 집안일·가족처럼 피치 못한 지출이 있어서",
       "자주 쓴 사유가 다음부터 버튼으로 뜬다 · 통계 성공·실패 탭에 사유 목록 추가",
@@ -2960,15 +2990,20 @@ var HOLIDAYS = {
     var d = hres()[k], o = d && d[id];
     return (o && (o.v === 1 || o.v === 0 || o.v === 2)) ? o.v : null;
   }
-  function setHab(k, id, v, why){
+  /* ex = { why, amt } — 넘기지 않은 값은 원래 있던 것을 그대로 둔다 */
+  function setHab(k, id, v, ex){
     var d = hres(), old = (d[k] && d[k][id]) || null;
     if(v === null){ if(d[k]) delete d[k][id]; }
     else {
       if(!d[k]) d[k] = {};
       var o = { v:v, at:Date.now() };
-      /* 사유는 실패·예외에만 붙는다. 성공으로 바꾸면 같이 떨어져 나간다. */
-      var w = (why === undefined) ? (old && old.why) : why;
-      if((v === 0 || v === 2) && w) o.why = String(w).slice(0, 120);
+      /* 사유·금액은 실패·예외에만 붙는다. 성공으로 바꾸면 같이 떨어져 나간다. */
+      var w = (ex && ex.why !== undefined) ? ex.why : (old && old.why);
+      var a = (ex && ex.amt !== undefined) ? ex.amt : (old && old.amt);
+      if(v === 0 || v === 2){
+        if(w) o.why = String(w).slice(0, 120);
+        if(a > 0) o.amt = Math.min(Math.round(a), 1e10);
+      }
       d[k][id] = o;
     }
     if(d[k] && !Object.keys(d[k]).length) delete d[k];
@@ -2978,8 +3013,25 @@ var HOLIDAYS = {
     var d = hres()[k], o = d && d[id];
     return (o && o.why) ? o.why : "";
   }
+  function habAmtOf(k, id){
+    var d = hres()[k], o = d && d[id];
+    return (o && o.amt > 0) ? o.amt : 0;
+  }
   /* 사유를 물을 항목인가 — 기본은 묻는다. 귀찮으면 항목 관리에서 끌 수 있다(noask). */
   function habAsks(h){ return !!h && !h.noask; }
+  /* 금액까지 적을 항목인가 — "돈 안쓰기"처럼 이름에 티가 나면 저절로 켜고,
+     항목 관리에서 켜고 끌 수 있다(h.amt). 자전거·버스 항목에 금액 칸이 뜨면 성가시다. */
+  function habAmt(h){
+    if(!h) return false;
+    if(h.amt === 1) return true;
+    if(h.amt === 0) return false;
+    return /돈|지출|비용|소비|절약|용돈|카드|과금|결제/.test(String(h.name || ""));
+  }
+  /* 12000 → "12,000원" */
+  function won(n){
+    n = Math.round(+n || 0);
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
+  }
   /* 그 항목에 예전에 적어둔 사유 — 자주 쓴 것부터. 매번 같은 말을 다시 치지 않게. */
   function whyHistory(id){
     var d = hres(), k, o, m = {}, arr = [], t;
@@ -3007,6 +3059,10 @@ var HOLIDAYS = {
     $("whySub").textContent = (d.getMonth()+1) + "/" + d.getDate() + " (" + DAYS[d.getDay()] + ") · " +
       (v === 2 ? "예외" : "실패") + (h.desc ? " · " + h.desc : "");
     $("whyText").value = habWhy(k, h.id);
+    var useAmt = habAmt(h), a = habAmtOf(k, h.id);
+    $("whyAmtWrap").style.display = useAmt ? "flex" : "none";
+    $("whyAmt").value = a > 0 ? a : "";
+    paintAmtHint();
     var hist = whyHistory(h.id), list = hist.slice();
     /* 쓴 적이 없으면 보기를 띄우고, 쌓이기 시작하면 내가 쓴 말만 남긴다 */
     if(list.length < 4) WHY_SEED.forEach(function(s){ if(list.indexOf(s) < 0 && list.length < 8) list.push(s); });
@@ -3025,6 +3081,11 @@ var HOLIDAYS = {
     });
     $("whyOverlay").hidden = false;
     setTimeout(function(){ $("whyText").focus(); }, 30);
+  }
+  /* 0 이 잔뜩 붙은 숫자는 눈으로 세기 어렵다. 옆에 읽어서 붙여준다. */
+  function paintAmtHint(){
+    var v = parseInt($("whyAmt").value, 10);
+    $("whyAmtHint").textContent = (v > 0) ? won(v) : "";
   }
   function closeWhy(){ $("whyOverlay").hidden = true; whyK = null; whyH = null; }
   function habCount(id){
@@ -3073,12 +3134,14 @@ var HOLIDAYS = {
       };
       /* 찍혀 있는 실패·예외에는 사유 단추를 붙인다 — 적힌 게 있으면 그 글을 그대로 보여준다 */
       if(cur === 0 || cur === 2){
-        var w = habWhy(viewKey, h.id);
+        var w = habWhy(viewKey, h.id), am = habAmtOf(viewKey, h.id);
+        var lab = am > 0 ? (won(am) + (w ? " · " + w : "")) : w;
         var wb = document.createElement("button");
         wb.type = "button";
-        wb.className = "hwhy" + (w ? " has" : "");
-        wb.textContent = w || "사유";
-        wb.title = w ? (w + "\n(눌러서 고치기)") : "왜 그랬는지 한 줄 남기기";
+        wb.className = "hwhy" + (lab ? " has" : "");
+        wb.textContent = lab || (habAmt(h) ? "사유·금액" : "사유");
+        wb.title = lab ? (lab + "\n(눌러서 고치기)")
+                       : (habAmt(h) ? "얼마 썼는지와 왜 그랬는지 남기기" : "왜 그랬는지 한 줄 남기기");
         wb.onclick = function(){ openWhy(viewKey, h); };
         el.appendChild(wb);
       }
@@ -3110,6 +3173,7 @@ var HOLIDAYS = {
           '<button type="button" data-m="all" title="쉬는 날에도 체크합니다">매일</button>' +
         '</span>' +
         '<button type="button" class="haskb">사유 묻기</button>' +
+        '<button type="button" class="haskb hamtb">금액</button>' +
         '<span class="catuse"></span>' +
         '<button class="icon" type="button" aria-label="삭제">' + XMARK + '</button>' +
         '<input type="text" class="hdesc" maxlength="40" placeholder="세부 기준 (예: 커피는 제외)">';
@@ -3124,6 +3188,14 @@ var HOLIDAYS = {
                             : "사유를 묻지 않습니다 (눌러서 켜기)";
       ab.onclick = function(){
         if(habAsks(h)) h.noask = 1; else delete h.noask;
+        habTouch(); save(); renderHabList(); render();
+      };
+      var mb = row.querySelector(".hamtb");
+      mb.classList.toggle("on", habAmt(h));
+      mb.title = habAmt(h) ? "사유와 함께 얼마 썼는지도 적습니다 (눌러서 끄기)"
+                           : "금액은 묻지 않습니다 (눌러서 켜기)";
+      mb.onclick = function(){
+        h.amt = habAmt(h) ? 0 : 1;
         habTouch(); save(); renderHabList(); render();
       };
       Array.prototype.forEach.call(row.querySelector(".hmode").children, function(b){
@@ -5444,13 +5516,17 @@ var HOLIDAYS = {
         if(!habApplies(h, k)) continue;
         o = d[k][h.id];
         if(!o || (o.v !== 0 && o.v !== 2)) continue;
-        rows.push({ k:k, id:h.id, name:h.name, v:o.v, why:(o.why || "").trim() });
+        rows.push({ k:k, id:h.id, name:h.name, v:o.v, why:(o.why || "").trim(),
+                    amt:(o.amt > 0 ? o.amt : 0), useAmt:habAmt(h) });
       }
     }
     rows.sort(function(a, b){ return a.k < b.k ? 1 : (a.k > b.k ? -1 : 0); });
     var box = $("hsWhyBox");
+    renderSpend(rows);
     if(!rows.length){ box.hidden = true; return; }
     box.hidden = false;
+    var anyAmt = false;
+    rows.forEach(function(r){ if(r.useAmt) anyAmt = true; });
     var MAX = 60, shown = rows.slice(0, MAX), body = "", withWhy = 0;
     rows.forEach(function(r){ if(r.why) withWhy++; });
     shown.forEach(function(r){
@@ -5458,7 +5534,9 @@ var HOLIDAYS = {
       body += '<tr><td class="wd">' + (dd.getMonth()+1) + '/' + dd.getDate() +
         ' (' + DAYS[dd.getDay()] + ')</td>' +
         '<td class="wv"><span class="' + (r.v === 2 ? "ex" : "no") + '">' + (r.v === 2 ? "예외" : "실패") + '</span></td>' +
-        '<td class="wn nmc"></td><td class="ww whyc"></td></tr>';
+        '<td class="wn nmc"></td><td class="ww whyc"></td>' +
+        (anyAmt ? '<td class="wa' + (r.amt ? '' : ' z') + '">' + (r.amt ? won(r.amt) : (r.useAmt ? '·' : '')) + '</td>' : '') +
+        '</tr>';
     });
     var t = $("hsWhyTable");
     t.innerHTML = "<tbody>" + body + "</tbody>";
@@ -5474,6 +5552,50 @@ var HOLIDAYS = {
       (rows.length > MAX ? " · 최근 " + MAX + "번만 표시" : "") +
       " · 사유는 보드 맨 위 체크 줄에서 적고 고칩니다";
   }
+  /* 금액을 적는 항목이 있으면 얼마나 어디에 썼는지 따로 모아 보여준다.
+     성공률만 보는 것보다 "생필품 3번 42,000원" 이 눈에 들어온다. */
+  function renderSpend(rows){
+    var box = $("hsSpendBox"), use = rows.filter(function(r){ return r.useAmt; });
+    var withAmt = use.filter(function(r){ return r.amt > 0; });
+    if(!use.length || !withAmt.length){ box.hidden = true; return; }
+    box.hidden = false;
+    var total = 0, byWhy = {}, names = {};
+    withAmt.forEach(function(r){
+      total += r.amt;
+      names[r.name] = 1;
+      var w = r.why || "(사유 없음)";
+      if(!byWhy[w]) byWhy[w] = { w:w, n:0, sum:0, last:"" };
+      byWhy[w].n++; byWhy[w].sum += r.amt;
+      if(r.k > byWhy[w].last) byWhy[w].last = r.k;
+    });
+    var nm = Object.keys(names);
+    $("hsSpendH").textContent = nm.length === 1 ? ("쓴 돈 — " + nm[0]) : "쓴 돈";
+    var avg = Math.round(total / withAmt.length);
+    var miss = use.length - withAmt.length;
+    $("hsSpend").innerHTML =
+      '<div><b>' + won(total) + '</b><span>합계 · ' + withAmt.length + '번</span></div>' +
+      '<div><b>' + won(avg) + '</b><span>한 번에 평균</span></div>' +
+      '<div><b>' + Object.keys(byWhy).length + '가지</b><span>사유' +
+        (miss ? ' · 금액 안 적은 ' + miss + '번은 뺐습니다' : '') + '</span></div>';
+    var arr = [];
+    for(var w in byWhy) arr.push(byWhy[w]);
+    arr.sort(function(a, b){ return b.sum - a.sum; });
+    var head = '<thead><tr><th>사유</th><th>횟수</th><th>합계</th><th>비중</th><th>마지막</th></tr></thead>', body = "";
+    arr.forEach(function(x){
+      var pct = total ? Math.round(x.sum / total * 100) : 0;
+      var d = x.last ? fromIso(x.last) : null;
+      body += '<tr><td class="snm"></td>' +
+        '<td class="z">' + x.n + '회</td>' +
+        '<td class="ok"><b>' + won(x.sum) + '</b></td>' +
+        '<td class="z">' + pct + '%</td>' +
+        '<td class="z">' + (d ? (d.getMonth()+1) + '/' + d.getDate() : '·') + '</td></tr>';
+    });
+    var t = $("hsSpendTable");
+    t.innerHTML = head + "<tbody>" + body + "</tbody>";
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr .snm"), function(td, i){
+      if(arr[i]) td.textContent = arr[i].w;
+    });
+  }
   function renderHabStats(keys){
     var t = habTally(keys), hs = t.hs;
     if(!hs.length){
@@ -5483,7 +5605,7 @@ var HOLIDAYS = {
       $("hsNote").textContent = "성공·실패 항목이 없습니다. 보드 맨 위 “항목 관리”에서 추가하세요.";
       $("hsTable").innerHTML = ""; $("hsDowTable").innerHTML = "";
       $("hsDowNote").textContent = ""; $("hsGrid").innerHTML = "";
-      $("hsWhyBox").hidden = true;
+      $("hsWhyBox").hidden = true; $("hsSpendBox").hidden = true;
       return;
     }
     renderWhyList(keys, hs);
@@ -5863,13 +5985,18 @@ var HOLIDAYS = {
   }
   $("whySkip").onclick = closeWhy;
   $("whyOverlay").addEventListener("mousedown", function(e){ if(e.target === $("whyOverlay")) closeWhy(); });
+  $("whyAmt").addEventListener("input", paintAmtHint);
   $("whyClear").onclick = function(){
-    if(whyH) setHab(whyK, whyH.id, habOf(whyK, whyH.id), "");
+    if(whyH) setHab(whyK, whyH.id, habOf(whyK, whyH.id), { why:"", amt:0 });
     closeWhy();
   };
   $("whyForm").addEventListener("submit", function(e){
     e.preventDefault();
-    if(whyH) setHab(whyK, whyH.id, habOf(whyK, whyH.id), $("whyText").value.trim());
+    if(whyH){
+      var a = parseInt($("whyAmt").value, 10);
+      setHab(whyK, whyH.id, habOf(whyK, whyH.id),
+             { why: $("whyText").value.trim(), amt: (a > 0 ? a : 0) });
+    }
     closeWhy();
   });
   $("whyText").addEventListener("keydown", function(e){
