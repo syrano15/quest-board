@@ -564,6 +564,11 @@
   .wkline .kv.hi i{color:var(--done);}
   .wkline .zz{font-size:.8rem;color:var(--dim);}
   @media(max-width:560px){ .wkline > b{min-width:0;width:100%;} }
+  .primary:disabled{opacity:.45;cursor:not-allowed;}
+  /* 취미 표에서 잘못 들어온 줄을 바로 뺀다 */
+  .sttable .wxb{background:none;border:1px solid var(--line);border-radius:.3rem;color:var(--dim);
+    font-size:.72rem;padding:.1rem .4rem;cursor:pointer;line-height:1.5;}
+  .sttable .wxb:hover{border-color:var(--urgent);color:var(--urgent);}
   .wrow .byb.wkb{border-style:solid;border-color:var(--line);}
   .wrow .byb.wkb.on{border-color:var(--done);color:var(--done);}
   .acts{display:flex;gap:.1rem;padding-right:.35rem;opacity:0;transition:opacity .15s ease;flex:none;}
@@ -1299,7 +1304,7 @@
     </div>
     <p class="hsec">게임·드라마처럼 여러 날 걸리는 것</p>
     <div class="htab">
-      <div class="hrow"><code>작품</code><span>보드의 카드 한 장은 그 날 한 판·한 편입니다. 작품 자체(소닉, 만달로리안)는 따로 기록합니다</span></div>
+      <div class="hrow"><code>작품</code><span>보드의 카드 한 장은 그 날 한 판·한 편입니다. 작품 자체(소닉, 만달로리안)는 따로 등록합니다 — <b>등록한 것만</b> 취미 통계에 잡힙니다</span></div>
       <div class="hrow"><code>여는 곳</code><span>언젠가 목록의 <b>게임·드라마</b> 단추, 또는 카드 상세 창의 <b>🏁 엔딩·완주 기록하기</b></span></div>
       <div class="hrow"><code>마무리</code><span>게임은 <b>엔딩</b>, 드라마·애니는 <b>완주</b>, 책은 <b>완독</b> · 도중에 접었으면 <b>하차</b></span></div>
       <div class="hrow"><code>끝내면</code><span>언젠가 목록에서 내려가고, 그 날 보드 카드에 🏁 가 붙습니다</span></div>
@@ -1829,11 +1834,14 @@
         <div class="fdate"><input type="date" id="wkFinAt"><button type="button" class="q" id="wkFinToday">오늘</button></div>
       </div>
       <p class="hint" id="wkRec" style="font-size:.8rem;margin:.1rem 0 0"></p>
+      <p class="hint" id="wkNeed" style="font-size:.8rem;margin:.1rem 0 0;color:var(--accent)" hidden>
+        종류를 골라야 작품으로 등록됩니다. 그냥 할 일이면 닫으세요 — 통계에 안 잡힙니다.
+      </p>
       <div class="composer-row">
-        <button type="button" class="ghost danger" id="wkClear">기록 지우기</button>
+        <button type="button" class="ghost danger" id="wkClear">작품에서 빼기</button>
         <span style="flex:1"></span>
         <button type="button" class="ghost" id="wkClose">닫기</button>
-        <button type="submit" class="primary" style="padding:.55rem 1.2rem">저장</button>
+        <button type="submit" class="primary" id="wkSave" style="padding:.55rem 1.2rem">저장</button>
       </div>
     </form>
   </div>
@@ -1855,13 +1863,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.3";
-  var APP_BUILD = "2026-09-13 16:40";
+  var APP_VERSION = "v5.4";
+  var APP_BUILD = "2026-09-15 10:30";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.4",  d:"2026-09-15", n:[
+      "취미 통계가 엉망이던 것 수정 — 이름으로 종류를 추측하던 걸 없앴다 (\"세훈이 오후 산책\"이 책, \"…문서 읽기\"가 책, \"…설치 및 플레이\"가 게임으로 잡혔음)",
+      "이제 내가 직접 등록한 작품만 취미 탭에 나온다 — 취미 태그가 붙었다고 끌어오지 않는다",
+      "작품 시트에서 종류를 골라야 저장된다 · 취미 표의 빼기 버튼으로 잘못 들어온 줄 정리"
+    ]},
     { v:"v5.3",  d:"2026-09-13", n:[
       "사유와 함께 얼마 썼는지도 적는다 — 통계에 합계·평균과 사유별 지출 표",
       "금액을 물을지는 항목마다 정한다 (이름에 돈·지출 같은 말이 있으면 저절로 켜짐)"
@@ -2066,15 +2079,14 @@ var HOLIDAYS = {
   function wkey(text){ return String(text || "").trim(); }
   function works(){ if(!store.works) store.works = {}; return store.works; }
   function workOf(text){ var n = wkey(text); return n ? (works()[n] || null) : null; }
-  /* 종류를 일일이 찍게 하면 아무도 안 찍는다. 이름과 회차로 먼저 찍어주고, 틀리면 고치게 한다. */
-  function guessKind(text, hasSeq){
-    var t = wkey(text);
-    if(/게임|겜$|플스|스팀|플레이/.test(t)) return "game";
-    if(/애니|드라마|시즌|시리즈|영화|다큐/.test(t)) return "show";
-    if(/읽기|독서|책$|\(책\)/.test(t)) return "book";
-    if(hasSeq) return "show";                    /* 회차를 적고 있으면 연재물이다 */
-    return "";
-  }
+  /* 종류는 반드시 사람이 고른다.
+     v5.3 까지는 이름으로 찍어줬는데 크게 틀렸다 —
+       "세훈이 오후 산책"  → /책$/ 에 걸려 책
+       "…문서 읽기"        → /읽기/ 에 걸려 책
+       "핫 레스토랑 설치 및 플레이" → /플레이/ 에 걸려 게임
+     한국어는 낱말이 붙어 다녀서 부분일치가 늘 사고를 낸다. 추측은 없앤다.
+     회차(@3/8)를 적고 있는 것만 연재물이 확실하므로 그것만 첫 제안으로 쓴다. */
+  function seedKind(hasSeq){ return hasSeq ? "show" : ""; }
   function setWork(text, patch){
     var n = wkey(text);
     if(!n) return null;
@@ -3516,18 +3528,22 @@ var HOLIDAYS = {
     did.title = hitN ? "보드에서 같은 이름으로 완료한 횟수" : "";
     /* 작품 버튼 — 게임·드라마처럼 여러 날 걸치는 것에만 띄운다.
        "베란다 정리" 옆에 엔딩 버튼이 붙으면 목록만 시끄러워진다. */
-    var wrec = workOf(it.text), gk = wrec && wrec.kind ? wrec.kind : guessKind(it.text, false);
+    var wrec = workOf(it.text);
     var cn = catById(it.cat), hobby = !!(cn && /취미/.test(cn.name));
     var wkb = row.querySelector(".wkb");
-    if(gk || hobby){
-      var kd = kindDef(gk || "etc");
+    /* 이미 등록한 것에는 종류를 보여주고, 취미 칸에는 등록하러 갈 문을 열어둔다.
+       등록 전에는 회색 "작품" 이라 이 줄이 작품으로 세어지고 있지 않다는 게 눈에 보인다. */
+    if(wrec && wrec.kind || hobby){
+      var kd = kindDef((wrec && wrec.kind) || "etc");
       var short = { game:"게임", show:"드라마", book:"책", etc:"작품" }[kd.k] || "작품";
       wkb.hidden = false;
       wkb.textContent = (wrec && wrec.fin === "end") ? ("🏁 " + kd.fin)
                       : (wrec && wrec.fin === "drop") ? "하차"
-                      : short;
-      wkb.classList.toggle("on", !!(wrec && (wrec.kind || wrec.fin)));
-      wkb.title = "작품 기록 — 종류·분량·" + kd.fin + " 여부를 적습니다";
+                      : (wrec && wrec.kind) ? short : "작품 +";
+      wkb.classList.toggle("on", !!(wrec && wrec.kind));
+      wkb.title = (wrec && wrec.kind)
+        ? ("작품 기록 — 종류·분량·" + kd.fin + " 여부를 고칩니다")
+        : "게임·드라마처럼 여러 날 걸리는 작품이면 여기서 등록하세요 (등록해야 통계에 잡힙니다)";
       wkb.onclick = function(){ openWork(it.text); };
     }
     /* 기한 버튼 — 누를 때마다 없음 → 이번 달 → 올해 → 없음 */
@@ -4520,11 +4536,11 @@ var HOLIDAYS = {
   /* ---------- 작품 시트 ---------- */
   var wkName = null, wkKind = "", wkFin = "";
   function wkPaint(){
-    var d = kindDef(wkKind);
+    var d = kindDef(wkKind), picked = !!wkKind;
     Array.prototype.forEach.call($("wkKind").children, function(b){ b.classList.toggle("on", b.dataset.k === wkKind); });
     Array.prototype.forEach.call($("wkFin").children, function(b){ b.classList.toggle("on", (b.dataset.v || "") === wkFin); });
     /* 끝냈다는 말은 종류마다 다르다 — 게임은 엔딩, 드라마는 완주, 책은 완독 */
-    $("wkFin").children[1].textContent = d.fin;
+    $("wkFin").children[1].textContent = picked ? d.fin : "끝냄";
     $("wkVolWrap").style.display = (wkKind === "show" || wkKind === "book") ? "flex" : "none";
     $("wkSeaWrap").style.display = (wkKind === "show") ? "contents" : "none";
     $("wkTotUnit").textContent = (wkKind === "book") ? "권짜리" : "편짜리";
@@ -4532,14 +4548,20 @@ var HOLIDAYS = {
       ? "분량 — 전체 몇 권인지 (모르면 비워두기)"
       : "분량 — 시즌은 내가 본 만큼, 편수는 전체 (모르면 비워두기)";
     $("wkFinWrap").style.display = wkFin ? "flex" : "none";
-    $("wkFinLabel").textContent = (wkFin === "drop") ? "그만둔 날" : (d.fin + "한 날");
+    $("wkFinLabel").textContent = (picked ? d.fin : "끝낸") + "한 날";
+    if(wkFin === "drop") $("wkFinLabel").textContent = "그만둔 날";
+    /* 종류를 안 고르면 저장할 수 없다 — 잘못 분류된 항목이 통계에 쌓이는 걸 막는 지점 */
+    var sv = $("wkSave");
+    sv.disabled = !picked;
+    sv.title = picked ? "" : "종류를 먼저 고르세요";
+    $("wkNeed").hidden = picked;
   }
   function openWork(text, dayK){
     var n = wkey(text);
     if(!n) return;
     wkName = n;
     var w = workOf(n), t = workTally(n);
-    wkKind = (w && w.kind) || guessKind(n, t.eps > 0) || "etc";
+    wkKind = (w && w.kind) || seedKind(t.eps > 0);   /* 없으면 빈 칸 — 직접 고르게 한다 */
     wkFin = (w && w.fin) || "";
     $("wkTitle").textContent = n;
     $("wkSea").value = (w && w.sea) || "";
@@ -4578,7 +4600,7 @@ var HOLIDAYS = {
   };
   $("workForm").addEventListener("submit", function(e){
     e.preventDefault();
-    if(!wkName) return;
+    if(!wkName || !wkKind) return;               /* 종류 없이는 등록하지 않는다 */
     var n = wkName;
     var sea = parseInt($("wkSea").value, 10), tot = parseInt($("wkTot").value, 10);
     setWork(n, {
@@ -5303,19 +5325,15 @@ var HOLIDAYS = {
         if(!s.first || k < s.first) s.first = k;
       }
     }
-    /* 어떤 이름을 취미 작품으로 볼 것인가 — 기록이 있거나, 취미 태그가 붙었거나, 이름이 티를 내거나 */
+    /* 어떤 이름을 작품으로 볼 것인가 — 내가 직접 등록한 것만.
+       취미 태그가 붙었다고 끌어오지 않는다. 취미 칸에는 "건담 자세 다시 잡기" 같은
+       그냥 할 일도 잔뜩 있어서, 자동으로 긁어오면 목록이 못 쓰게 된다. */
     var names = {}, w;
-    for(n in reg){ w = reg[n]; if(w && (w.kind || w.fin)) names[n] = 1; }
+    for(n in reg){ w = reg[n]; if(w && w.kind) names[n] = 1; }
     stWishes().forEach(function(x){
       var nm = wkey(x.text);
-      if(!nm) return;
-      if(x.cat) cats[nm] = cats[nm] || x.cat;
-      if(isHobbyCat(x.cat) || guessKind(nm, false)) names[nm] = 1;
+      if(nm && x.cat) cats[nm] = cats[nm] || x.cat;
     });
-    for(n in tally){
-      if(names[n]) continue;
-      if(isHobbyCat(cats[n]) || guessKind(n, tally[n].eps > 0)) names[n] = 1;
-    }
     var wishState = {};
     stWishes().forEach(function(x){
       var nm = wkey(x.text);
@@ -5325,7 +5343,7 @@ var HOLIDAYS = {
     for(n in names){
       w = reg[n] || null;
       var t = tally[n] || { sessions:0, eps:0, maxSeq:0, tot:0, last:"", first:"" };
-      var kind = (w && w.kind) || guessKind(n, t.eps > 0) || "etc";
+      var kind = (w && w.kind) || "etc";      /* names 에는 kind 가 있는 것만 들어온다 */
       out.push({
         name:n, kind:kind, cat:cats[n] || null,
         sea: (w && w.sea) || 0,
@@ -5400,11 +5418,15 @@ var HOLIDAYS = {
     $("wkNote").innerHTML = rows.length
       ? ("작품 " + rows.length + "개 중 <b>" + endN + "개를 끝냈습니다</b>" +
          (goN ? " · " + goN + "개는 진행 중" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
-         "<br>언젠가 목록이나 항목 편집에서 <b>작품</b> 버튼을 눌러 종류·시즌·엔딩을 적어두면 여기 숫자가 정확해집니다. " +
+         "<br>여기에는 <b>내가 직접 등록한 작품만</b> 나옵니다. 잘못 들어온 줄은 오른쪽 <b>빼기</b>로 지우세요. " +
          "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
-      : "게임이나 드라마를 담아두면 여기에 모입니다. 언젠가 목록의 <b>작품</b> 버튼으로 종류를 정해주세요.";
+      : "아직 등록한 작품이 없습니다. 게임·드라마처럼 여러 날에 걸치는 것만 " +
+        "언젠가 목록의 <b>작품 +</b> 버튼이나 카드 상세의 <b>🏁</b> 버튼으로 등록하세요. " +
+        "등록한 것만 여기 잡히니 그냥 할 일은 섞이지 않습니다.";
 
-    var head = '<thead><tr><th>작품</th><th>종류</th><th>진행</th><th>기록</th><th>상태</th><th>마지막</th></tr></thead>';
+    var mine0 = stProfile() === profile;
+    var head = '<thead><tr><th>작품</th><th>종류</th><th>진행</th><th>기록</th><th>상태</th><th>마지막</th>' +
+               (mine0 ? '<th></th>' : '') + '</tr></thead>';
     var body = "";
     function md(k){ if(!k) return "·"; var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
     rows.forEach(function(r){
@@ -5430,11 +5452,22 @@ var HOLIDAYS = {
         '<td class="' + (prog === "·" ? "z" : "") + '">' + prog + '</td>' +
         '<td class="' + (rec === "·" ? "z" : "ok") + '">' + rec + '</td>' +
         '<td class="' + cls + '">' + stt + '</td>' +
-        '<td class="z">' + md(r.fin ? (r.finAt || r.last) : r.last) + '</td></tr>';
+        '<td class="z">' + md(r.fin ? (r.finAt || r.last) : r.last) + '</td>' +
+        (mine0 ? '<td><button type="button" class="wxb" title="이건 작품이 아닙니다 — 목록에서 뺍니다">빼기</button></td>' : '') +
+        '</tr>';
     });
     var t = $("wkTable");
     t.innerHTML = head + "<tbody>" +
-      (rows.length ? body : '<tr><td colspan="6" class="z">기록한 작품이 없습니다</td></tr>') + "</tbody>";
+      (rows.length ? body : '<tr><td colspan="' + (mine0 ? 7 : 6) + '" class="z">등록한 작품이 없습니다</td></tr>') + "</tbody>";
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr .wxb"), function(b, i){
+      var r = rows[i];
+      if(!r) return;
+      b.onclick = function(){
+        dropWork(r.name); retireWish(r.name, "");
+        save(); render(); renderWorkStats();
+        toast('"' + r.name + '" 을(를) 작품 목록에서 뺐습니다', null);
+      };
+    });
     /* 이름은 텍스트로 넣는다 (따옴표·꺾쇠가 깨지지 않게) · 누르면 그 작품 시트가 열린다 */
     var mine = stProfile() === profile;
     Array.prototype.forEach.call(t.querySelectorAll("tbody tr .nm"), function(td, i){
