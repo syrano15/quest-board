@@ -578,18 +578,24 @@
      보고만 있는 시간이 길어지면 시계와 달력만 남긴다. 아무거나 누르면 보드로 돌아온다. */
   /* --bg 라는 변수는 없다. 바탕색은 --ink 다. 배경 이미지를 깔아둔 경우까지 덮어야 하므로 불투명하게. */
   .zen{position:fixed;inset:0;z-index:60;background:var(--ink);display:grid;place-items:center;
-    padding:2rem 1.5rem;cursor:pointer;animation:zfade .45s ease;}
+    padding:1.6rem 1.6rem;cursor:pointer;animation:zfade .45s ease;overflow:hidden;}
   @keyframes zfade{ from{opacity:0} to{opacity:1} }
-  .zbox{display:flex;flex-direction:column;align-items:center;gap:.7rem;max-width:44rem;width:100%;}
+  /* 시계는 왼쪽, 달력은 오른쪽. 세로로 쌓으면 달력이 잘려서 스크롤해야 했다.
+     좁거나 낮은 창에서는 다시 세로로 쌓는다. */
+  .zwrap{display:flex;flex-direction:column;align-items:center;gap:.7rem;
+    width:100%;max-width:74rem;max-height:100%;min-height:0;}
+  .zbox{display:flex;flex-direction:row;align-items:center;justify-content:center;
+    gap:clamp(1.4rem,5vw,4rem);width:100%;min-height:0;}
+  .zleft{display:flex;flex-direction:column;align-items:center;gap:.55rem;min-width:0;flex:0 1 auto;}
   .zclock{display:flex;align-items:baseline;gap:.5rem;font-family:"IBM Plex Mono",monospace;
-    font-size:clamp(4.2rem,19vw,12rem);font-weight:300;line-height:1;letter-spacing:-.02em;
+    font-size:min(9.5rem,17vw,26vh);font-weight:300;line-height:1;letter-spacing:-.02em;
     color:var(--text);font-variant-numeric:tabular-nums;}
   .zclock .zsec{font-size:.26em;color:var(--dim);letter-spacing:.02em;}
   .zclock .zap{font-size:.22em;color:var(--muted);letter-spacing:.04em;align-self:center;}
   /* 둘 다 고르면 아날로그가 주인공이고 디지털은 밑에 작게 */
-  .zbox.both .zclock{font-size:clamp(1.8rem,6vw,3.2rem);}
-  .zdial{width:clamp(13rem,36vw,21rem);height:auto;display:block;}
-  .zbox.both .zdial{width:clamp(11rem,30vw,17rem);}
+  .zbox.both .zclock{font-size:min(3.2rem,6vw,9vh);}
+  .zdial{width:min(22rem,30vw,52vh);height:auto;display:block;}
+  .zbox.both .zdial{width:min(17rem,24vw,38vh);}
   .zdial .dface{fill:none;stroke:var(--line);stroke-width:2;}
   .zdial .dtick{stroke:var(--dim);stroke-linecap:round;}
   .zdial .dtick.big{stroke:var(--muted);}
@@ -599,13 +605,15 @@
   .zdial .dc{fill:var(--accent);}
   .zdate{margin:0;display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;justify-content:center;
     font-family:var(--title-font,"Black Han Sans"),var(--ui-font),sans-serif;
-    font-weight:var(--title-weight,400);font-size:clamp(1.5rem,5.5vw,2.6rem);line-height:1.1;}
+    font-weight:var(--title-weight,400);font-size:min(2.3rem,4.6vw,6vh);line-height:1.15;}
   .zdate span{font-size:.66em;font-weight:700;color:var(--muted);}
   .zdate span.sat{color:#6FA8DC;} .zdate span.sun{color:#E0655F;}
   .zdate .holi{font-size:.5em;font-weight:600;}
-  .zsum{margin:.1rem 0 .5rem;font-size:1.02rem;color:var(--dim);text-align:center;}
+  .zsum{margin:.1rem 0 0;font-size:min(1.02rem,2.2vh);color:var(--dim);text-align:center;}
   .zsum b{color:var(--accent);}
-  .zcal{width:100%;max-width:min(34rem,86vw);border:1px solid var(--line-soft);border-radius:.9rem;padding:.9rem 1rem 1rem;}
+  /* 달력은 가로·세로 둘 다에 묶어 잘리지 않게 한다. 한 칸이 정사각형이라 폭이 곧 높이다. */
+  .zcal{flex:0 0 auto;width:min(31rem,40vw,68vh);border:1px solid var(--line-soft);
+    border-radius:.9rem;padding:.8rem .9rem .9rem;}
   .zch{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:.6rem;}
   .zch b{font-family:"IBM Plex Mono",monospace;font-size:1.1rem;letter-spacing:.06em;color:var(--muted);min-width:8rem;text-align:center;}
   .zch .nav{background:none;border:1px solid var(--line);border-radius:.4rem;color:var(--dim);
@@ -615,18 +623,23 @@
   .zgrid .zh{font-size:.78rem;color:var(--dim);text-align:center;padding:.2rem 0 .3rem;}
   .zgrid .zh.s0{color:#E0655F;} .zgrid .zh.s6{color:#6FA8DC;}
   .zd{position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:.4rem;
-    font-size:1.08rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+    font-size:min(1.08rem,2.4vh,2.6vw);color:var(--muted);font-variant-numeric:tabular-nums;}
   .zd.oth{color:var(--line);}
   .zd.sun{color:#E0655F;} .zd.sat{color:#6FA8DC;}
   .zd.tod{background:var(--accent);color:var(--ink);font-weight:700;}
   .zd .zbar{position:absolute;left:20%;right:20%;bottom:5px;height:3px;background:var(--line);border-radius:3px;overflow:hidden;}
   .zd.tod .zbar{background:rgba(0,0,0,.25);}
   .zd .zbar i{display:block;height:100%;background:var(--done);}
-  .zhint{margin:.4rem 0 0;font-size:.8rem;color:var(--line);letter-spacing:.02em;}
-  /* 세로가 짧으면 달력부터 접고, 더 짧으면 시계만 남긴다 */
-  @media (max-height:760px){ .zclock{font-size:clamp(3.4rem,13vw,7rem);} .zcal{max-width:min(26rem,86vw);} .zd{font-size:.9rem;}
-    .zdial{width:clamp(10rem,26vw,15rem);} }
-  @media (max-height:560px){ .zcal{display:none;} .zsum{margin-bottom:0;} }
+  .zhint{margin:0;font-size:.8rem;color:var(--line);letter-spacing:.02em;flex:none;}
+  /* 좁은 창·폰에서는 다시 세로로 쌓는다 (가로로는 둘 다 못 넣는다) */
+  @media (max-width:860px){
+    .zbox{flex-direction:column;gap:.8rem;}
+    .zcal{width:min(31rem,86vw,52vh);}
+    .zdial{width:min(16rem,52vw,30vh);}
+    .zclock{font-size:min(6rem,20vw,16vh);}
+  }
+  /* 아주 낮은 창에서는 달력을 접고 시계만 남긴다 */
+  @media (max-height:420px){ .zcal{display:none;} }
   .primary:disabled{opacity:.45;cursor:not-allowed;}
   /* 취미 표에서 잘못 들어온 줄을 바로 뺀다 */
   .sttable .wxb{background:none;border:1px solid var(--line);border-radius:.3rem;color:var(--dim);
@@ -1863,16 +1876,20 @@
 </div>
 
 <div class="zen" id="zenOverlay" hidden>
-  <div class="zbox">
-    <svg class="zdial" id="zDial" viewBox="0 0 200 200" aria-hidden="true" hidden></svg>
-    <div class="zclock" id="zClock"><span id="zAmPm" class="zap" hidden></span><span id="zTime">--:--</span><span class="zsec" id="zSec">00</span></div>
-    <p class="zdate"><b id="zDate">—</b><span id="zDow">—</span><span class="holi" id="zHoli" hidden></span></p>
-    <p class="zsum" id="zSum"></p>
-    <div class="zcal">
-      <div class="zch"><button class="nav" id="zPrev" type="button" aria-label="이전 달">‹</button>
-        <b id="zCalTitle">—</b>
-        <button class="nav" id="zNext" type="button" aria-label="다음 달">›</button></div>
-      <div class="zgrid" id="zGrid"></div>
+  <div class="zwrap">
+    <div class="zbox" id="zBox">
+      <div class="zleft">
+        <svg class="zdial" id="zDial" viewBox="0 0 200 200" aria-hidden="true" hidden></svg>
+        <div class="zclock" id="zClock"><span id="zAmPm" class="zap" hidden></span><span id="zTime">--:--</span><span class="zsec" id="zSec">00</span></div>
+        <p class="zdate"><b id="zDate">—</b><span id="zDow">—</span><span class="holi" id="zHoli" hidden></span></p>
+        <p class="zsum" id="zSum"></p>
+      </div>
+      <div class="zcal">
+        <div class="zch"><button class="nav" id="zPrev" type="button" aria-label="이전 달">‹</button>
+          <b id="zCalTitle">—</b>
+          <button class="nav" id="zNext" type="button" aria-label="다음 달">›</button></div>
+        <div class="zgrid" id="zGrid"></div>
+      </div>
     </div>
     <p class="zhint">아무 키나 누르거나 화면을 누르면 돌아갑니다</p>
   </div>
@@ -1983,13 +2000,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.7";
-  var APP_BUILD = "2026-09-16 18:10";
+  var APP_VERSION = "v5.8";
+  var APP_BUILD = "2026-09-16 20:30";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.8",  d:"2026-09-16", n:[
+      "대기 화면을 가로 배치로 — 시계 왼쪽, 달력 오른쪽. 달력이 잘려 스크롤해야 하던 것 해결",
+      "시계·달력 크기를 창 높이에도 묶어서 어떤 창에서도 한 화면에 들어간다",
+      "좁은 창·폰에서는 예전처럼 세로로 쌓는다"
+    ]},
     { v:"v5.7",  d:"2026-09-16", n:[
       "시계 모양 설정 — 디지털 / 아날로그 / 둘 다",
       "초 보이기, 오전·오후(12시간) 켜고 끄기 · 아날로그 초침도 같이 따라간다",
@@ -6301,7 +6323,7 @@ var HOLIDAYS = {
        SVG 는 반드시 속성으로 껐다 켜야 한다. */
     if(showA) $("zDial").removeAttribute("hidden"); else $("zDial").setAttribute("hidden", "");
     $("zClock").hidden = !showD;
-    document.querySelector(".zbox").classList.toggle("both", clockFace === "both");
+    $("zBox").classList.toggle("both", clockFace === "both");
   }
   function zenPaintCal(){
     var base = zenMonth || fromIso(todayKey);
