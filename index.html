@@ -93,8 +93,16 @@
   .datenav{display:flex;align-items:center;gap:.35rem;margin-bottom:.15rem;}
   /* ---------- 날짜 고르는 달력 ----------
      화살표로 하루씩 옮기는 것만으로는 일주일 전·후를 보기 번거로웠다. */
-  #dateLine{cursor:pointer;border-radius:.3rem;transition:color .15s ease;}
+  #dateLine{cursor:pointer;border-radius:.3rem;transition:color .15s ease;
+    display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;}
   #dateLine:hover{color:var(--accent);}
+  #dateLine b{font-weight:inherit;}
+  /* 요일이 작고 흐려서 안 보인다고 해서 제목 줄로 끌어올렸다. 토·일·공휴일은 색으로도 구분한다. */
+  #dowLine{font-size:.62em;font-weight:700;color:var(--muted);letter-spacing:-.01em;}
+  #dowLine.sat{color:#6FA8DC;}
+  #dowLine.sun{color:#E0655F;}
+  #dateLine:hover #dowLine{color:inherit;}
+  #dowRow:empty{display:none;}
   .calpop{position:fixed;z-index:19;width:17rem;background:var(--panel);
     border:1px solid var(--line);border-radius:.7rem;padding:.6rem;
     box-shadow:0 14px 36px rgba(0,0,0,.5);}
@@ -564,6 +572,44 @@
   .wkline .kv.hi i{color:var(--done);}
   .wkline .zz{font-size:.8rem;color:var(--dim);}
   @media(max-width:560px){ .wkline > b{min-width:0;width:100%;} }
+  /* ---------- 대기 화면 ----------
+     보고만 있는 시간이 길어지면 시계와 달력만 남긴다. 아무거나 누르면 보드로 돌아온다. */
+  /* --bg 라는 변수는 없다. 바탕색은 --ink 다. 배경 이미지를 깔아둔 경우까지 덮어야 하므로 불투명하게. */
+  .zen{position:fixed;inset:0;z-index:60;background:var(--ink);display:grid;place-items:center;
+    padding:2rem 1.5rem;cursor:pointer;animation:zfade .45s ease;}
+  @keyframes zfade{ from{opacity:0} to{opacity:1} }
+  .zbox{display:flex;flex-direction:column;align-items:center;gap:.6rem;max-width:34rem;width:100%;}
+  .zclock{display:flex;align-items:baseline;gap:.5rem;font-family:"IBM Plex Mono",monospace;
+    font-size:clamp(3.6rem,15vw,8.5rem);font-weight:300;line-height:1;letter-spacing:-.02em;
+    color:var(--text);font-variant-numeric:tabular-nums;}
+  .zclock .zsec{font-size:.28em;color:var(--dim);letter-spacing:.02em;}
+  .zdate{margin:0;display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;justify-content:center;
+    font-family:var(--title-font,"Black Han Sans"),var(--ui-font),sans-serif;
+    font-weight:var(--title-weight,400);font-size:clamp(1.3rem,4.5vw,2rem);line-height:1.1;}
+  .zdate span{font-size:.66em;font-weight:700;color:var(--muted);}
+  .zdate span.sat{color:#6FA8DC;} .zdate span.sun{color:#E0655F;}
+  .zdate .holi{font-size:.5em;font-weight:600;}
+  .zsum{margin:.1rem 0 .5rem;font-size:.92rem;color:var(--dim);text-align:center;}
+  .zsum b{color:var(--accent);}
+  .zcal{width:100%;max-width:23rem;border:1px solid var(--line-soft);border-radius:.7rem;padding:.6rem .7rem .7rem;}
+  .zch{display:flex;align-items:center;justify-content:center;gap:.7rem;margin-bottom:.4rem;}
+  .zch b{font-family:"IBM Plex Mono",monospace;font-size:.86rem;letter-spacing:.06em;color:var(--muted);min-width:7rem;text-align:center;}
+  .zch .nav{background:none;border:1px solid var(--line);border-radius:.35rem;color:var(--dim);
+    width:1.5rem;height:1.5rem;cursor:pointer;line-height:1;font-size:.9rem;}
+  .zch .nav:hover{border-color:var(--muted);color:var(--text);}
+  .zgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .zgrid .zh{font-size:.62rem;color:var(--dim);text-align:center;padding:.15rem 0;}
+  .zgrid .zh.s0{color:#E0655F;} .zgrid .zh.s6{color:#6FA8DC;}
+  .zd{position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:.3rem;
+    font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .zd.oth{color:var(--line);}
+  .zd.sun{color:#E0655F;} .zd.sat{color:#6FA8DC;}
+  .zd.tod{background:var(--accent);color:var(--ink);font-weight:700;}
+  .zd .zbar{position:absolute;left:18%;right:18%;bottom:3px;height:2px;background:var(--line);border-radius:2px;overflow:hidden;}
+  .zd.tod .zbar{background:rgba(0,0,0,.25);}
+  .zd .zbar i{display:block;height:100%;background:var(--done);}
+  .zhint{margin:.3rem 0 0;font-size:.74rem;color:var(--line);letter-spacing:.02em;}
+  @media (max-height:520px){ .zcal{display:none;} .zsum{margin-bottom:0;} }
   .primary:disabled{opacity:.45;cursor:not-allowed;}
   /* 취미 표에서 잘못 들어온 줄을 바로 뺀다 */
   .sttable .wxb{background:none;border:1px solid var(--line);border-radius:.3rem;color:var(--dim);
@@ -1083,12 +1129,12 @@
         <button class="nav" id="prevDay" type="button" aria-label="이전 날">
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2L3.5 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <h1 id="dateLine" role="button" tabindex="0" title="눌러서 날짜 고르기">—</h1>
+        <h1 id="dateLine" role="button" tabindex="0" title="눌러서 날짜 고르기"><b id="dateMd">—</b><span id="dowLine">—</span></h1>
         <button class="nav" id="nextDay" type="button" aria-label="다음 날">
           <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
-      <p class="dow"><span id="dowLine">—</span><span class="holi" id="holiName" hidden></span><span class="today-chip" id="todayChip" hidden>TODAY</span>
+      <p class="dow" id="dowRow"><span class="holi" id="holiName" hidden></span><span class="today-chip" id="todayChip" hidden>TODAY</span>
         <button class="backtoday" id="backToday" type="button" hidden>오늘로</button></p>
       <p class="who" id="whoLine">업무 일정</p>
     </div>
@@ -1243,6 +1289,16 @@
       <button type="button" data-h="5">새벽 5시</button>
     </div>
     <p class="hint" id="dayStartNote" style="font-size:.76rem;margin:0"></p>
+    <span class="fl">대기 화면 자동 전환</span>
+    <div class="seg" id="idleSeg">
+      <button type="button" data-m="0">끄기</button>
+      <button type="button" data-m="1">1분</button>
+      <button type="button" data-m="3">3분</button>
+      <button type="button" data-m="5">5분</button>
+      <button type="button" data-m="10">10분</button>
+      <button type="button" data-m="30">30분</button>
+    </div>
+    <p class="hint" id="idleNote" style="font-size:.76rem;margin:0"></p>
     <div class="mlist">
       <button type="button" class="mrow" id="mCal"><b>날짜 골라 가기</b><span>달력에서 지난 날·앞날로 바로 이동합니다</span></button>
       <button type="button" class="mrow" id="fontBtn"><b>글꼴 바꾸기</b><span>보드 글씨체와 크기를 고릅니다</span></button>
@@ -1252,6 +1308,7 @@
       <button type="button" class="mrow monly" id="mCats"><b>카테고리 관리</b><span>이름과 색상을 바꿉니다</span></button>
       <button type="button" class="mrow monly" id="mBg"><b>배경 이미지</b><span>보드 뒷배경을 바꿉니다</span></button>
       <button type="button" class="mrow monly" id="mHelp"><b>입력 도움말</b><span>#카테고리 · 내일 · !! · @3/12 쓰는 법</span></button>
+      <button type="button" class="mrow" id="mZen"><b>대기 화면</b><span>시계와 달력만 크게 — 아무거나 누르면 돌아옵니다</span></button>
       <button type="button" class="mrow" id="mLog"><b>업데이트 기록</b><span>지금까지 무엇을 고치고 더했는지</span></button>
       <button type="button" class="mrow dtonly" id="widgetBtn"><b>위젯 모드로 보기</b><span>세로 슬림 창으로 새로 엽니다</span></button>
       <button type="button" class="mrow" id="syncBtn"><b>기기 간 동기화</b><span>회사·집 PC가 같은 목록을 보게 합니다</span></button>
@@ -1293,6 +1350,13 @@
       <div class="hrow"><code>✎</code><span>상세 창 열기</span></div>
       <div class="hrow"><code>✕</code><span>삭제</span></div>
       <div class="hrow"><code>＋ 다음 회차</code><span>회차 항목을 완료하면 나타납니다. 누르면 다음 회차가 생깁니다</span></div>
+    </div>
+    <p class="hsec">대기 화면</p>
+    <div class="htab">
+      <div class="hrow"><code>여는 법</code><span>그 외 기능 → <b>대기 화면</b>. 또는 자동 전환 시간을 정해두면 그만큼 방치했을 때 저절로 넘어갑니다</span></div>
+      <div class="hrow"><code>보이는 것</code><span>큰 시계, 오늘 날짜·요일, 오늘 진행 상황, 이번 달 달력(칸마다 완료 비율)</span></div>
+      <div class="hrow"><code>닫는 법</code><span>아무 키나 누르거나 화면을 누르면 하던 자리로 돌아옵니다. 보드는 그대로 있습니다</span></div>
+      <div class="hrow"><code>달력 넘기기</code><span>‹ › 는 대기 화면을 닫지 않고 달만 넘깁니다</span></div>
     </div>
     <p class="hsec">성공·실패 체크</p>
     <div class="htab">
@@ -1758,6 +1822,21 @@
   </div>
 </div>
 
+<div class="zen" id="zenOverlay" hidden>
+  <div class="zbox">
+    <div class="zclock"><span id="zTime">--:--</span><span class="zsec" id="zSec">00</span></div>
+    <p class="zdate"><b id="zDate">—</b><span id="zDow">—</span><span class="holi" id="zHoli" hidden></span></p>
+    <p class="zsum" id="zSum"></p>
+    <div class="zcal">
+      <div class="zch"><button class="nav" id="zPrev" type="button" aria-label="이전 달">‹</button>
+        <b id="zCalTitle">—</b>
+        <button class="nav" id="zNext" type="button" aria-label="다음 달">›</button></div>
+      <div class="zgrid" id="zGrid"></div>
+    </div>
+    <p class="zhint">아무 키나 누르거나 화면을 누르면 돌아갑니다</p>
+  </div>
+</div>
+
 <div class="overlay" id="whyOverlay" hidden>
   <div class="sheet" style="width:min(32rem,100%)">
     <h2 id="whyTitle">사유</h2>
@@ -1863,13 +1942,17 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.4";
-  var APP_BUILD = "2026-09-15 10:30";
+  var APP_VERSION = "v5.5";
+  var APP_BUILD = "2026-09-16 11:20";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.5",  d:"2026-09-16", n:[
+      "날짜 옆에 요일을 크게 붙였다 — 아랫줄 작은 글씨라 안 보인다고 해서",
+      "대기 화면 추가 — 시계·날짜·달력만 크게. 그 외 기능에서 열거나, 몇 분 방치하면 저절로 넘어가게 설정"
+    ]},
     { v:"v5.4",  d:"2026-09-15", n:[
       "취미 통계가 엉망이던 것 수정 — 이름으로 종류를 추측하던 걸 없앴다 (\"세훈이 오후 산책\"이 책, \"…문서 읽기\"가 책, \"…설치 및 플레이\"가 게임으로 잡혔음)",
       "이제 내가 직접 등록한 작품만 취미 탭에 나온다 — 취미 태그가 붙었다고 끌어오지 않는다",
@@ -3955,15 +4038,18 @@ var HOLIDAYS = {
     paintTagBanner();
 
     var d = fromIso(viewKey);
-    $("dateLine").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
+    $("dateMd").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
     var hol = holidayOf(viewKey), wd = d.getDay();
     var dl = $("dowLine");
     dl.textContent = DAYS[wd]+"요일";
     dl.className = (hol || wd === 0) ? "sun" : (wd === 6 ? "sat" : "");
+
     var hn = $("holiName");
     hn.hidden = !hol; if(hol) hn.textContent = hol;
     $("todayChip").hidden = viewKey !== todayKey;
     $("backToday").hidden = viewKey === todayKey;
+    /* 공휴일도 아니고 오늘도 아닌 지난 날이면 아랫줄이 빈 채로 자리만 차지한다 */
+    $("dowRow").hidden = !hol && viewKey !== todayKey && $("backToday").hidden;
     $("emptyTitle").textContent = viewKey === todayKey ? "오늘 할 일을 적어주세요"
       : (d.getMonth()+1)+"월 "+d.getDate()+"일 할 일을 적어주세요";
 
@@ -4457,6 +4543,7 @@ var HOLIDAYS = {
 
   document.addEventListener("keydown", function(e){
     if(e.key !== "Escape") return;
+    if(zenOn){ zenClose(); return; }
     if(!$("calPop").hidden){ $("calPop").hidden = true; return; }
     if(!$("pinOverlay").hidden){ $("pinOverlay").hidden = true; return; }
     /* 사유 창은 항목 관리 위에 겹쳐 뜰 수 있다 — 먼저 닫는다 (기록 자체는 남는다) */
@@ -6035,6 +6122,117 @@ var HOLIDAYS = {
   $("whyText").addEventListener("keydown", function(e){
     if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("whyForm").requestSubmit(); }
   });
+  /* ---------- 대기 화면 ----------
+     일정 시간 아무것도 안 하면 시계·달력만 남는 화면으로 넘어간다.
+     보드는 그대로 있고 위에 덮기만 하므로, 아무거나 누르면 하던 자리로 돌아온다. */
+  var IDLE_KEY = "questboard:idle";
+  var idleMin = 0;                       /* 0 = 자동으로 안 켜짐 */
+  try{ idleMin = Math.max(0, Math.min(120, +(localStorage.getItem(IDLE_KEY) || 0) || 0)); }catch(e){}
+  var zenOn = false, zenTimer = null, zenTick = null, zenMonth = null;
+  function zenPaintClock(){
+    var n = new Date();
+    $("zTime").textContent = String(n.getHours()).padStart(2,"0") + ":" + String(n.getMinutes()).padStart(2,"0");
+    $("zSec").textContent = String(n.getSeconds()).padStart(2,"0");
+  }
+  function zenPaintCal(){
+    var base = zenMonth || fromIso(todayKey);
+    var y = base.getFullYear(), m = base.getMonth();
+    $("zCalTitle").textContent = y + "." + String(m+1).padStart(2,"0");
+    var first = new Date(y, m, 1), start = new Date(first);
+    start.setDate(1 - first.getDay());
+    var g = $("zGrid"), html = "", i;
+    for(i = 0; i < 7; i++) html += '<div class="zh s' + i + '">' + DAYS[i] + '</div>';
+    var x = new Date(start);
+    for(i = 0; i < 42; i++){
+      var k = iso(x), wd = x.getDay(), oth = x.getMonth() !== m;
+      var hol = holidayOf(k), st = dayStat(k);
+      var cls = "zd" + (oth ? " oth" : (k === todayKey ? " tod" : ((hol || wd === 0) ? " sun" : (wd === 6 ? " sat" : ""))));
+      var bar = (!oth && st.all) ? '<span class="zbar"><i style="width:' +
+                Math.round(st.done / st.all * 100) + '%"></i></span>' : "";
+      html += '<div class="' + cls + '" title="' + esc(dayStatText(k)) + '">' + x.getDate() + bar + '</div>';
+      x.setDate(x.getDate() + 1);
+    }
+    g.innerHTML = html;
+  }
+  function zenPaint(){
+    zenPaintClock();
+    var d = fromIso(todayKey), wd = d.getDay(), hol = holidayOf(todayKey);
+    $("zDate").textContent = d.getFullYear() + "년 " + (d.getMonth()+1) + "월 " + d.getDate() + "일";
+    var dw = $("zDow");
+    dw.textContent = DAYS[wd] + "요일";
+    dw.className = (hol || wd === 0) ? "sun" : (wd === 6 ? "sat" : "");
+    var hn = $("zHoli"); hn.hidden = !hol; if(hol) hn.textContent = hol;
+    var arr = (store.days[todayKey] || []).filter(function(x){ return !x.canceled; });
+    var dn = arr.filter(function(x){ return x.done; }).length;
+    $("zSum").innerHTML = arr.length
+      ? (arr.length === dn ? "오늘 <b>" + arr.length + "건 전부 끝냈습니다</b>"
+                           : "오늘 " + arr.length + "건 중 <b>" + dn + "건 완료</b> · " + (arr.length - dn) + "건 남음")
+      : "오늘 적어둔 일이 없습니다";
+    zenPaintCal();
+  }
+  function zenOpen(){
+    if(zenOn) return;
+    zenOn = true; zenMonth = null;
+    zenPaint();
+    $("zenOverlay").hidden = false;
+    zenTick = setInterval(zenPaintClock, 1000);
+    if(zenTimer){ clearTimeout(zenTimer); zenTimer = null; }
+  }
+  function zenClose(){
+    if(!zenOn) return;
+    zenOn = false;
+    $("zenOverlay").hidden = true;
+    if(zenTick){ clearInterval(zenTick); zenTick = null; }
+    idleKick();
+  }
+  /* 사람이 뭔가 할 때마다 시계를 다시 맞춘다 */
+  function idleKick(){
+    if(zenTimer){ clearTimeout(zenTimer); zenTimer = null; }
+    if(!idleMin || zenOn) return;
+    zenTimer = setTimeout(function(){
+      /* 시트를 열어둔 채 자리를 비운 것까지 덮지는 않는다 */
+      if(document.querySelector(".overlay:not([hidden])")) { idleKick(); return; }
+      zenOpen();
+    }, idleMin * 60000);
+  }
+  /* 문서 캡처가 버튼보다 먼저 돈다. 그래서 버튼에서 stopPropagation 해도 이미 늦다 —
+     닫을지 말지는 여기서 대상을 보고 정한다. (달력 화살표는 통과시킨다) */
+  function zenPass(e){
+    var t = e && e.target;
+    return !!(t && t.closest && t.closest(".zch"));
+  }
+  ["mousedown","keydown","wheel","touchstart"].forEach(function(ev){
+    document.addEventListener(ev, function(e){
+      if(zenOn){ if(!zenPass(e)) zenClose(); }
+      else idleKick();
+    }, true);
+  });
+  document.addEventListener("mousemove", function(){ if(!zenOn) idleKick(); });
+  function zenShift(n){
+    var b = zenMonth || fromIso(todayKey);
+    zenMonth = new Date(b.getFullYear(), b.getMonth() + n, 1);
+    zenPaintCal();
+  }
+  $("zPrev").onclick = function(){ zenShift(-1); };
+  $("zNext").onclick = function(){ zenShift(1); };
+  $("mZen").onclick = function(){ $("moreOverlay").hidden = true; setTimeout(zenOpen, 60); };
+  Array.prototype.forEach.call($("idleSeg").children, function(b){
+    b.onclick = function(){
+      idleMin = +b.dataset.m || 0;
+      try{ localStorage.setItem(IDLE_KEY, String(idleMin)); }catch(e){}
+      paintIdleSeg(); idleKick();
+    };
+  });
+  function paintIdleSeg(){
+    Array.prototype.forEach.call($("idleSeg").children, function(b){
+      b.classList.toggle("on", (+b.dataset.m || 0) === idleMin);
+    });
+    $("idleNote").textContent = idleMin
+      ? (idleMin + "분 동안 아무것도 안 하면 시계·달력만 남는 화면으로 넘어갑니다. 아무거나 누르면 돌아옵니다.")
+      : "자동으로 켜지 않습니다. 위 \u201c대기 화면\u201d 으로 직접 열 수 있습니다.";
+  }
+  paintIdleSeg();
+  idleKick();
   $("verText").onclick = openLog;
   $("logClose").onclick = function(){ $("logOverlay").hidden = true; };
   $("logOverlay").addEventListener("mousedown", function(e){ if(e.target === $("logOverlay")) $("logOverlay").hidden = true; });
