@@ -153,9 +153,14 @@
   .backtoday{background:none;border:none;padding:0;color:var(--accent);font-size:.78rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
   .who{margin:.15rem 0 0;font-size:.75rem;color:var(--dim);}
 
-  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:.55rem;}
-  .ring{position:relative;width:8.2rem;height:8.2rem;}
-  .ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+  /* 원형 차트 — 사이드바가 넓어졌는데 링만 8.2rem 고정이라 가운데가 휑했다.
+     이제 사이드바 폭을 채우되 창 높이에도 걸리게 해서, 넓으면 커지고 낮으면 알아서 줄어든다.
+     ⚠ 이 앱은 1rem이 16px이 아니다(글자 크기 설정이 root를 키운다). vh/%를 같이 물려야 안 넘친다. */
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:.55rem;flex:1 1 auto;min-height:0;}
+  .ring{position:relative;width:8.2rem;width:var(--ringpx,min(100%,12.6rem,25vh));aspect-ratio:1;flex:none;
+    margin:0 auto;container-type:inline-size;}
+  .ring svg{width:100%;height:100%;display:block;transform:rotate(-90deg);}
   .ring .track{fill:none;stroke:var(--surface-2);stroke-width:8;}
   .ring .seg{fill:none;stroke-width:8;transition:stroke-dashoffset .4s ease;}
   .ring-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -166,10 +171,11 @@
   .ring-mid.on .n,.ring-mid.on .of{display:none;}
   .ring-hov{display:none;flex-direction:column;align-items:center;gap:.15rem;text-align:center;padding:0 .6rem;}
   .ring-mid.on .ring-hov{display:flex;}
-  .ring-hov b{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
-  .ring-hov i{font-style:normal;font-size:.82rem;color:var(--muted);line-height:1.25;word-break:keep-all;}
-  .ring-mid .n{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
-  .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--dim);letter-spacing:.08em;}
+  /* 가운데 글자는 링 지름을 따라간다(cqw). 링이 커지면 같이 커진다. */
+  .ring-hov b{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-size:26cqw;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
+  .ring-hov i{font-style:normal;font-size:.82rem;font-size:11cqw;color:var(--muted);line-height:1.25;word-break:keep-all;}
+  .ring-mid .n{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-size:30cqw;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
+  .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.7rem;font-size:9.5cqw;color:var(--dim);letter-spacing:.08em;}
   .clock{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;
     background:none;border:none;padding:.1rem .3rem;border-radius:.3rem;cursor:pointer;transition:color .15s ease;}
   .clock:hover{color:var(--accent);}
@@ -178,20 +184,12 @@
      낮은 창에서는 링과 버튼을 단계적으로 줄여 한 화면에 다 들어오게 한다. */
   @media (max-height:860px){
     .side{padding:.9rem .95rem;gap:.7rem;}
-    .ring{width:7rem;height:7rem;}
-    .ring-mid .n{font-size:1.7rem;}
-    .ring-hov b{font-size:1.5rem;}
     .clock{font-size:1.15rem;}
     h1{font-size:1.95rem;}
   }
   @media (max-height:720px){
     .side{padding:.75rem .8rem;gap:.5rem;}
     .ring-wrap{gap:.35rem;}
-    .ring{width:5.8rem;height:5.8rem;}
-    .ring-mid .n{font-size:1.45rem;}
-    .ring-mid .of{font-size:.62rem;}
-    .ring-hov b{font-size:1.25rem;}
-    .ring-hov i{font-size:.72rem;}
     .clock{font-size:1rem;}
     h1{font-size:1.7rem;}
     .dow{font-size:.82rem;}
@@ -207,8 +205,6 @@
   }
   @media (max-height:620px){
     .side{padding:.6rem .7rem;gap:.4rem;}
-    .ring{width:4.2rem;height:4.2rem;}
-    .ring-mid .n{font-size:1.1rem;}
     .ring-mid .of{display:none;}
     .clock{font-size:.85rem;}
     h1{font-size:1.35rem;}
@@ -2000,13 +1996,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.8";
-  var APP_BUILD = "2026-09-16 20:30";
+  var APP_VERSION = "v5.9";
+  var APP_BUILD = "2026-09-16 21:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.9",  d:"2026-09-16", n:[
+      "원형 차트가 사이드바에 남는 자리만큼 커진다 — 8.2rem 고정이라 넓은 창에서 작아 보이던 것 해결",
+      "링을 칸 가운데에 제대로 놓고, 가운데 숫자도 링 크기를 따라 커진다",
+      "낮은 창에서 단계적으로 줄이던 규칙 대신 실제로 남는 높이를 재서 잡는다"
+    ]},
     { v:"v5.8",  d:"2026-09-16", n:[
       "대기 화면을 가로 배치로 — 시계 왼쪽, 달력 오른쪽. 달력이 잘려 스크롤해야 하던 것 해결",
       "시계·달력 크기를 창 높이에도 묶어서 어떤 창에서도 한 화면에 들어간다",
@@ -3785,6 +3786,33 @@ var HOLIDAYS = {
   /* 칸 수처럼 "한 화면에 몇 줄" 로도 고정할 수 있게 한다 */
   var ROWFIX = { r3:3, r4:4, r5:5, r6:6 };
   var rowSize = "auto", colFix = "auto", layoutTries = 0;
+
+  /* ---------- 원형 차트 크기 ----------
+     8.2rem 고정이라 사이드바가 넓거나 높아도 링만 작게 남아 가운데가 휑했다.
+     이제 링 칸에 실제로 남는 자리를 재서 그만큼 키운다.
+     ⚠ 재는 순서가 중요하다. 링을 0으로 만들어 두고 나머지(시계·카테고리 막대·몸무게)를
+        먼저 잰 다음에 남는 높이를 계산한다. 안 그러면 링 자신의 크기가 답에 섞여 들어간다. */
+  function sizeRing(){
+    var ring = $("ring");
+    if(!ring || !ring.offsetParent) return;          /* 위젯 모드 등 안 보일 때는 건드리지 않는다 */
+    var wrap = ring.parentNode;
+    if(!wrap || wrap.clientWidth < 40) return;
+    ring.style.setProperty("--ringpx", "0px");
+    var kids = wrap.children, rest = 0, shown = 0, i, k;
+    for(i = 0; i < kids.length; i++){
+      k = kids[i];
+      if(k === ring || !k.offsetParent) continue;
+      rest += k.getBoundingClientRect().height;
+      shown++;
+    }
+    var gap = parseFloat(getComputedStyle(wrap).rowGap) || 0;
+    var avail = wrap.clientHeight - rest - gap * shown;
+    var px = Math.min(wrap.clientWidth, avail);
+    var unit = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    px = Math.max(3.4 * unit, Math.min(px, 16 * unit));   /* 너무 작지도, 우스울 만큼 크지도 않게 */
+    ring.style.setProperty("--ringpx", Math.round(px) + "px");
+  }
+
   function layoutList(){
     var list = $("list");
     if(!list || list.hidden) return;
@@ -4116,6 +4144,7 @@ var HOLIDAYS = {
     paintWishCount();
     renderWeight();
     paintTagBanner();
+    sizeRing();          /* 시계·카테고리 막대·몸무게가 다 자리잡은 뒤에 링 크기를 잡는다 */
 
     var d = fromIso(viewKey);
     $("dateMd").textContent = (d.getMonth()+1)+"월 "+d.getDate()+"일";
@@ -4474,6 +4503,9 @@ var HOLIDAYS = {
      숨겨졌다 다시 보이는 순간도 여기서 걸린다. */
   if(window.ResizeObserver){
     new ResizeObserver(function(){ layoutList(); }).observe($("list"));
+    /* 사이드바 높이가 바뀌면 링도 다시 잰다.
+       ⚠ 링 자체를 보면 안 된다 — 링을 키우는 게 다시 관찰을 부른다(무한 반복). */
+    new ResizeObserver(function(){ sizeRing(); }).observe(document.querySelector(".side"));
   }
 
   /* ---------- events ---------- */
