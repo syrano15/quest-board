@@ -599,6 +599,32 @@
   .zdial .dh,.zdial .dm{stroke:var(--text);stroke-linecap:round;}
   .zdial .ds{stroke:var(--accent);stroke-linecap:round;}
   .zdial .dc{fill:var(--accent);}
+
+  /* ---------- 시계 판 모양 ----------
+     기계식 손목시계 느낌을 내는 판. 특정 브랜드를 베끼지 않고 흔한 기법만 쓴다 —
+     붙임 인덱스, 면 깎은 바늘(한쪽은 밝게 한쪽은 어둡게), 야광, 철길 분눈금.
+     색은 전부 테마 변수를 쓰므로 밝은 테마에서도 그대로 산다. */
+  .zdial .dplate{fill:var(--panel);}
+  .zdial .dsun{fill:url(#qbSun);}                    /* 판에 도는 빛 */
+  .zdial .dbezel{fill:none;stroke:var(--line);stroke-width:3;}
+  .zdial .dbezel2{fill:none;stroke:var(--line-soft);stroke-width:1;}
+  .zdial .drail{fill:none;stroke:var(--dim);stroke-width:.8;}
+  .zdial .didx{fill:var(--text);stroke:var(--ink);stroke-width:.5;}
+  .zdial .dlume{fill:#C9E3C4;stroke:var(--text);stroke-width:.9;stroke-linejoin:round;}
+  .zdial .dpip{fill:var(--accent);}
+  .zdial .drn{fill:var(--text);font-family:var(--ui-font,"IBM Plex Sans KR"),sans-serif;
+    font-size:15px;font-weight:600;letter-spacing:.02em;text-anchor:middle;dominant-baseline:central;}
+  /* 면 깎은 바늘 — f1 이 빛 받는 쪽, f2 가 그늘진 쪽 */
+  .zdial .f1{fill:var(--text);}
+  .zdial .f2{fill:var(--muted);}
+  .zdial .dmoon{fill:none;stroke:var(--text);}
+  .zdial .dstem{fill:var(--accent);}
+  .zdial .dcap{fill:var(--text);stroke:var(--ink);stroke-width:.6;}
+  .zdial .dcap2{fill:var(--accent);}
+  #qbSun .s1{stop-color:#FFFFFF;stop-opacity:.10;}
+  #qbSun .s2{stop-color:#000000;stop-opacity:.26;}
+  body.light #qbSun .s1{stop-color:#FFFFFF;stop-opacity:.34;}
+  body.light #qbSun .s2{stop-color:#7A8798;stop-opacity:.22;}
   .zdate{margin:0;display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;justify-content:center;
     font-family:var(--title-font,"Black Han Sans"),var(--ui-font),sans-serif;
     font-weight:var(--title-weight,400);font-size:min(2.3rem,4.6vw,6vh);line-height:1.15;}
@@ -1335,6 +1361,14 @@
     <div class="seg" id="clockOptSeg">
       <button type="button" data-o="sec">초 보이기</button>
       <button type="button" data-o="h12">오전·오후</button>
+      <button type="button" data-o="sweep">스윕 초침</button>
+    </div>
+    <span class="fl">시계 판</span>
+    <div class="seg" id="dialSeg">
+      <button type="button" data-d="plain">기본</button>
+      <button type="button" data-d="classic">클래식</button>
+      <button type="button" data-d="diver">다이버</button>
+      <button type="button" data-d="roman">로마자</button>
     </div>
     <p class="hint" id="clockNote" style="font-size:.76rem;margin:0"></p>
     <span class="fl">대기 화면 자동 전환</span>
@@ -1996,13 +2030,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.9";
-  var APP_BUILD = "2026-09-16 21:40";
+  var APP_VERSION = "v6.0";
+  var APP_BUILD = "2026-09-16 22:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v6.0",  d:"2026-09-16", n:[
+      "시계 판 고르기 — 기본 / 클래식(붙임 인덱스·도피네 바늘) / 다이버(야광·칼 바늘) / 로마자(철길 분눈금)",
+      "스윕 초침 — 기계식처럼 초당 8번 끊어 흐른다. 1초씩 딱딱 가는 예전 방식으로 되돌릴 수도 있음",
+      "판은 테마 색을 따라가서 밝은 테마에서도 그대로 산다"
+    ]},
     { v:"v5.9",  d:"2026-09-16", n:[
       "원형 차트가 사이드바에 남는 자리만큼 커진다 — 8.2rem 고정이라 넓은 창에서 작아 보이던 것 해결",
       "링을 칸 가운데에 제대로 놓고, 가운데 숫자도 링 크기를 따라 커진다",
@@ -6252,17 +6291,25 @@ var HOLIDAYS = {
      대기 화면 시계를 디지털·아날로그 중에 고르고, 초와 12시간 표시를 켜고 끈다.
      사이드바·위젯의 작은 시계는 글자뿐이라 초·12시간 설정만 따른다. */
   var FACE_KEY = "questboard:clockface", COPT_KEY = "questboard:clockopt";
+  var DIAL_KEY = "questboard:clockdial";
+  var DIALS = ["plain","classic","diver","roman"];
   var clockFace = "digital", clockSec = true, clock12 = false;
+  /* 스윕(초침이 끊기지 않고 흐르는 것)은 기본으로 켜 둔다.
+     예전 설정 문자열에는 이 글자가 없으므로 "n"(= 끄기)로 저장해야 기존 사용자도 켜진 채로 온다. */
+  var clockSweep = true, clockDial = "plain";
   try{
     clockFace = localStorage.getItem(FACE_KEY) || "digital";
     if(["digital","analog","both"].indexOf(clockFace) < 0) clockFace = "digital";
+    clockDial = localStorage.getItem(DIAL_KEY) || "plain";
+    if(DIALS.indexOf(clockDial) < 0) clockDial = "plain";
     var co = localStorage.getItem(COPT_KEY);
-    if(co !== null){ clockSec = co.indexOf("s") >= 0; clock12 = co.indexOf("h") >= 0; }
+    if(co !== null){ clockSec = co.indexOf("s") >= 0; clock12 = co.indexOf("h") >= 0; clockSweep = co.indexOf("n") < 0; }
   }catch(e){}
   function saveClockOpt(){
     try{
       localStorage.setItem(FACE_KEY, clockFace);
-      localStorage.setItem(COPT_KEY, (clockSec ? "s" : "") + (clock12 ? "h" : ""));
+      localStorage.setItem(DIAL_KEY, clockDial);
+      localStorage.setItem(COPT_KEY, (clockSec ? "s" : "") + (clock12 ? "h" : "") + (clockSweep ? "" : "n"));
     }catch(e){}
   }
   /* 작은 시계용 — 12시간이면 0시는 12시로 */
@@ -6273,36 +6320,133 @@ var HOLIDAYS = {
     if(withSec && clockSec) t += ":" + String(d.getSeconds()).padStart(2,"0");
     return ap + t;
   }
-  /* 아날로그 판 — 눈금과 숫자는 한 번만 그리고, 바늘만 매초 돌린다 */
-  var dialReady = false;
-  function buildDial(){
-    if(dialReady) return;
-    var h = '<circle class="dface" cx="100" cy="100" r="94"/>', i, a, x1, y1, x2, y2, big;
-    for(i = 0; i < 60; i++){
-      a = i * 6 * Math.PI / 180;
-      big = (i % 5 === 0);
-      x1 = 100 + Math.sin(a) * (big ? 78 : 83);
-      y1 = 100 - Math.cos(a) * (big ? 78 : 83);
-      x2 = 100 + Math.sin(a) * 87;
-      y2 = 100 - Math.cos(a) * 87;
-      h += '<line class="dtick' + (big ? " big" : "") + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
-           '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke-width="' + (big ? 2.4 : 1) + '"/>';
-    }
-    for(i = 1; i <= 12; i++){
-      a = i * 30 * Math.PI / 180;
-      h += '<text class="dnum" x="' + (100 + Math.sin(a) * 64).toFixed(1) + '" y="' +
-           (100 - Math.cos(a) * 64).toFixed(1) + '">' + i + '</text>';
-    }
-    h += '<line class="dh" id="dHand" x1="100" y1="100" x2="100" y2="48" stroke-width="6"/>' +
-         '<line class="dm" id="mHand" x1="100" y1="100" x2="100" y2="26" stroke-width="4"/>' +
-         '<line class="ds" id="sHand" x1="100" y1="112" x2="100" y2="22" stroke-width="1.6"/>' +
-         '<circle class="dc" cx="100" cy="100" r="4"/>';
-    $("zDial").innerHTML = h;
-    dialReady = true;
+  /* ---------- 아날로그 판 ----------
+     눈금·숫자는 한 번만 그리고 바늘만 돌린다. 판 모양을 바꾸면 다시 그린다.
+     바늘은 모양이 달라도 항상 #dHand / #mHand / #sHand 세 개이고
+     rotate(각도 100 100) 로만 돈다 — paintDial 이 그 약속에만 기대고 있으니 깨지 말 것. */
+  var ROMAN = ["XII","I","II","III","IIII","V","VI","VII","VIII","IX","X","XI"];
+  /* 극좌표 — 12시가 0도, 시계 방향 */
+  function pxy(r, deg){
+    var a = deg * Math.PI / 180;
+    return [(100 + Math.sin(a) * r).toFixed(1), (100 - Math.cos(a) * r).toFixed(1)];
   }
+  /* 가운데를 축으로 세워 둔 막대 하나 (인덱스용). deg 만큼 돌려 붙인다 */
+  function bar(cls, r1, r2, w, deg, rx){
+    return '<rect class="' + cls + '" x="' + (100 - w / 2) + '" y="' + (100 - r2) +
+      '" width="' + w + '" height="' + (r2 - r1) + '"' + (rx ? ' rx="' + rx + '"' : "") +
+      ' transform="rotate(' + deg + ' 100 100)"/>';
+  }
+  /* 면 깎은 바늘(도피네) — 가운데 능선을 두고 좌·우를 다른 밝기로 칠해 각져 보이게 한다.
+     tip = 끝 y, wy = 가장 넓어지는 y, base = 축 아래 끝 y (꼬리는 짧아야 한 방향으로 읽힌다) */
+  function facet(tip, wy, base, w){
+    return '<polygon class="f1" points="100,' + tip + ' ' + (100 - w) + ',' + wy + ' 100,' + base + '"/>' +
+           '<polygon class="f2" points="100,' + tip + ' ' + (100 + w) + ',' + wy + ' 100,' + base + '"/>';
+  }
+  var dialBuilt = null;
+  function buildDial(){
+    if(dialBuilt === clockDial) return;
+    var h = '<defs><radialGradient id="qbSun" cx="50%" cy="34%" r="78%">' +
+            '<stop class="s1" offset="0"/><stop class="s2" offset="1"/></radialGradient></defs>';
+    var i, deg, p, q;
+
+    if(clockDial === "classic"){
+      /* 정장 시계 — 붙임 막대 인덱스, 도피네 바늘, 12시만 두 줄 */
+      h += '<circle class="dbezel" cx="100" cy="100" r="95"/>' +
+           '<circle class="dplate" cx="100" cy="100" r="92"/>' +
+           '<circle class="dsun" cx="100" cy="100" r="92"/>' +
+           '<circle class="dbezel2" cx="100" cy="100" r="86"/>';
+      for(i = 0; i < 60; i++){                       /* 분 눈금 점 */
+        if(i % 5 === 0) continue;
+        p = pxy(81, i * 6);
+        h += '<circle class="drail" cx="' + p[0] + '" cy="' + p[1] + '" r="1" fill="currentColor" stroke="none" opacity=".5"/>';
+      }
+      for(i = 0; i < 12; i++){
+        deg = i * 30;
+        if(i === 0){ h += bar("didx", 62, 77, 3.4, -2.2) + bar("didx", 62, 77, 3.4, 2.2); }
+        else h += bar("didx", 63, 77, 3.8, deg);
+      }
+      h += '<g id="dHand">' + facet(50, 72, 107, 5.4) + '</g>' +
+           '<g id="mHand">' + facet(24, 54, 107, 4.4) + '</g>' +
+           '<g id="sHand"><rect class="dstem" x="99.3" y="22" width="1.4" height="94"/>' +
+             '<circle class="dstem" cx="100" cy="113" r="4.6"/></g>' +
+           '<circle class="dcap" cx="100" cy="100" r="4.2"/><circle class="dcap2" cx="100" cy="100" r="1.6"/>';
+
+    } else if(clockDial === "diver"){
+      /* 다이버 — 두꺼운 베젤, 야광 인덱스, 칼 바늘, 초침 끝에 야광 알 */
+      h += '<circle class="dbezel" cx="100" cy="100" r="96" stroke-width="7"/>';
+      for(i = 0; i < 12; i++) h += bar("didx", 90, 97, 2.2, i * 30);
+      /* ⚠ 좌표는 반지름이 아니라 y 다. 12시 방향 r 은 y = 100 - r. 여기서 한 번 헷갈려 판 한가운데 찍혔다. */
+      h += '<polygon class="dpip" points="100,3 95.5,12 104.5,12"/>' +
+           '<circle class="dplate" cx="100" cy="100" r="86"/>' +
+           '<circle class="dsun" cx="100" cy="100" r="86"/>';
+      for(i = 0; i < 60; i++){
+        if(i % 5 === 0) continue;
+        h += bar("drail", 78, 83, 1, i * 6);
+      }
+      h += '<polygon class="dlume" points="100,24 91.5,42 108.5,42"/>';   /* 12시 삼각 (r 76→58) */
+      for(i = 1; i < 12; i++){
+        if(i === 3 || i === 6 || i === 9) h += bar("dlume", 58, 74, 9, i * 30, 1.5);
+        else h += bar("dlume", 60, 74, 8, i * 30, 4);
+      }
+      h += '<g id="dHand"><polygon class="dlume" points="100,50 107,64 107,108 93,108 93,64"/></g>' +
+           '<g id="mHand"><polygon class="dlume" points="100,22 105.5,38 105.5,108 94.5,108 94.5,38"/></g>' +
+           '<g id="sHand"><rect class="dstem" x="99.2" y="26" width="1.6" height="92"/>' +
+             '<circle class="dlume" cx="100" cy="40" r="6"/><circle class="dstem" cx="100" cy="116" r="4"/></g>' +
+           '<circle class="dcap" cx="100" cy="100" r="4.4"/><circle class="dcap2" cx="100" cy="100" r="1.6"/>';
+
+    } else if(clockDial === "roman"){
+      /* 로마 숫자 — 철길 분눈금. 12시 자리는 관례대로 IIII 가 아니라 XII,
+         4시 자리는 옛 시계들이 쓰던 IIII 를 그대로 쓴다. */
+      h += '<circle class="dbezel" cx="100" cy="100" r="95" stroke-width="2"/>' +
+           '<circle class="dplate" cx="100" cy="100" r="93"/>' +
+           '<circle class="dsun" cx="100" cy="100" r="93"/>' +
+           '<circle class="drail" cx="100" cy="100" r="88"/>' +
+           '<circle class="drail" cx="100" cy="100" r="82"/>';
+      for(i = 0; i < 60; i++) h += bar("didx", 82, 88, (i % 5 === 0) ? 1.8 : .7, i * 6);
+      for(i = 0; i < 12; i++){
+        p = pxy(64, i * 30);
+        h += '<text class="drn" x="' + p[0] + '" y="' + p[1] + '">' + ROMAN[i] + '</text>';
+      }
+      /* 브레게풍 — 가느다란 대에 속 빈 달 하나, 그 위로 짧은 창끝.
+         ⚠ 달은 반드시 .dmoon 으로. .f1 을 쓰면 CSS fill 이 fill="none" 속성을 이겨 꽉 찬 원이 된다. */
+      h += '<g id="dHand"><rect class="f1" x="98.7" y="60" width="2.6" height="48" rx="1.3"/>' +
+             '<circle class="dmoon" cx="100" cy="62" r="6.4" stroke-width="2.4"/>' +
+             '<polygon class="f1" points="100,46 102.4,60 97.6,60"/></g>' +
+           '<g id="mHand"><rect class="f1" x="98.9" y="38" width="2.2" height="70" rx="1.1"/>' +
+             '<circle class="dmoon" cx="100" cy="39" r="5.6" stroke-width="2.2"/>' +
+             '<polygon class="f1" points="100,24 102.2,37 97.8,37"/></g>' +
+           '<g id="sHand"><rect class="dstem" x="99.4" y="24" width="1.2" height="92"/>' +
+             '<circle class="dstem" cx="100" cy="113" r="4"/></g>' +
+           '<circle class="dcap" cx="100" cy="100" r="3.4"/><circle class="dcap2" cx="100" cy="100" r="1.4"/>';
+
+    } else {
+      /* 기본 — v5.7 부터 쓰던 담백한 판 */
+      h += '<circle class="dface" cx="100" cy="100" r="94"/>';
+      for(i = 0; i < 60; i++){
+        var big = (i % 5 === 0);
+        p = pxy(big ? 78 : 83, i * 6); q = pxy(87, i * 6);
+        h += '<line class="dtick' + (big ? " big" : "") + '" x1="' + p[0] + '" y1="' + p[1] +
+             '" x2="' + q[0] + '" y2="' + q[1] + '" stroke-width="' + (big ? 2.4 : 1) + '"/>';
+      }
+      for(i = 1; i <= 12; i++){
+        p = pxy(64, i * 30);
+        h += '<text class="dnum" x="' + p[0] + '" y="' + p[1] + '">' + i + '</text>';
+      }
+      h += '<line class="dh" id="dHand" x1="100" y1="100" x2="100" y2="48" stroke-width="6"/>' +
+           '<line class="dm" id="mHand" x1="100" y1="100" x2="100" y2="26" stroke-width="4"/>' +
+           '<line class="ds" id="sHand" x1="100" y1="112" x2="100" y2="22" stroke-width="1.6"/>' +
+           '<circle class="dc" cx="100" cy="100" r="4"/>';
+    }
+    $("zDial").innerHTML = h;
+    dialBuilt = clockDial;
+  }
+  /* 오토매틱은 사실 매끄럽게 흐르는 게 아니라 초당 8번 끊어 간다(28,800 진동/시).
+     그 간격을 그대로 흉내 내면 가장 그럴듯하고, 매 프레임 다시 그리지 않아 가볍다. */
+  var SWEEP_HZ = 8;
   function paintDial(d){
-    if(!dialReady) return;
+    if(dialBuilt === null) return;
     var sec = d.getSeconds(), min = d.getMinutes(), hr = d.getHours() % 12;
+    if(clockSweep) sec += Math.floor(d.getMilliseconds() / 1000 * SWEEP_HZ) / SWEEP_HZ;
     function turn(id, deg){ $(id).setAttribute("transform", "rotate(" + deg.toFixed(2) + " 100 100)"); }
     turn("dHand", (hr + min / 60) * 30);
     turn("mHand", (min + sec / 60) * 6);
@@ -6317,20 +6461,38 @@ var HOLIDAYS = {
     var os = $("clockOptSeg").children;
     os[0].classList.toggle("on", clockSec);
     os[1].classList.toggle("on", clock12);
+    os[2].classList.toggle("on", clockSweep);
+    Array.prototype.forEach.call($("dialSeg").children, function(b){
+      b.classList.toggle("on", b.dataset.d === clockDial);
+    });
+    var dialName = { plain:"담백한 기본 판", classic:"붙임 인덱스와 도피네 바늘의 정장 판",
+                     diver:"야광 인덱스와 칼 바늘의 다이버 판", roman:"로마 숫자와 철길 분눈금 판" }[clockDial];
     $("clockNote").textContent =
       (clockFace === "analog" ? "대기 화면에 아날로그 시계만 띄웁니다."
        : clockFace === "both" ? "아날로그를 크게, 디지털을 그 아래 작게 띄웁니다."
        : "대기 화면에 디지털 시계만 띄웁니다.") +
       " 초 " + (clockSec ? "보임" : "숨김") + " · " + (clock12 ? "오전·오후 12시간" : "24시간") + " 표시" +
-      (clockFace === "digital" ? "" : (clockSec ? " (초침 돕니다)" : " (초침 없음)"));
+      (clockFace === "digital" ? " (판 설정은 아날로그를 골라야 보입니다)"
+        : " · " + dialName + (clockSec ? (clockSweep ? " · 초침은 오토매틱처럼 초당 8번 흐릅니다" : " · 초침은 1초씩 딱딱 갑니다") : " (초침 없음)"));
   }
   Array.prototype.forEach.call($("faceSeg").children, function(b){
     b.onclick = function(){ clockFace = b.dataset.f; saveClockOpt(); paintFaceSeg(); if(zenOn) zenPaint(); render(); };
   });
   Array.prototype.forEach.call($("clockOptSeg").children, function(b){
     b.onclick = function(){
-      if(b.dataset.o === "sec") clockSec = !clockSec; else clock12 = !clock12;
-      saveClockOpt(); paintFaceSeg(); if(zenOn) zenPaint(); render();
+      var o = b.dataset.o;
+      if(o === "sec") clockSec = !clockSec;
+      else if(o === "sweep") clockSweep = !clockSweep;
+      else clock12 = !clock12;
+      saveClockOpt(); paintFaceSeg(); if(zenOn){ zenRetick(); zenPaint(); } render();
+    };
+  });
+  Array.prototype.forEach.call($("dialSeg").children, function(b){
+    b.onclick = function(){
+      clockDial = b.dataset.d;
+      /* 판이 바뀌면 다시 그려야 한다 — 안 그러면 예전 판이 그대로 남는다 */
+      dialBuilt = null;
+      saveClockOpt(); paintFaceSeg(); if(zenOn) zenPaint();
     };
   });
   var IDLE_KEY = "questboard:idle";
@@ -6340,10 +6502,12 @@ var HOLIDAYS = {
   function zenPaintClock(){
     var n = new Date(), h = n.getHours(), ap = "";
     if(clock12){ ap = h < 12 ? "오전" : "오후"; h = h % 12; if(!h) h = 12; }
-    $("zTime").textContent = (clock12 ? String(h) : String(h).padStart(2,"0")) + ":" + String(n.getMinutes()).padStart(2,"0");
-    var ael = $("zAmPm"); ael.hidden = !clock12; if(clock12) ael.textContent = ap;
+    /* 스윕이면 초당 8번 불리므로 글자는 값이 바뀔 때만 건드린다 */
+    function put(el, t){ if(el.textContent !== t) el.textContent = t; }
+    put($("zTime"), (clock12 ? String(h) : String(h).padStart(2,"0")) + ":" + String(n.getMinutes()).padStart(2,"0"));
+    var ael = $("zAmPm"); ael.hidden = !clock12; if(clock12) put(ael, ap);
     var sel = $("zSec"); sel.hidden = !clockSec;
-    if(clockSec) sel.textContent = String(n.getSeconds()).padStart(2,"0");
+    if(clockSec) put(sel, String(n.getSeconds()).padStart(2,"0"));
     paintDial(n);
   }
   /* 고른 모양에 맞춰 시계를 켜고 끈다 */
@@ -6394,12 +6558,19 @@ var HOLIDAYS = {
       : "오늘 적어둔 일이 없습니다";
     zenPaintCal();
   }
+  /* 스윕 초침이 켜져 있고 판이 보일 때만 빠르게 돈다. 그 외에는 1초에 한 번이면 충분하다. */
+  function zenRetick(){
+    if(zenTick){ clearInterval(zenTick); zenTick = null; }
+    if(!zenOn) return;
+    var fast = clockSweep && clockSec && clockFace !== "digital";
+    zenTick = setInterval(zenPaintClock, fast ? Math.round(1000 / SWEEP_HZ) : 1000);
+  }
   function zenOpen(){
     if(zenOn) return;
     zenOn = true; zenMonth = null;
     zenPaint();
     $("zenOverlay").hidden = false;
-    zenTick = setInterval(zenPaintClock, 1000);
+    zenRetick();
     if(zenTimer){ clearTimeout(zenTimer); zenTimer = null; }
   }
   function zenClose(){
