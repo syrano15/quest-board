@@ -535,7 +535,10 @@
   .splist{display:flex;flex-direction:column;gap:.35rem;}
   .sprow{display:flex;align-items:center;gap:.4rem;}
   .sprow .spw{flex:1 1 9rem;min-width:0;}
-  .sprow .spa{width:6.5rem;text-align:right;}
+  /* 177,212.35 같은 값이 잘리지 않게 넓게. 화살표(스피너)는 자리만 먹어서 뺀다 */
+  .sprow .spa{width:8.2rem;text-align:right;-moz-appearance:textfield;}
+  .sprow .spa::-webkit-outer-spin-button,
+  .sprow .spa::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .sprow .fnum{flex:none;gap:.3rem;}
   .sprow .fnum span{font-size:.8rem;color:var(--dim);}
   .sprow .spx{flex:none;background:none;border:1px solid var(--line);border-radius:.35rem;
@@ -1733,7 +1736,7 @@
     <p class="hint" style="font-size:.8rem">집 보드에서만 보입니다. 회사 보드에는 나타나지 않습니다.</p>
     <form class="wtform" id="wtForm">
       <input type="date" id="wtDate">
-      <input type="number" class="fi" id="wtInput" step="0.1" min="20" max="300" placeholder="kg" inputmode="decimal">
+      <input type="number" class="fi" id="wtInput" step="any" min="20" max="300" placeholder="kg" inputmode="decimal">
       <button class="primary" type="submit">기록</button>
     </form>
     <div class="wtlist" id="wtList"></div>
@@ -2057,13 +2060,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v6.1";
-  var APP_BUILD = "2026-09-16 23:30";
+  var APP_VERSION = "v6.2";
+  var APP_BUILD = "2026-09-17 00:10";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v6.2",  d:"2026-09-17", n:[
+      "금액에 소수점·아무 숫자나 들어간다 — step=100 이라 100 단위가 아니면 저장이 막히던 것 해결",
+      "해외 결제 환산·할인으로 생긴 177,212.35원 같은 값을 그대로 적고 합계도 소수까지 맞춘다",
+      "몸무게 칸도 같은 이유로 0.1 단위만 받던 것을 풀었다"
+    ]},
     { v:"v6.1",  d:"2026-09-16", n:[
       "하루에 여러 건 쓴 돈을 따로따로 적는다 — 사유·금액 줄을 필요한 만큼 늘림",
       "통계 사유별 지출도 건마다 갈라 센다. 이어 붙인 덩어리가 사유 하나로 잡히던 것 해결",
@@ -3238,13 +3246,18 @@ var HOLIDAYS = {
      ⚠ why/amt 는 지우지 않고 요약(사유는 " · " 로 이어 붙이고, 금액은 합계)으로 계속 남긴다.
         예전 버전 앱이 동기화로 이 기록을 읽어도 한 줄로는 제대로 보이게 하기 위해서다.
      ⚠ 건이 하나뿐이면 sp 를 아예 안 만든다 — 예전과 똑같은 모양이라 자료가 커지지 않는다. */
+  /* 금액은 정수가 아닐 수 있다 — 해외 결제 환산과 할인 때문에 0.n 원 단위가 나온다(v6.2).
+     소수 둘째 자리까지 남기고, 더하기에서 0.30000000000000004 가 나오지 않게 매번 다듬는다. */
+  function money(n){
+    n = Math.round((+n || 0) * 100) / 100;
+    return (n > 0) ? Math.min(n, 1e11) : 0;
+  }
   function cleanSp(arr){
     var out = [], i, w, a;
     if(!arr || !arr.length) return out;
     for(i = 0; i < arr.length && out.length < 20; i++){
       w = String((arr[i] && arr[i].w) || "").trim().slice(0, 120);
-      a = Math.round(+((arr[i] && arr[i].a) || 0));
-      if(!(a > 0)) a = 0; else a = Math.min(a, 1e10);
+      a = money(arr[i] && arr[i].a);
       if(!w && !a) continue;                    /* 빈 줄은 버린다 */
       out.push(a ? { w:w, a:a } : { w:w });
     }
@@ -3264,7 +3277,7 @@ var HOLIDAYS = {
   function spTotal(sp){
     var t = 0, i;
     for(i = 0; i < (sp || []).length; i++) t += (sp[i].a || 0);
-    return t;
+    return money(t);
   }
   function spText(sp){
     return (sp || []).map(function(x){ return x.w; }).filter(Boolean).join(" · ");
@@ -3311,10 +3324,15 @@ var HOLIDAYS = {
     if(h.amt === 0) return false;
     return /돈|지출|비용|소비|절약|용돈|카드|과금|결제/.test(String(h.name || ""));
   }
-  /* 12000 → "12,000원" */
+  /* 12000 → "12,000원" · 177212.35 → "177,212.35원" (소수는 있을 때만 붙인다) */
   function won(n){
-    n = Math.round(+n || 0);
-    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
+    n = Math.round((+n || 0) * 100) / 100;
+    var neg = n < 0 ? "-" : "";
+    n = Math.abs(n);
+    var i = Math.floor(n), f = Math.round((n - i) * 100);
+    var s = String(i).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    if(f) s += "." + (f % 10 === 0 ? String(f / 10) : String(f).padStart(2, "0"));
+    return neg + s + "원";
   }
   /* 그 항목에 예전에 적어둔 사유 — 자주 쓴 것부터. 매번 같은 말을 다시 치지 않게.
      여러 건을 적은 날은 이어 붙인 요약이 아니라 건 하나하나를 센다. */
@@ -3345,8 +3363,10 @@ var HOLIDAYS = {
     row.className = "sprow";
     row.innerHTML =
       '<input class="ft spw" type="text" maxlength="120" placeholder="사유 (예: 세제·휴지)">' +
-      '<div class="fnum"><input class="ft spa" type="number" min="0" max="99999999" step="100" ' +
-        'placeholder="0" inputmode="numeric"><span>원</span></div>' +
+      /* ⚠ step 을 100 으로 두면 브라우저가 "100 의 배수만 유효한 값"으로 보고 저장을 막는다.
+         해외 결제 환산·할인 때문에 177,212.35 같은 값이 실제로 들어온다(사용자 제보). step="any" 로 둘 것. */
+      '<div class="fnum"><input class="ft spa" type="number" min="0" max="99999999999" step="any" ' +
+        'placeholder="0" inputmode="decimal"><span>원</span></div>' +
       '<button type="button" class="spx" title="이 줄 지우기" aria-label="이 줄 지우기">×</button>';
     var wi = row.querySelector(".spw"), ai = row.querySelector(".spa");
     wi.value = w || "";
@@ -3364,7 +3384,8 @@ var HOLIDAYS = {
   }
   function readSp(){
     return Array.prototype.map.call($("whySpList").children, function(r){
-      return { w:r.querySelector(".spw").value, a:parseInt(r.querySelector(".spa").value, 10) || 0 };
+      /* ⚠ parseInt 를 쓰면 177212.35 가 177212 로 잘린다. parseFloat 이어야 한다. */
+      return { w:r.querySelector(".spw").value, a:parseFloat(r.querySelector(".spa").value) || 0 };
     });
   }
   /* 0 이 잔뜩 붙은 숫자는 눈으로 세기 어렵다. 합계를 읽어서 붙여준다. */
