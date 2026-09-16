@@ -585,6 +585,18 @@
     font-size:clamp(4.2rem,19vw,12rem);font-weight:300;line-height:1;letter-spacing:-.02em;
     color:var(--text);font-variant-numeric:tabular-nums;}
   .zclock .zsec{font-size:.26em;color:var(--dim);letter-spacing:.02em;}
+  .zclock .zap{font-size:.22em;color:var(--muted);letter-spacing:.04em;align-self:center;}
+  /* 둘 다 고르면 아날로그가 주인공이고 디지털은 밑에 작게 */
+  .zbox.both .zclock{font-size:clamp(1.8rem,6vw,3.2rem);}
+  .zdial{width:clamp(13rem,36vw,21rem);height:auto;display:block;}
+  .zbox.both .zdial{width:clamp(11rem,30vw,17rem);}
+  .zdial .dface{fill:none;stroke:var(--line);stroke-width:2;}
+  .zdial .dtick{stroke:var(--dim);stroke-linecap:round;}
+  .zdial .dtick.big{stroke:var(--muted);}
+  .zdial .dnum{fill:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:13px;text-anchor:middle;dominant-baseline:central;}
+  .zdial .dh,.zdial .dm{stroke:var(--text);stroke-linecap:round;}
+  .zdial .ds{stroke:var(--accent);stroke-linecap:round;}
+  .zdial .dc{fill:var(--accent);}
   .zdate{margin:0;display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;justify-content:center;
     font-family:var(--title-font,"Black Han Sans"),var(--ui-font),sans-serif;
     font-weight:var(--title-weight,400);font-size:clamp(1.5rem,5.5vw,2.6rem);line-height:1.1;}
@@ -612,7 +624,8 @@
   .zd .zbar i{display:block;height:100%;background:var(--done);}
   .zhint{margin:.4rem 0 0;font-size:.8rem;color:var(--line);letter-spacing:.02em;}
   /* 세로가 짧으면 달력부터 접고, 더 짧으면 시계만 남긴다 */
-  @media (max-height:760px){ .zclock{font-size:clamp(3.4rem,13vw,7rem);} .zcal{max-width:min(26rem,86vw);} .zd{font-size:.9rem;} }
+  @media (max-height:760px){ .zclock{font-size:clamp(3.4rem,13vw,7rem);} .zcal{max-width:min(26rem,86vw);} .zd{font-size:.9rem;}
+    .zdial{width:clamp(10rem,26vw,15rem);} }
   @media (max-height:560px){ .zcal{display:none;} .zsum{margin-bottom:0;} }
   .primary:disabled{opacity:.45;cursor:not-allowed;}
   /* 취미 표에서 잘못 들어온 줄을 바로 뺀다 */
@@ -1304,6 +1317,17 @@
       <button type="button" data-h="5">새벽 5시</button>
     </div>
     <p class="hint" id="dayStartNote" style="font-size:.76rem;margin:0"></p>
+    <span class="fl">시계 모양</span>
+    <div class="seg" id="faceSeg">
+      <button type="button" data-f="digital">디지털</button>
+      <button type="button" data-f="analog">아날로그</button>
+      <button type="button" data-f="both">둘 다</button>
+    </div>
+    <div class="seg" id="clockOptSeg">
+      <button type="button" data-o="sec">초 보이기</button>
+      <button type="button" data-o="h12">오전·오후</button>
+    </div>
+    <p class="hint" id="clockNote" style="font-size:.76rem;margin:0"></p>
     <span class="fl">대기 화면 자동 전환</span>
     <div class="seg" id="idleSeg">
       <button type="button" data-m="0">끄기</button>
@@ -1370,6 +1394,7 @@
     <div class="htab">
       <div class="hrow"><code>여는 법</code><span>사이드바 <b>시계·달력</b> 버튼, 사이드바 시계 누르기, 위젯의 <b>◷</b>, 그 외 기능 → <b>대기 화면</b>. 자동 전환 시간을 정해두면 방치했을 때 저절로 넘어갑니다</span></div>
       <div class="hrow"><code>보이는 것</code><span>큰 시계, 오늘 날짜·요일, 오늘 진행 상황, 이번 달 달력(칸마다 완료 비율)</span></div>
+      <div class="hrow"><code>시계 모양</code><span>그 외 기능에서 <b>디지털 · 아날로그 · 둘 다</b>를 고르고, 초와 오전·오후 표시를 켜고 끕니다</span></div>
       <div class="hrow"><code>닫는 법</code><span>아무 키나 누르거나 화면을 누르면 하던 자리로 돌아옵니다. 보드는 그대로 있습니다</span></div>
       <div class="hrow"><code>달력 넘기기</code><span>‹ › 는 대기 화면을 닫지 않고 달만 넘깁니다</span></div>
     </div>
@@ -1839,7 +1864,8 @@
 
 <div class="zen" id="zenOverlay" hidden>
   <div class="zbox">
-    <div class="zclock"><span id="zTime">--:--</span><span class="zsec" id="zSec">00</span></div>
+    <svg class="zdial" id="zDial" viewBox="0 0 200 200" aria-hidden="true" hidden></svg>
+    <div class="zclock" id="zClock"><span id="zAmPm" class="zap" hidden></span><span id="zTime">--:--</span><span class="zsec" id="zSec">00</span></div>
     <p class="zdate"><b id="zDate">—</b><span id="zDow">—</span><span class="holi" id="zHoli" hidden></span></p>
     <p class="zsum" id="zSum"></p>
     <div class="zcal">
@@ -1957,13 +1983,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.6";
-  var APP_BUILD = "2026-09-16 15:40";
+  var APP_VERSION = "v5.7";
+  var APP_BUILD = "2026-09-16 18:10";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.7",  d:"2026-09-16", n:[
+      "시계 모양 설정 — 디지털 / 아날로그 / 둘 다",
+      "초 보이기, 오전·오후(12시간) 켜고 끄기 · 아날로그 초침도 같이 따라간다",
+      "사이드바·위젯 작은 시계도 12시간 설정을 따른다"
+    ]},
     { v:"v5.6",  d:"2026-09-16", n:[
       "카드 높이를 칸 수처럼 \"몇 줄\" 로도 고정 — 3열 × 4줄 식으로 자리가 딱 잡힌다",
       "사이드바에 시계·달력 버튼 추가 (사이드바 시계를 눌러도 열린다) · 위젯에도 ◷ 버튼",
@@ -3844,7 +3875,7 @@ var HOLIDAYS = {
 
   function renderWidget(){
     var d = fromIso(viewKey), now = new Date();
-    $("wClock").textContent = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+    $("wClock").textContent = clockText(now, false);
     var db = $("wDateBtn");
     var wh = holidayOf(viewKey), wwd = d.getDay();
     var wcls = (wh || wwd === 0) ? "sun" : (wwd === 6 ? "sat" : "");
@@ -4103,7 +4134,7 @@ var HOLIDAYS = {
     $("doneN").textContent = done;
     $("totalN").textContent = live.length;
     renderRing(live);
-    $("clock").textContent = (function(n){ return String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); })(new Date());
+    $("clock").textContent = clockText(new Date(), false);
   }
 
   /* ---------- 글꼴 ---------- */
@@ -6163,14 +6194,114 @@ var HOLIDAYS = {
   /* ---------- 대기 화면 ----------
      일정 시간 아무것도 안 하면 시계·달력만 남는 화면으로 넘어간다.
      보드는 그대로 있고 위에 덮기만 하므로, 아무거나 누르면 하던 자리로 돌아온다. */
+  /* ---------- 시계 모양 ----------
+     대기 화면 시계를 디지털·아날로그 중에 고르고, 초와 12시간 표시를 켜고 끈다.
+     사이드바·위젯의 작은 시계는 글자뿐이라 초·12시간 설정만 따른다. */
+  var FACE_KEY = "questboard:clockface", COPT_KEY = "questboard:clockopt";
+  var clockFace = "digital", clockSec = true, clock12 = false;
+  try{
+    clockFace = localStorage.getItem(FACE_KEY) || "digital";
+    if(["digital","analog","both"].indexOf(clockFace) < 0) clockFace = "digital";
+    var co = localStorage.getItem(COPT_KEY);
+    if(co !== null){ clockSec = co.indexOf("s") >= 0; clock12 = co.indexOf("h") >= 0; }
+  }catch(e){}
+  function saveClockOpt(){
+    try{
+      localStorage.setItem(FACE_KEY, clockFace);
+      localStorage.setItem(COPT_KEY, (clockSec ? "s" : "") + (clock12 ? "h" : ""));
+    }catch(e){}
+  }
+  /* 작은 시계용 — 12시간이면 0시는 12시로 */
+  function clockText(d, withSec){
+    var h = d.getHours(), ap = "";
+    if(clock12){ ap = h < 12 ? "오전 " : "오후 "; h = h % 12; if(!h) h = 12; }
+    var t = (clock12 ? String(h) : String(h).padStart(2,"0")) + ":" + String(d.getMinutes()).padStart(2,"0");
+    if(withSec && clockSec) t += ":" + String(d.getSeconds()).padStart(2,"0");
+    return ap + t;
+  }
+  /* 아날로그 판 — 눈금과 숫자는 한 번만 그리고, 바늘만 매초 돌린다 */
+  var dialReady = false;
+  function buildDial(){
+    if(dialReady) return;
+    var h = '<circle class="dface" cx="100" cy="100" r="94"/>', i, a, x1, y1, x2, y2, big;
+    for(i = 0; i < 60; i++){
+      a = i * 6 * Math.PI / 180;
+      big = (i % 5 === 0);
+      x1 = 100 + Math.sin(a) * (big ? 78 : 83);
+      y1 = 100 - Math.cos(a) * (big ? 78 : 83);
+      x2 = 100 + Math.sin(a) * 87;
+      y2 = 100 - Math.cos(a) * 87;
+      h += '<line class="dtick' + (big ? " big" : "") + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+           '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke-width="' + (big ? 2.4 : 1) + '"/>';
+    }
+    for(i = 1; i <= 12; i++){
+      a = i * 30 * Math.PI / 180;
+      h += '<text class="dnum" x="' + (100 + Math.sin(a) * 64).toFixed(1) + '" y="' +
+           (100 - Math.cos(a) * 64).toFixed(1) + '">' + i + '</text>';
+    }
+    h += '<line class="dh" id="dHand" x1="100" y1="100" x2="100" y2="48" stroke-width="6"/>' +
+         '<line class="dm" id="mHand" x1="100" y1="100" x2="100" y2="26" stroke-width="4"/>' +
+         '<line class="ds" id="sHand" x1="100" y1="112" x2="100" y2="22" stroke-width="1.6"/>' +
+         '<circle class="dc" cx="100" cy="100" r="4"/>';
+    $("zDial").innerHTML = h;
+    dialReady = true;
+  }
+  function paintDial(d){
+    if(!dialReady) return;
+    var sec = d.getSeconds(), min = d.getMinutes(), hr = d.getHours() % 12;
+    function turn(id, deg){ $(id).setAttribute("transform", "rotate(" + deg.toFixed(2) + " 100 100)"); }
+    turn("dHand", (hr + min / 60) * 30);
+    turn("mHand", (min + sec / 60) * 6);
+    var sh = $("sHand");
+    sh.style.display = clockSec ? "" : "none";
+    if(clockSec) turn("sHand", sec * 6);
+  }
+  function paintFaceSeg(){
+    Array.prototype.forEach.call($("faceSeg").children, function(b){
+      b.classList.toggle("on", b.dataset.f === clockFace);
+    });
+    var os = $("clockOptSeg").children;
+    os[0].classList.toggle("on", clockSec);
+    os[1].classList.toggle("on", clock12);
+    $("clockNote").textContent =
+      (clockFace === "analog" ? "대기 화면에 아날로그 시계만 띄웁니다."
+       : clockFace === "both" ? "아날로그를 크게, 디지털을 그 아래 작게 띄웁니다."
+       : "대기 화면에 디지털 시계만 띄웁니다.") +
+      " 초 " + (clockSec ? "보임" : "숨김") + " · " + (clock12 ? "오전·오후 12시간" : "24시간") + " 표시" +
+      (clockFace === "digital" ? "" : (clockSec ? " (초침 돕니다)" : " (초침 없음)"));
+  }
+  Array.prototype.forEach.call($("faceSeg").children, function(b){
+    b.onclick = function(){ clockFace = b.dataset.f; saveClockOpt(); paintFaceSeg(); if(zenOn) zenPaint(); render(); };
+  });
+  Array.prototype.forEach.call($("clockOptSeg").children, function(b){
+    b.onclick = function(){
+      if(b.dataset.o === "sec") clockSec = !clockSec; else clock12 = !clock12;
+      saveClockOpt(); paintFaceSeg(); if(zenOn) zenPaint(); render();
+    };
+  });
   var IDLE_KEY = "questboard:idle";
   var idleMin = 0;                       /* 0 = 자동으로 안 켜짐 */
   try{ idleMin = Math.max(0, Math.min(120, +(localStorage.getItem(IDLE_KEY) || 0) || 0)); }catch(e){}
   var zenOn = false, zenTimer = null, zenTick = null, zenMonth = null;
   function zenPaintClock(){
-    var n = new Date();
-    $("zTime").textContent = String(n.getHours()).padStart(2,"0") + ":" + String(n.getMinutes()).padStart(2,"0");
-    $("zSec").textContent = String(n.getSeconds()).padStart(2,"0");
+    var n = new Date(), h = n.getHours(), ap = "";
+    if(clock12){ ap = h < 12 ? "오전" : "오후"; h = h % 12; if(!h) h = 12; }
+    $("zTime").textContent = (clock12 ? String(h) : String(h).padStart(2,"0")) + ":" + String(n.getMinutes()).padStart(2,"0");
+    var ael = $("zAmPm"); ael.hidden = !clock12; if(clock12) ael.textContent = ap;
+    var sel = $("zSec"); sel.hidden = !clockSec;
+    if(clockSec) sel.textContent = String(n.getSeconds()).padStart(2,"0");
+    paintDial(n);
+  }
+  /* 고른 모양에 맞춰 시계를 켜고 끈다 */
+  function zenFace(){
+    var showD = clockFace !== "analog", showA = clockFace !== "digital";
+    if(showA) buildDial();
+    /* ⚠ SVG 요소에는 hidden 프로퍼티가 없다 (HTMLElement 것이다).
+       el.hidden = false 를 해도 속성이 안 지워져서 [hidden]{display:none} 에 계속 걸린다.
+       SVG 는 반드시 속성으로 껐다 켜야 한다. */
+    if(showA) $("zDial").removeAttribute("hidden"); else $("zDial").setAttribute("hidden", "");
+    $("zClock").hidden = !showD;
+    document.querySelector(".zbox").classList.toggle("both", clockFace === "both");
   }
   function zenPaintCal(){
     var base = zenMonth || fromIso(todayKey);
@@ -6193,6 +6324,7 @@ var HOLIDAYS = {
     g.innerHTML = html;
   }
   function zenPaint(){
+    zenFace();
     zenPaintClock();
     var d = fromIso(todayKey), wd = d.getDay(), hol = holidayOf(todayKey);
     $("zDate").textContent = d.getFullYear() + "년 " + (d.getMonth()+1) + "월 " + d.getDate() + "일";
@@ -6273,6 +6405,7 @@ var HOLIDAYS = {
       ? (idleMin + "분 동안 아무것도 안 하면 시계·달력만 남는 화면으로 넘어갑니다. 아무거나 누르면 돌아옵니다.")
       : "자동으로 켜지 않습니다. 위 \u201c대기 화면\u201d 으로 직접 열 수 있습니다.";
   }
+  paintFaceSeg();
   paintIdleSeg();
   idleKick();
   $("verText").onclick = openLog;
