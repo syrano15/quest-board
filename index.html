@@ -170,7 +170,9 @@
   .ring-hov i{font-style:normal;font-size:.82rem;color:var(--muted);line-height:1.25;word-break:keep-all;}
   .ring-mid .n{font-family:"IBM Plex Mono",monospace;font-size:2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;}
   .ring-mid .of{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--dim);letter-spacing:.08em;}
-  .clock{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;}
+  .clock{font-family:"IBM Plex Mono",monospace;font-size:1.3rem;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;
+    background:none;border:none;padding:.1rem .3rem;border-radius:.3rem;cursor:pointer;transition:color .15s ease;}
+  .clock:hover{color:var(--accent);}
 
   /* 창을 세로로 줄여 쓰면 사이드바가 넘쳐서 스크롤해야 했다.
      낮은 창에서는 링과 버튼을 단계적으로 줄여 한 화면에 다 들어오게 한다. */
@@ -578,38 +580,40 @@
   .zen{position:fixed;inset:0;z-index:60;background:var(--ink);display:grid;place-items:center;
     padding:2rem 1.5rem;cursor:pointer;animation:zfade .45s ease;}
   @keyframes zfade{ from{opacity:0} to{opacity:1} }
-  .zbox{display:flex;flex-direction:column;align-items:center;gap:.6rem;max-width:34rem;width:100%;}
+  .zbox{display:flex;flex-direction:column;align-items:center;gap:.7rem;max-width:44rem;width:100%;}
   .zclock{display:flex;align-items:baseline;gap:.5rem;font-family:"IBM Plex Mono",monospace;
-    font-size:clamp(3.6rem,15vw,8.5rem);font-weight:300;line-height:1;letter-spacing:-.02em;
+    font-size:clamp(4.2rem,19vw,12rem);font-weight:300;line-height:1;letter-spacing:-.02em;
     color:var(--text);font-variant-numeric:tabular-nums;}
-  .zclock .zsec{font-size:.28em;color:var(--dim);letter-spacing:.02em;}
+  .zclock .zsec{font-size:.26em;color:var(--dim);letter-spacing:.02em;}
   .zdate{margin:0;display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;justify-content:center;
     font-family:var(--title-font,"Black Han Sans"),var(--ui-font),sans-serif;
-    font-weight:var(--title-weight,400);font-size:clamp(1.3rem,4.5vw,2rem);line-height:1.1;}
+    font-weight:var(--title-weight,400);font-size:clamp(1.5rem,5.5vw,2.6rem);line-height:1.1;}
   .zdate span{font-size:.66em;font-weight:700;color:var(--muted);}
   .zdate span.sat{color:#6FA8DC;} .zdate span.sun{color:#E0655F;}
   .zdate .holi{font-size:.5em;font-weight:600;}
-  .zsum{margin:.1rem 0 .5rem;font-size:.92rem;color:var(--dim);text-align:center;}
+  .zsum{margin:.1rem 0 .5rem;font-size:1.02rem;color:var(--dim);text-align:center;}
   .zsum b{color:var(--accent);}
-  .zcal{width:100%;max-width:23rem;border:1px solid var(--line-soft);border-radius:.7rem;padding:.6rem .7rem .7rem;}
-  .zch{display:flex;align-items:center;justify-content:center;gap:.7rem;margin-bottom:.4rem;}
-  .zch b{font-family:"IBM Plex Mono",monospace;font-size:.86rem;letter-spacing:.06em;color:var(--muted);min-width:7rem;text-align:center;}
-  .zch .nav{background:none;border:1px solid var(--line);border-radius:.35rem;color:var(--dim);
-    width:1.5rem;height:1.5rem;cursor:pointer;line-height:1;font-size:.9rem;}
+  .zcal{width:100%;max-width:min(34rem,86vw);border:1px solid var(--line-soft);border-radius:.9rem;padding:.9rem 1rem 1rem;}
+  .zch{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:.6rem;}
+  .zch b{font-family:"IBM Plex Mono",monospace;font-size:1.1rem;letter-spacing:.06em;color:var(--muted);min-width:8rem;text-align:center;}
+  .zch .nav{background:none;border:1px solid var(--line);border-radius:.4rem;color:var(--dim);
+    width:2rem;height:2rem;cursor:pointer;line-height:1;font-size:1.15rem;}
   .zch .nav:hover{border-color:var(--muted);color:var(--text);}
-  .zgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-  .zgrid .zh{font-size:.62rem;color:var(--dim);text-align:center;padding:.15rem 0;}
+  .zgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .zgrid .zh{font-size:.78rem;color:var(--dim);text-align:center;padding:.2rem 0 .3rem;}
   .zgrid .zh.s0{color:#E0655F;} .zgrid .zh.s6{color:#6FA8DC;}
-  .zd{position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:.3rem;
-    font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .zd{position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:.4rem;
+    font-size:1.08rem;color:var(--muted);font-variant-numeric:tabular-nums;}
   .zd.oth{color:var(--line);}
   .zd.sun{color:#E0655F;} .zd.sat{color:#6FA8DC;}
   .zd.tod{background:var(--accent);color:var(--ink);font-weight:700;}
-  .zd .zbar{position:absolute;left:18%;right:18%;bottom:3px;height:2px;background:var(--line);border-radius:2px;overflow:hidden;}
+  .zd .zbar{position:absolute;left:20%;right:20%;bottom:5px;height:3px;background:var(--line);border-radius:3px;overflow:hidden;}
   .zd.tod .zbar{background:rgba(0,0,0,.25);}
   .zd .zbar i{display:block;height:100%;background:var(--done);}
-  .zhint{margin:.3rem 0 0;font-size:.74rem;color:var(--line);letter-spacing:.02em;}
-  @media (max-height:520px){ .zcal{display:none;} .zsum{margin-bottom:0;} }
+  .zhint{margin:.4rem 0 0;font-size:.8rem;color:var(--line);letter-spacing:.02em;}
+  /* 세로가 짧으면 달력부터 접고, 더 짧으면 시계만 남긴다 */
+  @media (max-height:760px){ .zclock{font-size:clamp(3.4rem,13vw,7rem);} .zcal{max-width:min(26rem,86vw);} .zd{font-size:.9rem;} }
+  @media (max-height:560px){ .zcal{display:none;} .zsum{margin-bottom:0;} }
   .primary:disabled{opacity:.45;cursor:not-allowed;}
   /* 취미 표에서 잘못 들어온 줄을 바로 뺀다 */
   .sttable .wxb{background:none;border:1px solid var(--line);border-radius:.3rem;color:var(--dim);
@@ -1145,7 +1149,7 @@
         <div class="ring-mid" id="ringMid"><span class="n" id="doneN">0</span><span class="of">/ <span id="totalN">0</span> DONE</span>
           <span class="ring-hov" id="ringHov"><b></b><i></i></span></div>
       </div>
-      <div class="clock" id="clock">--:--</div>
+      <button class="clock" id="clock" type="button" title="눌러서 시계·달력 크게 보기">--:--</button>
       <div class="cprog" id="cprog" hidden></div>
       <button class="wtbox" id="wtBox" type="button" hidden>
         <span class="wtl">몸무게</span>
@@ -1162,7 +1166,10 @@
         <button class="ghost" id="bgBtn" type="button">배경 이미지</button>
       </div>
       <button class="ghost" id="wishBtn" type="button">언젠가 <span class="cnt" id="wishN">0</span></button>
-      <button class="ghost" id="statsBtn" type="button">통계 보기</button>
+      <div class="row2">
+        <button class="ghost" id="statsBtn" type="button">통계 보기</button>
+        <button class="ghost" id="zenBtn" type="button" title="시계와 달력만 크게 — 아무거나 누르면 돌아옵니다">시계·달력</button>
+      </div>
       <button class="ghost" id="moreBtn" type="button">그 외 기능 ⋯</button>
       <input type="file" id="restoreFile" accept=".json,application/json" hidden>
       <div class="footline">
@@ -1244,6 +1251,7 @@
     <div class="sugbox" id="sugW" hidden></div>
     <input type="text" id="wAddInput" placeholder="＋ 할 일 (월 / 내일 / !! / 09:30)" maxlength="120" autocomplete="off">
     <button class="go" type="submit">추가</button>
+    <button class="more" type="button" id="wZen" title="시계·달력 크게 보기">◷</button>
     <button class="more" type="button" id="wMore" title="설정·통계·동기화">⋯</button>
   </form>
 </div>
@@ -1267,11 +1275,18 @@
     </div>
     <span class="fl">카드 높이</span>
     <div class="seg" id="rowSeg">
+      <button type="button" data-r="auto">자동</button>
       <button type="button" data-r="s">작게</button>
       <button type="button" data-r="m">중간</button>
       <button type="button" data-r="l">크게</button>
-      <button type="button" data-r="auto">자동</button>
     </div>
+    <div class="seg" id="rowSeg2">
+      <button type="button" data-r="r3">3줄</button>
+      <button type="button" data-r="r4">4줄</button>
+      <button type="button" data-r="r5">5줄</button>
+      <button type="button" data-r="r6">6줄</button>
+    </div>
+    <p class="hint" id="rowNote" style="font-size:.76rem;margin:0"></p>
     <span class="fl">칸 수 (세로 줄)</span>
     <div class="seg" id="colSeg">
       <button type="button" data-c="auto">자동</button>
@@ -1353,7 +1368,7 @@
     </div>
     <p class="hsec">대기 화면</p>
     <div class="htab">
-      <div class="hrow"><code>여는 법</code><span>그 외 기능 → <b>대기 화면</b>. 또는 자동 전환 시간을 정해두면 그만큼 방치했을 때 저절로 넘어갑니다</span></div>
+      <div class="hrow"><code>여는 법</code><span>사이드바 <b>시계·달력</b> 버튼, 사이드바 시계 누르기, 위젯의 <b>◷</b>, 그 외 기능 → <b>대기 화면</b>. 자동 전환 시간을 정해두면 방치했을 때 저절로 넘어갑니다</span></div>
       <div class="hrow"><code>보이는 것</code><span>큰 시계, 오늘 날짜·요일, 오늘 진행 상황, 이번 달 달력(칸마다 완료 비율)</span></div>
       <div class="hrow"><code>닫는 법</code><span>아무 키나 누르거나 화면을 누르면 하던 자리로 돌아옵니다. 보드는 그대로 있습니다</span></div>
       <div class="hrow"><code>달력 넘기기</code><span>‹ › 는 대기 화면을 닫지 않고 달만 넘깁니다</span></div>
@@ -1942,13 +1957,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v5.5";
-  var APP_BUILD = "2026-09-16 11:20";
+  var APP_VERSION = "v5.6";
+  var APP_BUILD = "2026-09-16 15:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v5.6",  d:"2026-09-16", n:[
+      "카드 높이를 칸 수처럼 \"몇 줄\" 로도 고정 — 3열 × 4줄 식으로 자리가 딱 잡힌다",
+      "사이드바에 시계·달력 버튼 추가 (사이드바 시계를 눌러도 열린다) · 위젯에도 ◷ 버튼",
+      "대기 화면 시계와 달력을 크게 — 시계 12rem, 달력 34rem 까지"
+    ]},
     { v:"v5.5",  d:"2026-09-16", n:[
       "날짜 옆에 요일을 크게 붙였다 — 아랫줄 작은 글씨라 안 보인다고 해서",
       "대기 화면 추가 — 시계·날짜·달력만 크게. 그 외 기능에서 열거나, 몇 분 방치하면 저절로 넘어가게 설정"
@@ -3709,6 +3729,8 @@ var HOLIDAYS = {
   var ROWSIZE_KEY = "questboard:rowsize", COLS_KEY = "questboard:cols";
   /* 중간은 5.6rem 에서 3px 이 부족해 제목이 두 줄이 안 됐다. 두 줄·세 줄이 확실히 들어가는 값으로 올렸다. */
   var ROWSIZES = { s:4.4, m:6.1, l:8.4 };
+  /* 칸 수처럼 "한 화면에 몇 줄" 로도 고정할 수 있게 한다 */
+  var ROWFIX = { r3:3, r4:4, r5:5, r6:6 };
   var rowSize = "auto", colFix = "auto", layoutTries = 0;
   function layoutList(){
     var list = $("list");
@@ -3726,9 +3748,14 @@ var HOLIDAYS = {
     var cols = Math.max(1, Math.min(4, Math.floor(list.clientWidth / (23 * unit))));
     if(colFix !== "auto") cols = Math.max(1, Math.min(4, +colFix || 3));
     list.style.setProperty("--cols", cols);
-    var rowmax;
-    list.classList.toggle("fixedrows", rowSize !== "auto" && !!ROWSIZES[rowSize]);
-    if(rowSize !== "auto" && ROWSIZES[rowSize]){
+    var rowmax, rn = ROWFIX[rowSize];
+    list.classList.toggle("fixedrows", rowSize !== "auto" && (!!ROWSIZES[rowSize] || !!rn));
+    if(rn){
+      /* "3줄"처럼 줄 수를 고정한 경우 — 칸 수와 짝을 이룬다 (3열 × 4줄 = 한 화면 12칸).
+         창을 키우면 카드가 같이 커지고, 넘치는 카드는 스크롤로 내려간다. */
+      var av = list.clientHeight - (rn - 1) * 0.7 * unit;
+      rowmax = Math.max(3.4, av / rn / unit);
+    } else if(rowSize !== "auto" && ROWSIZES[rowSize]){
       rowmax = ROWSIZES[rowSize];          /* 고정 높이 — 넘치면 목록이 스크롤된다 */
     } else {
       var rows = Math.max(1, Math.ceil(n / cols));
@@ -4295,16 +4322,26 @@ var HOLIDAYS = {
 
   /* ---------- 카드 높이 ---------- */
   function paintRowSeg(){
-    Array.prototype.forEach.call($("rowSeg").children, function(b){
-      b.classList.toggle("on", b.dataset.r === rowSize);
+    ["rowSeg","rowSeg2"].forEach(function(id){
+      Array.prototype.forEach.call($(id).children, function(b){
+        b.classList.toggle("on", b.dataset.r === rowSize);
+      });
     });
+    $("rowNote").textContent = ROWFIX[rowSize]
+      ? ("한 화면에 " + ROWFIX[rowSize] + "줄이 딱 맞게 카드를 늘립니다. 칸 수와 짝지으면 " +
+         (colFix === "auto" ? "칸 수 × " : colFix + "열 × ") + ROWFIX[rowSize] + "줄로 자리가 고정됩니다.")
+      : (rowSize === "auto"
+          ? "카드 수에 맞춰 높이를 자동으로 맞춥니다. 창 크기나 일감 수에 따라 달라집니다."
+          : "높이를 고정합니다. 창 크기와 상관없이 같은 크기로 유지되고, 넘치면 목록이 스크롤됩니다.");
   }
-  Array.prototype.forEach.call($("rowSeg").children, function(b){
-    b.onclick = function(){
-      rowSize = b.dataset.r;
-      try{ localStorage.setItem(ROWSIZE_KEY, rowSize); }catch(e){}
-      paintRowSeg(); layoutList();
-    };
+  ["rowSeg","rowSeg2"].forEach(function(id){
+    Array.prototype.forEach.call($(id).children, function(b){
+      b.onclick = function(){
+        rowSize = b.dataset.r;
+        try{ localStorage.setItem(ROWSIZE_KEY, rowSize); }catch(e){}
+        paintRowSeg(); layoutList();
+      };
+    });
   });
   try{ rowSize = localStorage.getItem(ROWSIZE_KEY) || "auto"; }catch(e){}
   paintRowSeg();
@@ -4319,6 +4356,7 @@ var HOLIDAYS = {
     b.onclick = function(){
       colFix = b.dataset.c;
       try{ localStorage.setItem(COLS_KEY, colFix); }catch(e){}
+      paintRowSeg();
       paintColSeg(); layoutList();
     };
   });
@@ -6216,6 +6254,10 @@ var HOLIDAYS = {
   $("zPrev").onclick = function(){ zenShift(-1); };
   $("zNext").onclick = function(){ zenShift(1); };
   $("mZen").onclick = function(){ $("moreOverlay").hidden = true; setTimeout(zenOpen, 60); };
+  /* 메인 화면에서 바로 — 문서 캡처가 먼저 돌아 닫아버리므로 한 박자 뒤에 연다 */
+  $("zenBtn").onclick = function(){ setTimeout(zenOpen, 40); };
+  $("wZen").onclick   = function(){ setTimeout(zenOpen, 40); };
+  $("clock").onclick  = function(){ setTimeout(zenOpen, 40); };
   Array.prototype.forEach.call($("idleSeg").children, function(b){
     b.onclick = function(){
       idleMin = +b.dataset.m || 0;
