@@ -516,6 +516,11 @@
   .cat{color:var(--c);font-size:.7rem;font-weight:700;letter-spacing:.02em;border:1px solid currentColor;
     border-radius:.3rem;padding:0 .34rem;line-height:1.7;opacity:.95;}
   .task.done .cat,.task.canceled .cat{opacity:.6;}
+  /* 좁은 화면 줄의 플랫폼 딱지 — .w-cat 과 같은 크기로 나란히 선다 */
+  .w-plat{color:var(--pc);display:inline-block;font-size:10px;font-weight:700;
+    border:1px solid color-mix(in srgb,var(--pc) 60%,transparent);border-radius:3px;
+    padding:0 3px;margin-right:4px;vertical-align:1px;white-space:nowrap;}
+  .w-plat.unset{opacity:.7;}
   .w-cat{color:var(--c);display:inline-block;font-size:10px;font-weight:700;border:1px solid currentColor;border-radius:3px;
     padding:0 3px;margin-right:5px;vertical-align:1px;text-decoration:none;}
   .w-item.done .w-cat{text-decoration:none;opacity:.65;}
@@ -829,6 +834,17 @@
   .chips.wkpick button.on{border-color:var(--accent);color:var(--accent);font-weight:700;
     background:rgba(232,163,61,.12);}
   body.home .chips.wkpick button.on{background:rgba(155,140,245,.14);}
+  /* 플랫폼·본 곳 칩은 제 색을 쓴다 (--pc 는 PLATS/HOWS 의 c 를 JS 가 넣어준다).
+     --pc 가 없는 칩(종류 고르기 등)은 위 규칙 그대로 강조색을 쓴다. */
+  .chips.wkpick button[style*="--pc"]{border-color:color-mix(in srgb,var(--pc) 45%,transparent);
+    color:color-mix(in srgb,var(--pc) 78%,var(--muted));}
+  .chips.wkpick button[style*="--pc"]:hover{border-color:var(--pc);color:var(--pc);}
+  .chips.wkpick button[style*="--pc"].on{border-color:var(--pc)!important;color:var(--pc)!important;
+    background:color-mix(in srgb,var(--pc) 16%,transparent)!important;box-shadow:inset 0 0 0 1px var(--pc);}
+  /* 보드 카드·통계에 붙는 플랫폼 딱지 */
+  .chip.plat{border:1px solid color-mix(in srgb,var(--pc) 55%,transparent);
+    color:color-mix(in srgb,var(--pc) 85%,var(--text));background:color-mix(in srgb,var(--pc) 13%,transparent);}
+  .chip.plat.unset{opacity:.72;}
   .wtform{display:flex;gap:.4rem;align-items:center;}
   .wtform input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:.5rem;
     color:var(--text);font:inherit;font-size:.9rem;padding:.45rem .55rem;color-scheme:dark;flex:none;}
@@ -1598,7 +1614,7 @@
     </div>
     <p class="hsec">게임·드라마처럼 여러 날 걸리는 것</p>
     <div class="htab">
-      <div class="hrow"><code>작품</code><span>보드의 카드 한 장은 그 날 한 판·한 편입니다. 작품 자체(소닉, 만달로리안)는 따로 등록합니다 — <b>등록한 것만</b> 취미 통계에 잡힙니다</span></div>
+      <div class="hrow"><code>작품</code><span>보드의 카드 한 장은 그 날 한 판·한 편입니다. 작품 자체(소닉, 만달로리안)는 카드 상세의 <b>작품으로 등록하기</b>로 따로 등록합니다 — <b>등록한 것만</b> 작품 통계에 잡힙니다. 끝내야 등록되는 게 아니라, 시작할 때 한 번 등록해두는 것입니다</span></div>
       <div class="hrow"><code>여는 곳</code><span>언젠가 목록의 <b>게임·드라마</b> 단추, 또는 카드 상세 창의 <b>🏁 엔딩·완주 기록하기</b></span></div>
       <div class="hrow"><code>마무리</code><span>게임은 <b>엔딩</b>, 드라마·애니는 <b>완주</b>, 책은 <b>완독</b> · 도중에 접었으면 <b>하차</b></span></div>
       <div class="hrow"><code>끝내면</code><span>언젠가 목록에서 내려가고, 그 날 보드 카드에 🏁 가 붙습니다</span></div>
@@ -2190,10 +2206,11 @@
         <input type="number" id="isSeqTot" min="0" max="9999" placeholder="전체">
         <span>비워두면 일반 항목</span>
       </div>
-      <span class="fl">작품 (게임·드라마처럼 여러 날에 걸치는 것)</span>
+      <span class="fl">작품 등록 (게임·영화·드라마처럼 여러 날에 걸치는 것)</span>
       <div class="fdate">
-        <button type="button" class="q" id="isWork" style="flex:1;text-align:left">🏁 엔딩·완주 기록하기</button>
+        <button type="button" class="q" id="isWork" style="flex:1;text-align:left">＋ 작품으로 등록하기</button>
       </div>
+      <p class="hint" id="isWorkNote" style="font-size:.76rem;margin:-.15rem 0 0"></p>
       <span class="fl">카테고리</span>
       <div class="chips catpick" id="isCats"></div>
       <span class="fl">카드 색</span>
@@ -2277,7 +2294,7 @@
     <h2 id="wkTitle">작품 기록</h2>
     <p class="hint" style="font-size:.82rem;margin:0">
       게임 한 판, 드라마 한 편은 그 날의 일감입니다. 여기는 <b>작품 자체</b>를 적는 곳이에요 —
-      몇 시즌짜리인지, 엔딩을 봤는지.
+      어떤 종류인지, 어디서 하고 있는지, 몇 시즌짜리인지. 끝내지 않았어도 등록해두면 통계에 잡힙니다.
     </p>
     <form class="composer" id="workForm">
       <span class="fl">종류</span>
@@ -2379,13 +2396,20 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.4";
-  var APP_BUILD = "2026-09-17 06:10";
+  var APP_VERSION = "v7.5";
+  var APP_BUILD = "2026-09-17 08:20";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.5",  d:"2026-09-17", n:[
+      "카드 상세의 작품 단추를 \"엔딩·완주 기록하기\" 에서 \"작품으로 등록하기\" 로 — 끝내야 적는 곳으로 읽혔다",
+      "이미 등록한 것은 단추에 종류와 플랫폼이 그대로 보인다 (게임 · 스위치 — 고치기)",
+      "플랫폼·본 곳에 색이 붙었다 — 보드 카드·작품 시트·통계 표·도넛이 모두 같은 색",
+      "게임·영화는 보드 카드에도 플랫폼 딱지가 뜬다 (등록 안 한 것에는 안 뜬다)",
+      "언젠가 줄 버튼이 영화·드라마·애니를 전부 \"작품\" 이라고 부르던 것 수정"
+    ]},
     { v:"v7.4",  d:"2026-09-17", n:[
       "종류를 한꺼번에 바꾸는 창 — 작품 통계에서 여러 개 골라 한 번에 옮긴다",
       "v7.2 이하의 드라마·애니 기록을 하나씩 안 고치고 체크만 해서 애니로 넘길 수 있다",
@@ -2666,20 +2690,54 @@ var HOLIDAYS = {
   }
   /* 시즌·화수를 세는 종류인가 */
   function isEpisodic(k){ k = kindKey(k); return k === "drama" || k === "anime"; }
-  /* 게임 플랫폼 — 하나만 고른다. 멀티플랫폼은 실제로 산 쪽을 고르면 된다. */
+  /* 게임 플랫폼 — 하나만 고른다. 멀티플랫폼은 실제로 산 쪽을 고르면 된다.
+     c 는 v7.5 에서 붙인 색. 시트의 테두리·보드 카드의 딱지·통계 도넛이 전부 이 색을 쓴다 —
+     한 곳에서만 고치면 세 군데 색이 어긋나니 반드시 여기만 고칠 것. */
   var PLATS = [
-    { k:"switch", n:"스위치" }, { k:"pc", n:"PC" }, { k:"ps", n:"PS" },
-    { k:"xbox", n:"Xbox" }, { k:"mobile", n:"모바일" }, { k:"vr", n:"VR" }, { k:"etcp", n:"기타" }
+    { k:"switch", n:"스위치", c:"#E2564E" }, { k:"pc", n:"PC", c:"#6E82A0" },
+    { k:"ps", n:"PS", c:"#3E7DD6" }, { k:"xbox", n:"Xbox", c:"#4CA860" },
+    { k:"mobile", n:"모바일", c:"#9B8CF5" }, { k:"vr", n:"VR", c:"#3FA8B8" },
+    { k:"etcp", n:"기타", c:"#8896A6" }
   ];
+  var UNSET_COLOR = "#6E7784";                 /* 미정 — 플랫폼·본 곳 공통 */
   function platName(k){
     for(var i = 0; i < PLATS.length; i++) if(PLATS[i].k === k) return PLATS[i].n;
     return "미정";
   }
+  function platColor(k){
+    for(var i = 0; i < PLATS.length; i++) if(PLATS[i].k === k) return PLATS[i].c;
+    return UNSET_COLOR;
+  }
   /* 영화를 어떻게 봤나 */
-  var HOWS = [ { k:"theater", n:"극장" }, { k:"disc", n:"블루레이" }, { k:"stream", n:"스트리밍" } ];
+  var HOWS = [ { k:"theater", n:"극장", c:"#E0A23C" }, { k:"disc", n:"블루레이", c:"#4C86C6" },
+               { k:"stream", n:"스트리밍", c:"#3FA08C" } ];
   function howName(k){
     for(var i = 0; i < HOWS.length; i++) if(HOWS[i].k === k) return HOWS[i].n;
     return "미정";
+  }
+  function howColor(k){
+    for(var i = 0; i < HOWS.length; i++) if(HOWS[i].k === k) return HOWS[i].c;
+    return UNSET_COLOR;
+  }
+  /* 크게 띄우는 카드(지금 이것 / NOW)의 머릿줄에 덧붙일 플랫폼 글자. 제 색을 쓴다. */
+  function platKey(it){
+    var bd = workBadge(workOf(it && it.text));
+    return bd ? ' · <span style="color:' + bd.c + '">' + esc(bd.t) + '</span>' : "";
+  }
+  /* 좁은 화면(위젯) 줄에 붙일 플랫폼 딱지 HTML. 등록 안 된 것에는 빈 문자열. */
+  function platChip(it){
+    var bd = workBadge(workOf(it && it.text));
+    if(!bd) return "";
+    return '<span class="w-plat' + (bd.set ? "" : " unset") + '" style="--pc:' + bd.c + '">' +
+           esc(bd.t) + '</span>';
+  }
+  /* 보드 카드·통계에 붙일 딱지 정보. 등록된 작품이 아니면 null. */
+  function workBadge(w){
+    if(!w || !w.kind) return null;
+    var kk = kindKey(w.kind);
+    if(kk === "game") return { t:platName(w.plat), c:platColor(w.plat), set:!!w.plat };
+    if(kk === "movie") return { t:howName(w.how), c:howColor(w.how), set:!!w.how };
+    return null;
   }
   function wkey(text){ return String(text || "").trim(); }
   function works(){ if(!store.works) store.works = {}; return store.works; }
@@ -3232,12 +3290,31 @@ var HOLIDAYS = {
     renderColorPick();
     renderCatPick();
     $("isReason").value = item.reason || "";
+    /* 작품 단추 — 등록 전이면 "등록하기", 등록됐으면 지금 뭘로 잡혀 있는지 보여준다.
+       v7.4 까지 "🏁 엔딩·완주 기록하기" 라고만 적혀 있어서, 끝낸 것만 적는 곳으로 읽혔다.
+       그래서 게임을 한 번도 등록 안 한 채로 통계가 0 이 나오는 일이 실제로 있었다. */
+    paintIsWork($("isText").value);
     /* 어느 보드로 가는지 버튼에 그대로 적어둔다 */
     $("isMove").textContent = "→ " + PROFILES[otherProfile()].label + "로";
     $("isMove").title = "이 일을 같은 날짜(" + viewKey + ")로 " + PROFILES[otherProfile()].label + "에 옮깁니다";
     setSegUI();
     $("itemOverlay").hidden = false;
     setTimeout(function(){ (sheetState === "open" ? $("isText") : $("isReason")).focus(); }, 20);
+  }
+  function paintIsWork(line){
+    var p = parseLine(line || ""), nm = (p && p.text) || (sheetItem && sheetItem.text) || "";
+    var w = workOf(nm), b = $("isWork"), note = $("isWorkNote");
+    if(w && w.kind){
+      var kd = kindDef(w.kind), bd = workBadge(w), bits = [kd.label];
+      if(bd) bits.push(bd.t);
+      if(w.fin === "end") bits.push("🏁 " + kd.fin);
+      else if(w.fin === "drop") bits.push("하차");
+      b.textContent = bits.join(" · ") + " — 고치기";
+      note.textContent = "작품으로 등록돼 있습니다. 통계의 작품 탭에서 세어집니다.";
+    } else {
+      b.textContent = "＋ 작품으로 등록하기 — 게임 · 영화 · 드라마 · 애니 · 책";
+      note.textContent = "등록해야 작품 통계에 잡힙니다. 끝냈는지 여부와 상관없이, 시작할 때 한 번 등록해두면 됩니다.";
+    }
   }
   function closeItemSheet(){ $("itemOverlay").hidden = true; sheetItem = null; }
 
@@ -3252,6 +3329,12 @@ var HOLIDAYS = {
     if(item.seq) meta += seqChip(item);
     /* 이 날 작품을 끝냈다면 그 자리에 깃발을 남긴다 — 나중에 "언제 엔딩 봤더라"가 보인다 */
     var wf = workOf(item.text);
+    /* 등록된 게임·영화면 플랫폼(본 곳)을 딱지로 보여준다 (v7.5).
+       등록 안 된 것에는 아무것도 안 붙는다 — 그 차이가 눈에 보여야 등록을 하게 된다. */
+    var wbd = workBadge(wf);
+    if(wbd && !muted)
+      meta += '<span class="chip plat' + (wbd.set ? "" : " unset") + '" style="--pc:' + wbd.c + '">' +
+              esc(wbd.t) + '</span>';
     if(wf && wf.fin && wf.finAt === viewKey)
       meta += '<span class="chip ' + (wf.fin === "end" ? "fin" : "cancel") + '">' +
               (wf.fin === "end" ? "🏁 " + kindDef(wf.kind).fin : "하차") + '</span>';
@@ -3333,7 +3416,8 @@ var HOLIDAYS = {
       b.type = "button";
       b.className = "nowcard " + (n === 0 ? "lead " : "") + levelOf(r.it);
       if(r.it.color){ b.setAttribute("data-ic",""); b.style.setProperty("--ic", r.it.color); }
-      b.innerHTML = '<span class="k">' + labels[n] + (sub ? " · " + esc(sub) : "") + '</span><span class="t">' + esc(r.it.text) + '</span>';
+      b.innerHTML = '<span class="k">' + labels[n] + (sub ? " · " + esc(sub) : "") + platKey(r.it) +
+        '</span><span class="t">' + esc(r.it.text) + '</span>';
       b.title = r.it.text + (r.it.note ? "\n메모 · " + r.it.note : "") + "\n(누르면 완료)";
       b.onclick = function(){ markDone(r.it, true); };
       strip.appendChild(b);
@@ -4238,7 +4322,9 @@ var HOLIDAYS = {
        등록 전에는 회색 "작품" 이라 이 줄이 작품으로 세어지고 있지 않다는 게 눈에 보인다. */
     if(wrec && wrec.kind || hobby){
       var kd = kindDef((wrec && wrec.kind) || "etc");
-      var short = { game:"게임", show:"드라마", book:"책", etc:"작품" }[kd.k] || "작품";
+      /* ⚠ 종류 이름은 WKINDS 에서 가져온다. v7.3 에서 6종으로 늘렸는데 여기만 옛 4종 표를
+         들고 있어서 영화·드라마·애니가 전부 "작품"으로 보였다 (v7.5 에서 고침). */
+      var short = (wrec && wrec.kind) ? kd.label : "작품";
       wkb.hidden = false;
       wkb.textContent = (wrec && wrec.fin === "end") ? ("🏁 " + kd.fin)
                       : (wrec && wrec.fin === "drop") ? "하차"
@@ -5199,7 +5285,7 @@ var HOLIDAYS = {
       var btn = document.createElement("button");
       btn.type = "button"; btn.className = "hb";
       btn.innerHTML = '<span class="k">' + (viewKey === todayKey ? "NOW · " : "") + esc(sub) +
-        (catById(r.it.cat) ? ' · ' + esc(catById(r.it.cat).name) : '') + '</span>' +
+        (catById(r.it.cat) ? ' · ' + esc(catById(r.it.cat).name) : '') + platKey(r.it) + '</span>' +
         '<span class="t"></span>' + (r.it.time ? '<span class="s">' + r.it.time + '</span>' : '') +
         (r.it.defer && r.it.reason ? '<span class="w-rsn">' + esc(r.it.reason) + '</span>' : '') +
         (r.it.note ? '<span class="w-note">' + esc(r.it.note) + '</span>' : '');
@@ -5226,7 +5312,7 @@ var HOLIDAYS = {
       c.onclick = function(){ markDone(r.it, true); };
       var b = document.createElement("button");
       b.type = "button"; b.className = "wopen"; b.setAttribute("aria-label","상세 보기");
-      b.innerHTML = '<span class="wt">' + catChip(r.it, "w-cat") +
+      b.innerHTML = '<span class="wt">' + catChip(r.it, "w-cat") + platChip(r.it) +
         (r.it.seq ? '<span class="w-seq">' + r.it.seq + (r.it.seqTot ? '/' + r.it.seqTot : '') + '화</span>' : '') + '<span class="wtx"></span>' +
         (r.it.defer && r.it.reason ? '<span class="w-rsn">' + esc(r.it.reason) + '</span>' : '') +
         (r.it.note ? '<span class="w-note">' + esc(r.it.note) + '</span>' : '') + '</span>' +
@@ -5258,7 +5344,7 @@ var HOLIDAYS = {
         b.innerHTML = '<span class="wt">' +
           (r.it.done && r.it.doneAt ? '<span class="w-pri" style="color:var(--done)">' + hhmm(r.it.doneAt) + '</span>' : '') +
           (r.it.pri === 2 ? '<span class="w-pri hot">긴급</span>' : (r.it.pri === 1 ? '<span class="w-pri warm">중요</span>' : '')) +
-          catChip(r.it, "w-cat") + '<span class="wtx"></span>' +
+          catChip(r.it, "w-cat") + platChip(r.it) + '<span class="wtx"></span>' +
           (r.it.reason ? '<span class="w-rsn">' + esc(r.it.reason) + '</span>' : '') +
           (r.it.note ? '<span class="w-note">' + esc(r.it.note) + '</span>' : '') + '</span>';
         b.querySelector(".wtx").textContent = r.it.text;
@@ -6043,6 +6129,8 @@ var HOLIDAYS = {
     list.forEach(function(x){
       var b = document.createElement("button");
       b.type = "button"; b.textContent = x.n;
+      /* 색은 각 항목이 들고 있다 (PLATS·HOWS 의 c). 고르면 진하게, 아니면 테두리만. */
+      if(x.c) b.style.setProperty("--pc", x.c);
       if(cur === x.k) b.className = "on";
       b.onclick = function(){ pick(cur === x.k ? "" : x.k); };
       host.appendChild(b);
@@ -6295,6 +6383,8 @@ var HOLIDAYS = {
     closeItemSheet();
     sendToBoard(it, t);
   };
+  /* 제목을 고치는 중이면 그 이름 기준으로 단추를 다시 그린다 — 이름이 곧 작품 열쇠라서 */
+  $("isText").addEventListener("input", function(){ if(!$("itemOverlay").hidden) paintIsWork(this.value); });
   $("isWork").onclick = function(){
     if(!sheetItem) return;
     /* 편집 중인 제목을 그대로 쓴다 — 아직 저장 전이라도 사용자가 보고 있는 이름이 맞다 */
@@ -7276,11 +7366,13 @@ var HOLIDAYS = {
       else { stt = "안 시작"; cls = "z"; }
       var cells;
       if(kind === "game"){
-        cells = ['<td class="z">' + esc(platName(r.plat)) + '</td>',
+        cells = ['<td><span class="chip plat' + (r.plat ? "" : " unset") + '" style="--pc:' +
+                   platColor(r.plat) + '">' + esc(platName(r.plat)) + '</span></td>',
                  '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
                  '<td class="z">' + md(r.last) + '</td>'];
       } else if(kind === "movie"){
-        cells = ['<td class="z">' + esc(howName(r.how)) + '</td>',
+        cells = ['<td><span class="chip plat' + (r.how ? "" : " unset") + '" style="--pc:' +
+                   howColor(r.how) + '">' + esc(howName(r.how)) + '</span></td>',
                  '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
                  '<td class="z">' + md(r.finAt || r.last) + '</td>'];
       } else if(isEpisodic(kind)){
@@ -7355,7 +7447,11 @@ var HOLIDAYS = {
       var html = '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="14"/>';
       var lgd = "";
       keys.forEach(function(k2, i3){
-        var col = (k2 === "?") ? "#4C5A6B" : COLS[i3 % COLS.length];
+        /* 게임·영화는 플랫폼·본 곳의 제 색을 쓴다 — 카드 딱지와 같은 색이어야 한 눈에 이어진다 */
+        var col = (k2 === "?") ? UNSET_COLOR
+                : (kind === "game") ? platColor(k2)
+                : (kind === "movie") ? howColor(k2)
+                : COLS[i3 % COLS.length];
         var len = C * (groups[k2] / tot), draw = Math.max(len - (keys.length > 1 ? 2 : 0), 0.8);
         html += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="14" ' +
           'stroke-dasharray="' + draw.toFixed(2) + ' ' + (C - draw).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '"></circle>';
