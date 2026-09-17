@@ -587,16 +587,6 @@
   .ver.tap{cursor:pointer;border-bottom:1px dotted var(--line);}
   .ver.tap:hover{color:var(--accent);border-bottom-color:var(--accent);}
   @media (max-width:520px){ .lgrow{grid-template-columns:1fr;gap:.3rem;} }
-  /* 종류별 요약 — 드라마 / 게임 / 책이 각각 한 줄씩 */
-  .wksum{display:flex;flex-direction:column;gap:.4rem;}
-  .wkline{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;padding:.45rem .6rem;
-    border:1px solid var(--line);border-radius:.5rem;}
-  .wkline > b{font-size:.86rem;min-width:5.2rem;}
-  .wkline .kv{font-size:.82rem;color:var(--dim);}
-  .wkline .kv i{font-style:normal;font-weight:700;color:var(--text);}
-  .wkline .kv.hi i{color:var(--done);}
-  .wkline .zz{font-size:.8rem;color:var(--dim);}
-  @media(max-width:560px){ .wkline > b{min-width:0;width:100%;} }
   /* ---------- 대기 화면 ----------
      보고만 있는 시간이 길어지면 시계와 달력만 남긴다. 아무거나 누르면 보드로 돌아온다. */
   /* --bg 라는 변수는 없다. 바탕색은 --ink 다. 배경 이미지를 깔아둔 경우까지 덮어야 하므로 불투명하게. */
@@ -834,6 +824,11 @@
     font-size:.8rem;font-weight:600;padding:.3rem .7rem;cursor:pointer;flex:none;}
   .toast button:hover{background:var(--accent);color:var(--ink);}
   .chips.catpick button.on{color:var(--ink)!important;font-weight:700;}
+  .seg.wrapseg{flex-wrap:wrap;}
+  .seg.wrapseg button{flex:1 1 4.5rem;}
+  .chips.wkpick button.on{border-color:var(--accent);color:var(--accent);font-weight:700;
+    background:rgba(232,163,61,.12);}
+  body.home .chips.wkpick button.on{background:rgba(155,140,245,.14);}
   .wtform{display:flex;gap:.4rem;align-items:center;}
   .wtform input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:.5rem;
     color:var(--text);font:inherit;font-size:.9rem;padding:.45rem .55rem;color-scheme:dark;flex:none;}
@@ -912,6 +907,9 @@
   .lrow .ct{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--text);}
   .lrow .pc{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--muted);width:3rem;text-align:right;font-variant-numeric:tabular-nums;}
 
+  /* ⚠ align-items:flex-end 라서 .bcol 높이가 auto 다.
+     그래서 .bk 에 height 를 % 로 주면 "부모 높이 미정"이라 그냥 min-height 로 주저앉는다.
+     막대 높이는 반드시 px 로 줄 것 (v7.3 에서 작품·금전 막대가 둘 다 이 이유로 안 보였다). */
   .bars{display:flex;align-items:flex-end;gap:.4rem;height:7rem;}
   .bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:.3rem;justify-content:flex-end;min-width:0;}
   .bcol .bv{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;}
@@ -937,6 +935,30 @@
   .sttable .bad{color:var(--urgent);}
   .sttable td.nm{max-width:24rem;overflow:hidden;text-overflow:ellipsis;}
   .stempty{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem 0;}
+
+  /* ---- 작품 종류별 카드 (v7.3) ---- */
+  .kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-top:.6rem;}
+  .kcard{background:var(--surface);border:1px solid var(--line-soft);border-radius:.6rem;
+    border-left:3px solid var(--c);padding:.6rem .7rem;display:flex;flex-direction:column;gap:.35rem;
+    cursor:pointer;transition:border-color .12s ease;}
+  .kcard:hover{border-color:var(--c);}
+  .kcard .kh{display:flex;align-items:baseline;gap:.4rem;}
+  .kcard .kh b{font-size:.88rem;color:var(--c);}
+  .kcard .kh span{font-size:.7rem;color:var(--dim);margin-left:auto;}
+  .kcard .kbig{font-family:"IBM Plex Mono",monospace;font-size:1.5rem;font-weight:600;line-height:1;}
+  .kcard .kbig i{font-style:normal;font-size:.72rem;color:var(--dim);font-weight:400;margin-left:.15rem;}
+  .kcard .kbar{height:.28rem;background:var(--surface-2);border-radius:99px;overflow:hidden;display:flex;}
+  .kcard .kbar i{display:block;height:100%;}
+  .kcard .krow{display:flex;gap:.5rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);}
+  .kcard .krow em{font-style:normal;font-family:"IBM Plex Mono",monospace;color:var(--text);font-weight:600;}
+  .klgd{display:flex;gap:.7rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);}
+  .klgd span{display:flex;align-items:center;gap:.28rem;}
+  .klgd i{width:.55rem;height:.55rem;border-radius:.15rem;display:block;}
+  .bcol .bk.stk{display:flex;flex-direction:column-reverse;background:none;}
+  .bcol .bk.stk i{display:block;width:100%;}
+  .wktag{display:inline-block;font-size:.7rem;font-weight:700;padding:0 .35rem;border-radius:.25rem;
+    border:1px solid var(--c);color:var(--c);white-space:nowrap;}
+  @media (max-width:820px){ .kgrid{grid-template-columns:repeat(2,1fr);} }
 
   /* ---- 금전 관리 (v7.1) ---- */
   /* 금전 관리 상자 — 몸무게와 같은 모양·같은 잠금. 다만 두 보드 모두에서 보인다. */
@@ -1709,7 +1731,7 @@
     <div class="seg" id="stTabs">
       <button type="button" data-t="task">할 일</button>
       <button type="button" data-t="wish">언젠가</button>
-      <button type="button" data-t="work">취미</button>
+      <button type="button" data-t="work">작품</button>
       <button type="button" data-t="hab">성공·실패</button>
     </div>
     <div class="seg periods" id="stPeriods">
@@ -1737,20 +1759,61 @@
     </div>
 
     <div id="stWorkPane" hidden>
-      <div class="tiles">
-        <div class="tile rest"><span class="tn" id="wkAll">0</span><span class="tl">작품</span></div>
-        <div class="tile done"><span class="tn" id="wkEnd">0</span><span class="tl">끝낸 것</span></div>
-        <div class="tile defer"><span class="tn" id="wkGo">0</span><span class="tl">진행 중</span></div>
-        <div class="tile cancel"><span class="tn" id="wkDrop">0</span><span class="tl">하차</span></div>
+      <div class="seg wrapseg" id="wkTabs">
+        <button type="button" data-k="">전체</button>
+        <button type="button" data-k="game">게임</button>
+        <button type="button" data-k="movie">영화</button>
+        <button type="button" data-k="drama">드라마</button>
+        <button type="button" data-k="anime">애니</button>
+        <button type="button" data-k="book">책</button>
+        <button type="button" data-k="etc">기타</button>
       </div>
-      <div class="stbox" style="margin-top:.6rem">
-        <h3>종류별</h3>
-        <div class="wksum" id="wkSum"></div>
+
+      <!-- 전체 -->
+      <div id="wkAllPane">
+        <div class="tiles" style="margin-top:.6rem">
+          <div class="tile rest"><span class="tn" id="wkAll">0</span><span class="tl">작품</span></div>
+          <div class="tile done"><span class="tn" id="wkEnd">0</span><span class="tl">끝낸 것</span></div>
+          <div class="tile defer"><span class="tn" id="wkGo">0</span><span class="tl">진행 중</span></div>
+          <div class="tile cancel"><span class="tn" id="wkDrop">0</span><span class="tl">하차</span></div>
+        </div>
+        <div class="kgrid" id="wkCards"></div>
+        <div class="stgrid" style="margin-top:.7rem">
+          <div class="stbox">
+            <h3>달마다 끝낸 것 — 최근 12개월</h3>
+            <div class="bars" id="wkBars"></div>
+            <div class="klgd" id="wkBarLgd"></div>
+          </div>
+          <div class="stbox">
+            <h3>최근에 끝낸 것</h3>
+            <div class="log" id="wkRecent" style="max-height:13rem"></div>
+          </div>
+        </div>
       </div>
+
+      <!-- 종류 하나 -->
+      <div id="wkOnePane" hidden>
+        <div class="tiles" id="wkOneTiles" style="margin-top:.6rem"></div>
+        <div class="stgrid" style="margin-top:.7rem">
+          <div class="stbox">
+            <h3 id="wkOneListH">작품별</h3>
+            <div style="overflow-x:auto;max-height:22rem;overflow-y:auto"><table class="sttable" id="wkOneTable"></table></div>
+          </div>
+          <div class="stbox" id="wkSideBox">
+            <h3 id="wkSideH">나눠 보기</h3>
+            <div class="donutwrap"><div class="donut" id="wkDonut">
+              <svg viewBox="0 0 120 120"></svg><div class="mid"><span class="n" id="wkDonutN">0</span><span class="l" id="wkDonutL">개</span></div>
+            </div></div>
+            <div class="legend" id="wkDonutLgd"></div>
+            <div id="wkSideExtra"></div>
+          </div>
+        </div>
+      </div>
+
       <p class="hint" id="wkNote" style="font-size:.78rem;margin-top:.5rem"></p>
-      <div class="stbox" style="margin-top:.6rem">
+      <div class="stbox" id="wkAllTableBox" style="margin-top:.6rem">
         <h3>작품별 — 진행 중인 것부터</h3>
-        <div style="overflow-x:auto;max-height:26rem;overflow-y:auto"><table class="sttable" id="wkTable"></table></div>
+        <div style="overflow-x:auto;max-height:22rem;overflow-y:auto"><table class="sttable" id="wkTable"></table></div>
       </div>
     </div>
 
@@ -2190,11 +2253,21 @@
     </p>
     <form class="composer" id="workForm">
       <span class="fl">종류</span>
-      <div class="seg" id="wkKind">
+      <div class="seg wrapseg" id="wkKind">
         <button type="button" data-k="game">게임</button>
-        <button type="button" data-k="show">드라마·애니</button>
+        <button type="button" data-k="movie">영화</button>
+        <button type="button" data-k="drama">드라마</button>
+        <button type="button" data-k="anime">애니</button>
         <button type="button" data-k="book">책</button>
         <button type="button" data-k="etc">기타</button>
+      </div>
+      <div id="wkPlatWrap" style="display:none;flex-direction:column;gap:.4rem">
+        <span class="fl">플랫폼</span>
+        <div class="chips wkpick" id="wkPlat"></div>
+      </div>
+      <div id="wkHowWrap" style="display:none;flex-direction:column;gap:.4rem">
+        <span class="fl">어떻게 봤나</span>
+        <div class="chips wkpick" id="wkHow"></div>
       </div>
       <div id="wkVolWrap" style="display:flex;flex-direction:column;gap:.4rem">
         <span class="fl" id="wkVolLabel">분량 — 내가 본 만큼 적으세요 (모르면 비워두기)</span>
@@ -2249,13 +2322,20 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.2";
-  var APP_BUILD = "2026-09-17 04:10";
+  var APP_VERSION = "v7.3";
+  var APP_BUILD = "2026-09-17 05:30";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.3",  d:"2026-09-17", n:[
+      "취미를 작품 탭으로 격상 — 게임·영화·드라마·애니·책·기타 여섯 종류로 나눴다",
+      "게임은 플랫폼(스위치·PC·PS·Xbox·모바일·VR), 영화는 본 곳(극장·블루레이·스트리밍)을 같이 적는다",
+      "통계에 종류별 탭이 붙었다 — 전체 한 장 + 종류마다 따로 (플랫폼 도넛, 극장·집 비율 등)",
+      "예전 드라마·애니 기록은 드라마로 읽어들인다 — 애니는 옮겨두면 따로 집계된다",
+      "막대 그래프가 안 보이던 것 해결 — 금전 관리의 달·요일 막대도 같이 고쳐졌다"
+    ]},
     { v:"v7.2",  d:"2026-09-17", n:[
       "금전 관리도 몸무게처럼 잠긴다 — 같은 비밀번호, 앱을 다시 켜면 또 잠김",
       "금전 관리 상자를 몸무게 바로 밑으로 옮기고 이번 달 합계·전월 대비를 얹었다",
@@ -2503,15 +2583,41 @@ var HOLIDAYS = {
      store.works = { "소닉 (게임)": { kind, sea, tot, fin, finAt, at } }
      - 이름으로 잡는 이유: 통계·언젠가·자동완성이 전부 이미 이름을 기준으로 돈다.
      - 날짜 칸(days)에 얹지 않는다. 언젠가를 days 에 얹었다가 크게 데인 적이 있다. */
+  /* v7.3 — 종류를 6개로 쪼갰다. 드라마와 애니, 영화가 각각 다른 단위로 세어지길 원해서.
+     ⚠ v7.2 까지는 "show"(드라마·애니) 하나였다. 그 기록은 드라마로 읽는다 —
+       애니는 자동으로 못 가른다(v5.4의 추측 금지 원칙). 사람이 다시 고르면 된다.
+     ⚠ 구버전 앱이 movie/drama/anime 를 받으면 kindDef 폴백으로 "기타"로 보일 뿐 값은 안 날아간다. */
   var WKINDS = [
-    { k:"game", label:"게임",        fin:"엔딩",  unit:"판" },
-    { k:"show", label:"드라마·애니", fin:"완주",  unit:"편" },
-    { k:"book", label:"책",          fin:"완독",  unit:"권" },
-    { k:"etc",  label:"기타",        fin:"끝냄",  unit:"회" }
+    { k:"game",  label:"게임",   fin:"엔딩", unit:"판", color:"#6FA8DC" },
+    { k:"movie", label:"영화",   fin:"관람", unit:"편", color:"#E0A23C" },
+    { k:"drama", label:"드라마", fin:"완주", unit:"편", color:"#D55181" },
+    { k:"anime", label:"애니",   fin:"완주", unit:"화", color:"#9B8CF5" },
+    { k:"book",  label:"책",     fin:"완독", unit:"권", color:"#3FA08C" },
+    { k:"etc",   label:"기타",   fin:"끝냄", unit:"회", color:"#8896A6" }
   ];
+  var KIND_ALIAS = { show:"drama" };            /* v7.2 이하 기록 */
+  function kindKey(k){ k = String(k || ""); return KIND_ALIAS[k] || k; }
   function kindDef(k){
+    k = kindKey(k);
     for(var i = 0; i < WKINDS.length; i++) if(WKINDS[i].k === k) return WKINDS[i];
-    return WKINDS[3];
+    return WKINDS[WKINDS.length - 1];           /* 기타 */
+  }
+  /* 시즌·화수를 세는 종류인가 */
+  function isEpisodic(k){ k = kindKey(k); return k === "drama" || k === "anime"; }
+  /* 게임 플랫폼 — 하나만 고른다. 멀티플랫폼은 실제로 산 쪽을 고르면 된다. */
+  var PLATS = [
+    { k:"switch", n:"스위치" }, { k:"pc", n:"PC" }, { k:"ps", n:"PS" },
+    { k:"xbox", n:"Xbox" }, { k:"mobile", n:"모바일" }, { k:"vr", n:"VR" }, { k:"etcp", n:"기타" }
+  ];
+  function platName(k){
+    for(var i = 0; i < PLATS.length; i++) if(PLATS[i].k === k) return PLATS[i].n;
+    return "미정";
+  }
+  /* 영화를 어떻게 봤나 */
+  var HOWS = [ { k:"theater", n:"극장" }, { k:"disc", n:"블루레이" }, { k:"stream", n:"스트리밍" } ];
+  function howName(k){
+    for(var i = 0; i < HOWS.length; i++) if(HOWS[i].k === k) return HOWS[i].n;
+    return "미정";
   }
   function wkey(text){ return String(text || "").trim(); }
   function works(){ if(!store.works) store.works = {}; return store.works; }
@@ -2523,7 +2629,7 @@ var HOLIDAYS = {
        "핫 레스토랑 설치 및 플레이" → /플레이/ 에 걸려 게임
      한국어는 낱말이 붙어 다녀서 부분일치가 늘 사고를 낸다. 추측은 없앤다.
      회차(@3/8)를 적고 있는 것만 연재물이 확실하므로 그것만 첫 제안으로 쓴다. */
-  function seedKind(hasSeq){ return hasSeq ? "show" : ""; }
+  function seedKind(hasSeq){ return hasSeq ? "drama" : ""; }
   function setWork(text, patch){
     var n = wkey(text);
     if(!n) return null;
@@ -2536,7 +2642,7 @@ var HOLIDAYS = {
   function dropWork(text){
     var n = wkey(text);
     /* 지우는 대신 비워둔다 — 다른 기기가 옛 값으로 되살리지 못하게 시각을 남긴다 */
-    if(works()[n]) works()[n] = { kind:"", sea:0, tot:0, fin:"", finAt:"", at:Date.now() };
+    if(works()[n]) works()[n] = { kind:"", sea:0, tot:0, plat:"", how:"", fin:"", finAt:"", at:Date.now() };
   }
   function hhmm(t){
     if(!t) return "";
@@ -4503,10 +4609,10 @@ var HOLIDAYS = {
     for(j = 11; j >= 0; j--) months.push(mnShiftYm(ym, -j));
     var sums = months.map(function(m){ var s = mnSum(mnInMonth(m)); if(s > mx) mx = s; return s; });
     months.forEach(function(m, k2){
-      var h = mx ? Math.max(2, Math.round(sums[k2] / mx * 100)) : 2;
+      var h = mx ? Math.max(3, Math.round(sums[k2] / mx * 96)) : 2;   /* px — % 는 주저앉는다 */
       bhtml += '<div class="bcol' + (m === ym ? " today" : "") + '" title="' + mnYmLabel(m) + " " + won(sums[k2]) + '">' +
         '<span class="bv">' + (sums[k2] ? Math.round(sums[k2] / 10000) : "") + '</span>' +
-        '<span class="bk" style="height:' + h + '%;' + (m === ym ? "" : "background:var(--accent-dim)") + '"></span>' +
+        '<span class="bk" style="height:' + h + 'px;' + (m === ym ? "" : "background:var(--accent-dim)") + '"></span>' +
         '<span class="bl">' + (+m.slice(5, 7)) + '</span></div>';
     });
     bars.innerHTML = bhtml;
@@ -4696,7 +4802,7 @@ var HOLIDAYS = {
     for(i = 0; i < 7; i++){
       dh += '<div class="bcol' + (i === 0 ? " sun" : (i === 6 ? " sat" : "")) + '" title="' + DAYS[i] + '요일 ' + won(dow[i]) + '">' +
         '<span class="bv">' + (dow[i] ? Math.round(dow[i] / 10000) : "") + '</span>' +
-        '<span class="bk" style="height:' + (mxd ? Math.max(2, Math.round(dow[i] / mxd * 100)) : 2) + '%"></span>' +
+        '<span class="bk" style="height:' + (mxd ? Math.max(3, Math.round(dow[i] / mxd * 84)) : 2) + 'px"></span>' +
         '<span class="bl">' + DAYS[i] + '</span></div>';
     }
     $("mnDow").innerHTML = dh;
@@ -5866,19 +5972,36 @@ var HOLIDAYS = {
     };
   });
   /* ---------- 작품 시트 ---------- */
-  var wkName = null, wkKind = "", wkFin = "";
+  var wkName = null, wkKind = "", wkFin = "", wkPlat = "", wkHow = "";
+  /* 칩 한 줄 그리기 — 플랫폼·관람 방식이 같은 모양을 쓴다 */
+  function wkChips(host, list, cur, pick){
+    host.innerHTML = "";
+    list.forEach(function(x){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = x.n;
+      if(cur === x.k) b.className = "on";
+      b.onclick = function(){ pick(cur === x.k ? "" : x.k); };
+      host.appendChild(b);
+    });
+  }
   function wkPaint(){
-    var d = kindDef(wkKind), picked = !!wkKind;
-    Array.prototype.forEach.call($("wkKind").children, function(b){ b.classList.toggle("on", b.dataset.k === wkKind); });
+    var d = kindDef(wkKind), picked = !!wkKind, kk = kindKey(wkKind);
+    Array.prototype.forEach.call($("wkKind").children, function(b){ b.classList.toggle("on", b.dataset.k === kk); });
     Array.prototype.forEach.call($("wkFin").children, function(b){ b.classList.toggle("on", (b.dataset.v || "") === wkFin); });
     /* 끝냈다는 말은 종류마다 다르다 — 게임은 엔딩, 드라마는 완주, 책은 완독 */
     $("wkFin").children[1].textContent = picked ? d.fin : "끝냄";
-    $("wkVolWrap").style.display = (wkKind === "show" || wkKind === "book") ? "flex" : "none";
-    $("wkSeaWrap").style.display = (wkKind === "show") ? "contents" : "none";
-    $("wkTotUnit").textContent = (wkKind === "book") ? "권짜리" : "편짜리";
-    $("wkVolLabel").textContent = (wkKind === "book")
+    /* 종류마다 묻는 게 다르다 */
+    $("wkPlatWrap").style.display = (kk === "game") ? "flex" : "none";
+    $("wkHowWrap").style.display = (kk === "movie") ? "flex" : "none";
+    if(kk === "game") wkChips($("wkPlat"), PLATS, wkPlat, function(v){ wkPlat = v; wkPaint(); });
+    if(kk === "movie") wkChips($("wkHow"), HOWS, wkHow, function(v){ wkHow = v; wkPaint(); });
+    var epi = isEpisodic(kk);
+    $("wkVolWrap").style.display = (epi || kk === "book") ? "flex" : "none";
+    $("wkSeaWrap").style.display = epi ? "contents" : "none";
+    $("wkTotUnit").textContent = (kk === "book") ? "권짜리" : (kk === "anime" ? "화짜리" : "편짜리");
+    $("wkVolLabel").textContent = (kk === "book")
       ? "분량 — 전체 몇 권인지 (모르면 비워두기)"
-      : "분량 — 시즌은 내가 본 만큼, 편수는 전체 (모르면 비워두기)";
+      : "분량 — 시즌은 내가 본 만큼, " + (kk === "anime" ? "화수" : "편수") + "는 전체 (모르면 비워두기)";
     $("wkFinWrap").style.display = wkFin ? "flex" : "none";
     $("wkFinLabel").textContent = (picked ? d.fin : "끝낸") + "한 날";
     if(wkFin === "drop") $("wkFinLabel").textContent = "그만둔 날";
@@ -5893,8 +6016,10 @@ var HOLIDAYS = {
     if(!n) return;
     wkName = n;
     var w = workOf(n), t = workTally(n);
-    wkKind = (w && w.kind) || seedKind(t.eps > 0);   /* 없으면 빈 칸 — 직접 고르게 한다 */
+    wkKind = kindKey((w && w.kind) || seedKind(t.eps > 0));   /* 없으면 빈 칸 — 직접 고르게 한다 */
     wkFin = (w && w.fin) || "";
+    wkPlat = (w && w.plat) || "";
+    wkHow = (w && w.how) || "";
     $("wkTitle").textContent = n;
     $("wkSea").value = (w && w.sea) || "";
     $("wkTot").value = (w && w.tot) || "";
@@ -5935,10 +6060,13 @@ var HOLIDAYS = {
     if(!wkName || !wkKind) return;               /* 종류 없이는 등록하지 않는다 */
     var n = wkName;
     var sea = parseInt($("wkSea").value, 10), tot = parseInt($("wkTot").value, 10);
+    var kk = kindKey(wkKind), epi = isEpisodic(kk);
     setWork(n, {
-      kind: wkKind,
-      sea: (sea > 0 && (wkKind === "show")) ? sea : 0,
-      tot: (tot > 0 && (wkKind === "show" || wkKind === "book")) ? tot : 0,
+      kind: kk,
+      sea: (sea > 0 && epi) ? sea : 0,
+      tot: (tot > 0 && (epi || kk === "book")) ? tot : 0,
+      plat: (kk === "game") ? (wkPlat || "") : "",
+      how: (kk === "movie") ? (wkHow || "") : "",
       fin: wkFin,
       finAt: wkFin ? ($("wkFinAt").value || todayKey) : ""
     });
@@ -6675,9 +6803,11 @@ var HOLIDAYS = {
     for(n in names){
       w = reg[n] || null;
       var t = tally[n] || { sessions:0, eps:0, maxSeq:0, tot:0, last:"", first:"" };
-      var kind = (w && w.kind) || "etc";      /* names 에는 kind 가 있는 것만 들어온다 */
+      var kind = kindKey((w && w.kind) || "etc");   /* v7.2 이하의 show 는 drama 로 읽는다 */
       out.push({
         name:n, kind:kind, cat:cats[n] || null,
+        plat: (w && w.plat) || "",
+        how: (w && w.how) || "",
         sea: (w && w.sea) || 0,
         tot: (w && w.tot) || t.tot || 0,
         fin: (w && w.fin) || "",
@@ -6698,63 +6828,158 @@ var HOLIDAYS = {
     });
     return out;
   }
-  function renderWorkStats(){
-    var rows = workRows();
-    var endN = 0, goN = 0, dropN = 0;
+  var wkTab = "";           /* "" = 전체, 아니면 종류 키 */
+  function wkKindSum(rows){
     var sum = {};
-    WKINDS.forEach(function(d){ sum[d.k] = { n:0, end:0, drop:0, go:0, sea:0, eps:0, sessions:0, idle:0 }; });
+    WKINDS.forEach(function(d){
+      sum[d.k] = { def:d, n:0, end:0, drop:0, go:0, idle:0, sea:0, eps:0, sessions:0 };
+    });
     rows.forEach(function(r){
-      var s = sum[r.kind] || sum.etc;
+      var s = sum[kindKey(r.kind)] || sum.etc;
       s.n++;
       s.eps += r.eps; s.sessions += r.sessions;
       /* 시즌 수를 안 적었으면 편을 본 작품은 최소 1시즌으로 센다 */
       s.sea += r.sea || (r.eps ? 1 : 0);
-      if(r.fin === "end"){ s.end++; endN++; }
-      else if(r.fin === "drop"){ s.drop++; dropN++; }
-      else if(r.touched){ s.go++; goN++; }
+      if(r.fin === "end") s.end++;
+      else if(r.fin === "drop") s.drop++;
+      else if(r.touched) s.go++;
       else s.idle++;
+    });
+    return sum;
+  }
+  /* 종류마다 앞세울 숫자가 다르다 — 게임은 플레이 횟수, 드라마는 시즌·편수 */
+  function wkKindBits(k, s){
+    if(k === "game") return [["타이틀", s.n + "개"], ["플레이", s.sessions + "회"]];
+    if(k === "movie") return [["편수", s.n + "편"]];
+    if(k === "drama") return [["작품", s.n + "개"], ["시즌", s.sea + "개"], ["본 편수", s.eps + "편"]];
+    if(k === "anime") return [["작품", s.n + "개"], ["쿨", s.sea + "개"], ["본 화수", s.eps + "화"]];
+    if(k === "book") return [["책", s.n + "권"], ["기록", (s.sessions + s.eps) + "회"]];
+    return [["작품", s.n + "개"], ["기록", (s.sessions + s.eps) + "회"]];
+  }
+  function renderWorkStats(){
+    var rows = workRows();
+    Array.prototype.forEach.call($("wkTabs").children, function(b){
+      b.classList.toggle("on", (b.dataset.k || "") === wkTab);
+    });
+    $("wkAllPane").hidden = !!wkTab;
+    $("wkOnePane").hidden = !wkTab;
+    $("wkAllTableBox").hidden = !!wkTab;
+    if(wkTab){ renderWorkOne(rows, wkTab); return; }
+
+    var sum = wkKindSum(rows);
+    var endN = 0, goN = 0, dropN = 0;
+    rows.forEach(function(r){
+      if(r.fin === "end") endN++;
+      else if(r.fin === "drop") dropN++;
+      else if(r.touched) goN++;
     });
     $("wkAll").textContent = rows.length;
     $("wkEnd").textContent = endN;
     $("wkGo").textContent = goN;
     $("wkDrop").textContent = dropN;
 
-    var html = "";
+    /* 종류별 카드 — 누르면 그 종류만 본다 */
+    var host = $("wkCards");
+    host.innerHTML = "";
     WKINDS.forEach(function(d){
       var s = sum[d.k];
-      if(!s || !s.n) return;
-      var kv = [];
-      if(d.k === "show"){
-        kv.push(["작품", s.n + "개"]);
-        if(s.sea) kv.push(["시즌", s.sea + "개"]);
-        if(s.eps) kv.push(["본 편수", s.eps + "편"]);
-      } else if(d.k === "game"){
-        kv.push(["타이틀", s.n + "개"]);
-        if(s.sessions) kv.push(["플레이", s.sessions + "회"]);
-      } else if(d.k === "book"){
-        kv.push(["책", s.n + "권"]);
-        if(s.sessions + s.eps) kv.push(["기록", (s.sessions + s.eps) + "회"]);
-      } else {
-        kv.push(["작품", s.n + "개"]);
-        if(s.sessions + s.eps) kv.push(["기록", (s.sessions + s.eps) + "회"]);
-      }
-      html += '<div class="wkline"><b>' + esc(d.label) + '</b>' +
-        kv.map(function(p){ return '<span class="kv">' + esc(p[0]) + ' <i>' + p[1] + '</i></span>'; }).join("") +
-        '<span class="kv hi">' + esc(d.fin) + ' <i>' + s.end + '개</i></span>' +
-        '<span style="flex:1"></span><span class="zz">' +
-        (s.go ? "진행 중 " + s.go : "") + (s.go && s.idle ? " · " : "") +
-        (s.idle ? "안 시작 " + s.idle : "") + (s.drop ? ((s.go || s.idle) ? " · " : "") + "하차 " + s.drop : "") +
-        '</span></div>';
+      if(!s.n) return;
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "kcard";
+      card.style.setProperty("--c", d.color);
+      var w = function(n){ return s.n ? Math.round(n / s.n * 100) : 0; };
+      card.innerHTML = '<span class="kh"><b></b><span></span></span>' +
+        '<span class="kbig">' + s.end + '<i>' + d.fin + '</i></span>' +
+        '<span class="kbar"><i style="width:' + w(s.end) + '%;background:var(--done)"></i>' +
+          '<i style="width:' + w(s.go) + '%;background:' + d.color + '"></i>' +
+          '<i style="width:' + w(s.drop) + '%;background:var(--dim)"></i></span>' +
+        '<span class="krow"></span>';
+      card.querySelector(".kh b").textContent = d.label;
+      card.querySelector(".kh span").textContent = wkKindBits(d.k, s)[0].join(" ");
+      var rw = card.querySelector(".krow");
+      wkKindBits(d.k, s).slice(1).forEach(function(p){
+        if(/^0[가-힣]*$/.test(p[1])) return;        /* "기록 0회" 같은 빈 줄은 안 띄운다 */
+        var e = document.createElement("span");
+        e.innerHTML = esc(p[0]) + " <em></em>";
+        e.querySelector("em").textContent = p[1];
+        rw.appendChild(e);
+      });
+      [["진행", s.go], ["안 시작", s.idle], ["하차", s.drop]].forEach(function(p){
+        if(!p[1]) return;
+        var e = document.createElement("span");
+        e.innerHTML = esc(p[0]) + " <em></em>";
+        e.querySelector("em").textContent = p[1];
+        rw.appendChild(e);
+      });
+      card.onclick = function(){ wkTab = d.k; renderWorkStats(); };
+      host.appendChild(card);
     });
-    $("wkSum").innerHTML = html || '<p class="hint" style="margin:0">아직 기록한 작품이 없습니다.</p>';
-    $("wkNote").innerHTML = rows.length
-      ? ("작품 " + rows.length + "개 중 <b>" + endN + "개를 끝냈습니다</b>" +
-         (goN ? " · " + goN + "개는 진행 중" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
-         "<br>여기에는 <b>내가 직접 등록한 작품만</b> 나옵니다. 잘못 들어온 줄은 오른쪽 <b>빼기</b>로 지우세요. " +
-         "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
-      : "아직 등록한 작품이 없습니다. 게임·드라마처럼 여러 날에 걸치는 것만 " +
-        "언젠가 목록의 <b>작품 +</b> 버튼이나 카드 상세의 <b>🏁</b> 버튼으로 등록하세요. " +
-        "등록한 것만 여기 잡히니 그냥 할 일은 섞이지 않습니다.";
+    if(!rows.length) host.innerHTML = '<p class="hint" style="margin:0;grid-column:1/-1">아직 기록한 작품이 없습니다.</p>';
+
+    /* 달마다 끝낸 것 — 종류별로 쌓는다 */
+    var months = [], i2, base = fromIso(todayKey);
+    for(i2 = 11; i2 >= 0; i2--){
+      var d2 = new Date(base.getFullYear(), base.getMonth() - i2, 1);
+      months.push(d2.getFullYear() + "-" + String(d2.getMonth() + 1).padStart(2, "0"));
+    }
+    var byM = {}, mx = 0;
+    months.forEach(function(m){ byM[m] = {}; });
+    rows.forEach(function(r){
+      if(r.fin !== "end" || !r.finAt) return;
+      var m = r.finAt.slice(0, 7);
+      if(!byM[m]) return;
+      var kk = kindKey(r.kind);
+      byM[m][kk] = (byM[m][kk] || 0) + 1;
+    });
+    months.forEach(function(m){
+      var t = 0, kk;
+      for(kk in byM[m]) t += byM[m][kk];
+      if(t > mx) mx = t;
+    });
+    var BARPX = 96;               /* 막대 최대 높이 (px) — 위 주석 참고 */
+    var bh = "", used = {};
+    months.forEach(function(m){
+      /* ⚠ 높이 기준이 두 개다. 바깥 칸은 열두 달 중 최대치(mx) 대비,
+         안쪽 조각은 그 달 합계(t) 대비. 둘 다 mx 로 두면 조각이 칸보다 작아져 막대가 안 보인다. */
+      var t = 0;
+      WKINDS.forEach(function(d){ t += (byM[m][d.k] || 0); });
+      var full = mx ? Math.max(3, Math.round(t / mx * BARPX)) : 2;
+      var stack = "", drawn = 0;
+      WKINDS.forEach(function(d){
+        var v = byM[m][d.k] || 0;
+        if(!v) return;
+        used[d.k] = 1;
+        var hpx = Math.max(2, Math.round(v / t * full));
+        drawn += hpx;
+        stack += '<i style="height:' + hpx + 'px;background:' + d.color + '"></i>';
+      });
+      bh += '<div class="bcol' + (m === todayKey.slice(0, 7) ? " today" : "") + '">' +
+        '<span class="bv">' + (t || "") + '</span>' +
+        '<span class="bk stk" style="height:' + (drawn || 2) + 'px">' + stack + '</span>' +
+        '<span class="bl">' + (+m.slice(5, 7)) + '</span></div>';
+    });
+    $("wkBars").innerHTML = bh;
+    var lg = "";
+    WKINDS.forEach(function(d){ if(used[d.k]) lg += '<span><i style="background:' + d.color + '"></i>' + esc(d.label) + '</span>'; });
+    $("wkBarLgd").innerHTML = lg;
+
+    /* 최근에 끝낸 것 */
+    var done = rows.filter(function(r){ return r.fin === "end" && r.finAt; })
+      .sort(function(a, b){ return a.finAt < b.finAt ? 1 : -1; }).slice(0, 8);
+    var rc = $("wkRecent");
+    rc.innerHTML = "";
+    done.forEach(function(r){
+      var d3 = fromIso(r.finAt), def = kindDef(r.kind);
+      var e = document.createElement("div");
+      e.className = "lgi";
+      e.innerHTML = '<span class="t nt">' + (d3.getMonth() + 1) + '/' + d3.getDate() + '</span>' +
+        '<span class="wktag" style="--c:' + def.color + '"></span><span class="x"></span>';
+      e.querySelector(".wktag").textContent = def.label;
+      e.querySelector(".x").textContent = r.name;
+      rc.appendChild(e);
+    });
+    if(!done.length) rc.innerHTML = '<p class="hint" style="margin:0">아직 끝낸 작품이 없습니다.</p>';
 
     var mine0 = stProfile() === profile;
     var head = '<thead><tr><th>작품</th><th>종류</th><th>진행</th><th>기록</th><th>상태</th><th>마지막</th>' +
@@ -6764,10 +6989,10 @@ var HOLIDAYS = {
     rows.forEach(function(r){
       var d = kindDef(r.kind);
       var prog = "·", rec = "·", stt, cls;
-      if(r.kind === "show"){
+      if(isEpisodic(r.kind)){
         if(r.maxSeq) prog = "EP " + r.maxSeq + (r.tot ? " / " + r.tot : "");
         else if(r.sea) prog = r.sea + "시즌";
-        if(r.eps) rec = r.eps + "편";
+        if(r.eps) rec = r.eps + (kindKey(r.kind) === "anime" ? "화" : "편");
       } else if(r.kind === "book"){
         if(r.tot) prog = r.tot + "권";
         if(r.sessions + r.eps) rec = (r.sessions + r.eps) + "회";
@@ -6811,6 +7036,179 @@ var HOLIDAYS = {
       td.title = "눌러서 작품 기록 고치기";
       td.onclick = function(){ $("statsOverlay").hidden = true; openWork(r.name); };
     });
+    $("wkNote").innerHTML = rows.length
+      ? ("작품 " + rows.length + "개 중 <b>" + endN + "개를 끝냈습니다</b>" +
+         (goN ? " · " + goN + "개는 진행 중" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
+         "<br>여기에는 <b>내가 직접 등록한 작품만</b> 나옵니다. 종류 버튼을 누르면 그 종류만 자세히 봅니다. " +
+         "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
+      : "아직 등록한 작품이 없습니다. 게임·영화·드라마처럼 남겨둘 만한 것만 " +
+        "언젠가 목록의 <b>작품 +</b> 버튼이나 카드 상세의 <b>🏁</b> 버튼으로 등록하세요.";
+  }
+
+  /* ---------- 종류 하나만 자세히 ----------
+     종류마다 보는 지표가 다르다. 게임은 플랫폼과 엔딩까지 걸린 시간,
+     영화는 극장에서 봤나, 드라마·애니는 시즌과 편수. */
+  function renderWorkOne(all, kind){
+    var def = kindDef(kind);
+    var rows = all.filter(function(r){ return kindKey(r.kind) === kind; });
+    var s = wkKindSum(rows)[kind];
+    var tiles = [];
+    if(kind === "game"){
+      tiles = [["타이틀", s.n + "개", "rest"], [def.fin, s.end + "개" + (s.n ? " · " + Math.round(s.end / s.n * 100) + "%" : ""), "done"],
+               ["플레이", s.sessions + "회", "defer"], ["손도 안 댐", s.idle + "개", "cancel"]];
+    } else if(kind === "movie"){
+      tiles = [["편수", s.n + "편", "rest"], ["본 것", s.end + "편", "done"],
+               ["보다 말았음", (s.go + s.idle) + "편", "defer"], ["하차", s.drop + "편", "cancel"]];
+    } else if(isEpisodic(kind)){
+      var unit = (kind === "anime") ? "화" : "편";
+      tiles = [["작품", s.n + "개", "rest"], [(kind === "anime" ? "쿨" : "시즌"), s.sea + "개", "defer"],
+               ["본 " + unit + "수", s.eps + unit, "rest"], [def.fin, s.end + "개", "done"]];
+    } else {
+      tiles = [["작품", s.n + "개", "rest"], [def.fin, s.end + "개", "done"],
+               ["진행 중", s.go + "개", "defer"], ["안 시작", s.idle + "개", "cancel"]];
+    }
+    $("wkOneTiles").innerHTML = tiles.map(function(t){
+      return '<div class="tile ' + t[2] + '"><span class="tn">' + esc(t[1]) + '</span><span class="tl">' + esc(t[0]) + '</span></div>';
+    }).join("");
+
+    /* 목록 — 종류마다 칸이 다르다 */
+    function md(k){ if(!k) return "·"; var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
+    var cols, sorted = rows.slice();
+    if(kind === "game"){
+      sorted.sort(function(a, b){ return b.sessions - a.sessions || (a.name < b.name ? -1 : 1); });
+      cols = ["이름", "플랫폼", "플레이", "마지막", "상태"];
+      $("wkOneListH").textContent = "타이틀 — 많이 한 순";
+    } else if(kind === "movie"){
+      sorted.sort(function(a, b){ return (b.finAt || b.last || "") < (a.finAt || a.last || "") ? -1 : 1; });
+      cols = ["이름", "본 방법", "기록", "본 날", "상태"];
+      $("wkOneListH").textContent = "영화 — 최근 본 순";
+    } else if(isEpisodic(kind)){
+      sorted.sort(function(a, b){ return b.eps - a.eps || (a.name < b.name ? -1 : 1); });
+      cols = ["이름", "시즌", "본 " + (kind === "anime" ? "화" : "편"), "진행", "마지막", "상태"];
+      $("wkOneListH").textContent = "작품 — 많이 본 순";
+    } else {
+      cols = ["이름", "진행", "기록", "마지막", "상태"];
+      $("wkOneListH").textContent = "작품별";
+    }
+    var head = '<thead><tr>' + cols.map(function(c){ return '<th>' + esc(c) + '</th>'; }).join("") + '</tr></thead>';
+    var body = "";
+    sorted.forEach(function(r){
+      var stt, cls;
+      if(r.fin === "end"){ stt = "🏁 " + def.fin; cls = "ok"; }
+      else if(r.fin === "drop"){ stt = "하차"; cls = "cx"; }
+      else if(r.touched){ stt = "진행 중"; cls = "df"; }
+      else { stt = "안 시작"; cls = "z"; }
+      var cells;
+      if(kind === "game"){
+        cells = ['<td class="z">' + esc(platName(r.plat)) + '</td>',
+                 '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
+                 '<td class="z">' + md(r.last) + '</td>'];
+      } else if(kind === "movie"){
+        cells = ['<td class="z">' + esc(howName(r.how)) + '</td>',
+                 '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
+                 '<td class="z">' + md(r.finAt || r.last) + '</td>'];
+      } else if(isEpisodic(kind)){
+        cells = ['<td class="' + (r.sea ? "" : "z") + '">' + (r.sea ? r.sea + "시즌" : "·") + '</td>',
+                 '<td class="' + (r.eps ? "ok" : "z") + '">' + (r.eps ? r.eps + (kind === "anime" ? "화" : "편") : "·") + '</td>',
+                 '<td class="' + (r.maxSeq ? "" : "z") + '">' + (r.maxSeq ? (r.maxSeq + (r.tot ? " / " + r.tot : "")) : "·") + '</td>',
+                 '<td class="z">' + md(r.fin ? (r.finAt || r.last) : r.last) + '</td>'];
+      } else {
+        cells = ['<td class="z">' + (r.tot ? r.tot + "권" : "·") + '</td>',
+                 '<td class="' + ((r.sessions + r.eps) ? "ok" : "z") + '">' + ((r.sessions + r.eps) ? (r.sessions + r.eps) + "회" : "·") + '</td>',
+                 '<td class="z">' + md(r.fin ? (r.finAt || r.last) : r.last) + '</td>'];
+      }
+      body += '<tr><td class="nm"></td>' + cells.join("") + '<td class="' + cls + '">' + stt + '</td></tr>';
+    });
+    var t = $("wkOneTable");
+    t.innerHTML = head + "<tbody>" +
+      (sorted.length ? body : '<tr><td colspan="' + cols.length + '" class="z">' + esc(def.label) + '로 등록한 것이 없습니다</td></tr>') + "</tbody>";
+    var mine = stProfile() === profile;
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr .nm"), function(td, i){
+      var r = sorted[i];
+      if(!r) return;
+      td.textContent = r.name;
+      if(!mine) return;
+      td.style.cursor = "pointer";
+      td.title = "눌러서 작품 기록 고치기";
+      td.onclick = function(){ $("statsOverlay").hidden = true; openWork(r.name); };
+    });
+
+    /* 오른쪽 — 종류마다 다른 나눠 보기 */
+    var groups = null, gLabel = "", extra = "";
+    if(kind === "game"){
+      gLabel = "플랫폼";
+      groups = {};
+      rows.forEach(function(r){ var k2 = r.plat || "?"; groups[k2] = (groups[k2] || 0) + 1; });
+      var ends = rows.filter(function(r){ return r.fin === "end"; });
+      if(ends.length){
+        var eh = '<h3 style="margin-top:.5rem">' + esc(def.fin) + '까지 걸린 것</h3><table class="sttable"><tbody>';
+        var sumS = 0, sumD = 0, cnt = 0;
+        ends.slice(0, 6).forEach(function(r){
+          var days = (r.first && r.finAt) ? Math.max(1, Math.round((fromIso(r.finAt) - fromIso(r.first)) / 864e5)) : 0;
+          if(r.sessions){ sumS += r.sessions; cnt++; }
+          if(days) sumD += days;
+          eh += '<tr><td class="nm2"></td><td>' + (r.sessions ? r.sessions + "회" : "·") + '</td>' +
+                '<td class="z">' + (days ? days + "일" : "·") + '</td></tr>';
+        });
+        eh += '</tbody></table>';
+        if(cnt) eh += '<p class="hint" style="margin:0">평균 <b>' + Math.round(sumS / cnt) + '회' +
+          (sumD ? " · " + Math.round(sumD / ends.slice(0, 6).length) + "일" : "") + '</b> 만에 ' + esc(def.fin) + '을 봤습니다</p>';
+        extra = eh;
+      }
+    } else if(kind === "movie"){
+      gLabel = "본 방법";
+      groups = {};
+      rows.forEach(function(r){ var k2 = r.how || "?"; groups[k2] = (groups[k2] || 0) + 1; });
+    } else if(isEpisodic(kind)){
+      gLabel = "시즌 수";
+      groups = {};
+      rows.forEach(function(r){
+        var n2 = r.sea || (r.eps ? 1 : 0);
+        var k2 = n2 ? (n2 + "시즌") : "?";
+        groups[k2] = (groups[k2] || 0) + 1;
+      });
+    }
+    var side = $("wkSideBox");
+    if(!groups || !rows.length){ side.hidden = true; }
+    else {
+      side.hidden = false;
+      $("wkSideH").textContent = gLabel;
+      var keys = Object.keys(groups).sort(function(a, b){ return groups[b] - groups[a]; });
+      var tot = rows.length, R = 50, C = 2 * Math.PI * R, off = 0;
+      var COLS = [def.color, "#3FA08C", "#E0A23C", "#6E82A0", "#8B6FD6", "#C78F4F", "#4C5A6B"];
+      var html = '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="var(--surface-2)" stroke-width="14"/>';
+      var lgd = "";
+      keys.forEach(function(k2, i3){
+        var col = (k2 === "?") ? "#4C5A6B" : COLS[i3 % COLS.length];
+        var len = C * (groups[k2] / tot), draw = Math.max(len - (keys.length > 1 ? 2 : 0), 0.8);
+        html += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="14" ' +
+          'stroke-dasharray="' + draw.toFixed(2) + ' ' + (C - draw).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '"></circle>';
+        off += len;
+        var nm = (k2 === "?") ? "미정" : (kind === "game" ? platName(k2) : (kind === "movie" ? howName(k2) : k2));
+        lgd += '<div class="lrow"><span class="sw" style="background:' + col + '"></span>' +
+          '<span class="nm">' + esc(nm) + '</span><span class="ct">' + groups[k2] + '</span>' +
+          '<span class="pc">' + Math.round(groups[k2] / tot * 100) + '%</span></div>';
+      });
+      $("wkDonut").querySelector("svg").innerHTML = html;
+      $("wkDonutN").textContent = tot;
+      $("wkDonutL").textContent = (kind === "movie") ? "편" : "개";
+      $("wkDonutLgd").innerHTML = lgd;
+      $("wkSideExtra").innerHTML = extra;
+      Array.prototype.forEach.call($("wkSideExtra").querySelectorAll(".nm2"), function(td, i4){
+        var r = rows.filter(function(x){ return x.fin === "end"; })[i4];
+        if(r) td.textContent = r.name;
+      });
+    }
+
+    var stuck = rows.filter(function(r){ return !r.fin && r.touched && r.last; })
+      .sort(function(a, b){ return a.last < b.last ? -1 : 1; })[0];
+    var msg = "";
+    if(stuck){
+      var gap = Math.round((fromIso(todayKey) - fromIso(stuck.last)) / 864e5);
+      if(gap >= 45) msg = "진행 중인 것 중 <b>" + esc(stuck.name) + "</b>은 마지막 기록이 " + gap + "일 전입니다 — 사실상 멈춘 것 같습니다";
+    }
+    if(!msg && rows.length) msg = esc(def.label) + " " + rows.length + "개 중 <b>" + s.end + "개를 " + esc(def.fin) + "</b>했습니다";
+    $("wkNote").innerHTML = msg;
   }
 
   /* ---------- 통계: 성공·실패 탭 ----------
@@ -7099,7 +7497,10 @@ var HOLIDAYS = {
     /* 언젠가 탭은 "지금 담아둔 것의 상태"를 보는 곳이라 기간을 나눌 대상이 아니다 */
     $("stPeriods").hidden = (stTab === "wish" || stTab === "work");
     $("stRange").hidden = (stTab === "wish" || stTab === "work");
-    Array.prototype.forEach.call($("stTabs").children, function(b){ b.classList.toggle("on", b.dataset.t === stTab); });
+    Array.prototype.forEach.call($("wkTabs").children, function(b){
+    b.onclick = function(){ wkTab = b.dataset.k || ""; renderWorkStats(); };
+  });
+  Array.prototype.forEach.call($("stTabs").children, function(b){ b.classList.toggle("on", b.dataset.t === stTab); });
     $("stTaskPane").hidden = stTab !== "task";
     $("stWishPane").hidden = stTab !== "wish";
     $("stWorkPane").hidden = stTab !== "work";
