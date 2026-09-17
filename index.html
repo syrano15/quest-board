@@ -960,6 +960,30 @@
     border:1px solid var(--c);color:var(--c);white-space:nowrap;}
   @media (max-width:820px){ .kgrid{grid-template-columns:repeat(2,1fr);} }
 
+  /* ---- 종류 한꺼번에 바꾸기 (v7.4) ---- */
+  /* ⚠ display:flex 가 [hidden] 의 display:none 을 이긴다 — 숨김 규칙을 따로 적어둔다 */
+  .wkbulkrow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.45rem;}
+  .wkbulkrow .qb{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
+    font-size:.78rem;padding:.28rem .7rem;cursor:pointer;transition:all .15s ease;flex:none;}
+  .wkbulkrow .qb:hover{border-color:var(--accent);color:var(--accent);}
+  .wkbulkrow[hidden]{display:none;}
+  .kbhead{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+  /* ⚠ .q 는 그 자체로는 아무 모양이 없다 (.fdate .q 안에서만 꾸며져 있었다).
+     그냥 쓰면 브라우저 기본 버튼(흰 네모)이 나온다 — v7.4 에서 한 번 당했다. */
+  .kbhead .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
+    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
+  .kbhead .q:hover{border-color:var(--accent);color:var(--accent);}
+  .kbhead .hint{margin-left:auto!important;}
+  .kblist{display:flex;flex-direction:column;gap:.15rem;max-height:17rem;overflow-y:auto;
+    border:1px solid var(--line);border-radius:.5rem;padding:.35rem;}
+  .kbrow{display:flex;align-items:center;gap:.5rem;padding:.35rem .45rem;border-radius:.4rem;
+    cursor:pointer;font-size:.86rem;}
+  .kbrow:hover{background:var(--surface);}
+  .kbrow input{width:1rem;height:1rem;flex:none;accent-color:var(--accent);}
+  .kbrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .kbrow .zz{font-size:.78rem;color:var(--dim);flex:none;}
+  .kblist .z{color:var(--dim);font-size:.84rem;padding:.6rem .45rem;}
+
   /* ---- 금전 관리 (v7.1) ---- */
   /* 금전 관리 상자 — 몸무게와 같은 모양·같은 잠금. 다만 두 보드 모두에서 보인다. */
   .mnbox{display:none;}
@@ -1768,6 +1792,10 @@
         <button type="button" data-k="book">책</button>
         <button type="button" data-k="etc">기타</button>
       </div>
+      <div class="wkbulkrow" id="wkBulkRow">
+        <button type="button" class="qb" id="wkBulkBtn">종류 한꺼번에 바꾸기</button>
+        <span class="hint" style="font-size:.76rem;margin:0">예전 기록은 드라마로 들어와 있습니다 — 애니는 여기서 한 번에 옮기세요</span>
+      </div>
 
       <!-- 전체 -->
       <div id="wkAllPane">
@@ -2304,6 +2332,35 @@
   </div>
 </div>
 
+<!-- v7.4 — 종류 한꺼번에 바꾸기.
+     v7.2 까지 드라마와 애니가 한 종류(show)였다. 이름으로는 절대 못 가르니(함정 2)
+     사람이 고르되, 하나씩 시트를 여닫지는 않게 한다. -->
+<div class="overlay" id="kbOverlay" hidden>
+  <div class="sheet" style="width:min(36rem,100%)">
+    <h2>종류 한꺼번에 바꾸기</h2>
+    <p class="hint" style="font-size:.82rem;margin:0">
+      고른 작품의 <b>종류만</b> 바꿉니다. 시즌·화수·끝낸 날 기록은 그대로예요.
+    </p>
+    <form class="composer" id="kbForm">
+      <span class="fl">지금 이 종류인 것을 보기</span>
+      <div class="chips wkpick" id="kbFrom"></div>
+      <div class="kbhead">
+        <button type="button" class="q" id="kbAll">전체 고르기</button>
+        <button type="button" class="q" id="kbNone">전체 풀기</button>
+        <span class="hint" id="kbCount" style="font-size:.8rem;margin:0"></span>
+      </div>
+      <div class="kblist" id="kbList"></div>
+      <span class="fl">이 종류로 바꾸기</span>
+      <div class="chips wkpick" id="kbTo"></div>
+      <div class="composer-row">
+        <span style="flex:1"></span>
+        <button type="button" class="ghost" id="kbClose">닫기</button>
+        <button type="submit" class="primary" id="kbSave" style="padding:.55rem 1.2rem">적용</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 (function(){
   var PROF_KEY = "questboard:profile";
@@ -2322,13 +2379,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.3";
-  var APP_BUILD = "2026-09-17 05:30";
+  var APP_VERSION = "v7.4";
+  var APP_BUILD = "2026-09-17 06:10";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.4",  d:"2026-09-17", n:[
+      "종류를 한꺼번에 바꾸는 창 — 작품 통계에서 여러 개 골라 한 번에 옮긴다",
+      "v7.2 이하의 드라마·애니 기록을 하나씩 안 고치고 체크만 해서 애니로 넘길 수 있다",
+      "옮길 때 그 종류에 없는 칸은 자동으로 비운다 (게임→영화면 플랫폼이 지워짐)"
+    ]},
     { v:"v7.3",  d:"2026-09-17", n:[
       "취미를 작품 탭으로 격상 — 게임·영화·드라마·애니·책·기타 여섯 종류로 나눴다",
       "게임은 플랫폼(스위치·PC·PS·Xbox·모바일·VR), 영화는 본 곳(극장·블루레이·스트리밍)을 같이 적는다",
@@ -5900,6 +5962,8 @@ var HOLIDAYS = {
     if(!$("mcatOverlay").hidden){ $("mcatOverlay").hidden = true; return; }
     /* 작품 시트는 언젠가 목록 위에 겹쳐 뜬다 — 먼저 닫혀야 한다 */
     if(!$("workOverlay").hidden){ closeWork(); return; }
+    /* 종류 한꺼번에 바꾸기는 통계 위에 겹쳐 뜬다 */
+    if(!$("kbOverlay").hidden){ $("kbOverlay").hidden = true; return; }
     if(!$("logOverlay").hidden){ $("logOverlay").hidden = true; return; }
     if(!$("habOverlay").hidden){ $("habOverlay").hidden = true; render(); return; }
     if(!$("tagOverlay").hidden){ $("tagOverlay").hidden = true; return; }
@@ -6076,6 +6140,116 @@ var HOLIDAYS = {
     if(wkFin === "end") toast('"' + n + '" ' + kindDef(wkKind).fin + " 기록했습니다 🏁", null);
     else if(wkFin === "drop") toast('"' + n + '" 하차로 정리했습니다', null);
   });
+  /* ---------- 종류 한꺼번에 바꾸기 (v7.4) ----------
+     v7.2 까지 드라마와 애니가 한 종류였다. 이름으로는 절대 못 가르니까(함정 2)
+     고르는 건 사람이 하되, 시트를 하나씩 여닫지는 않게 한다. */
+  var kbFrom = "drama", kbTo = "", kbSel = {};
+  function kbBuildSeg(host, withAny){
+    host.innerHTML = "";
+    var mk = function(k, label){
+      var b = document.createElement("button");
+      b.type = "button"; b.dataset.k = k; b.textContent = label;
+      b.onclick = function(){
+        if(host === $("kbFrom")){ kbFrom = k; kbSel = {}; }
+        else kbTo = k;
+        kbPaint();
+      };
+      host.appendChild(b);
+    };
+    if(withAny) mk("*", "전부");
+    WKINDS.forEach(function(d){ mk(d.k, d.label); });
+  }
+  /* 지금 걸러진 작품 이름들. kind 가 빈 것은 등록된 작품이 아니다 (빼기 한 것 포함) */
+  function kbNames(){
+    var w = works(), out = [], n;
+    for(n in w){
+      if(!w[n] || !w[n].kind) continue;
+      if(kbFrom !== "*" && kindKey(w[n].kind) !== kbFrom) continue;
+      out.push(n);
+    }
+    out.sort(function(a, b){ return a < b ? -1 : 1; });
+    return out;
+  }
+  function kbCount(){
+    var k, n = 0;
+    for(k in kbSel) if(kbSel[k]) n++;
+    $("kbCount").textContent = n ? n + "개 고름" : "고른 것 없음";
+    $("kbSave").disabled = !(n && kbTo && kbTo !== kbFrom);
+    return n;
+  }
+  function kbPaint(){
+    Array.prototype.forEach.call($("kbFrom").children, function(b){ b.classList.toggle("on", b.dataset.k === kbFrom); });
+    Array.prototype.forEach.call($("kbTo").children, function(b){ b.classList.toggle("on", b.dataset.k === kbTo); });
+    var names = kbNames(), host = $("kbList");
+    host.innerHTML = "";
+    if(!names.length){
+      host.innerHTML = '<div class="z">여기 해당하는 작품이 없습니다</div>';
+      kbCount();
+      return;
+    }
+    names.forEach(function(n){
+      var w = works()[n], t = workTally(n);
+      var row = document.createElement("label");
+      row.className = "kbrow";
+      row.innerHTML = '<input type="checkbox"><span class="nm"></span><span class="zz"></span>';
+      var cb = row.querySelector("input");
+      cb.checked = !!kbSel[n];
+      cb.onchange = function(){ if(cb.checked) kbSel[n] = 1; else delete kbSel[n]; kbCount(); };
+      row.querySelector(".nm").textContent = n;
+      var bits = [kindDef(w.kind).label];
+      if(w.sea) bits.push(w.sea + "시즌");
+      if(t.eps) bits.push(t.eps + "편 기록");
+      else if(t.sessions) bits.push(t.sessions + "회 기록");
+      /* 이모지는 줄 끝에서 잘려 보인다 — 글자로 적는다 */
+      if(w.fin === "end") bits.push(kindDef(w.kind).fin);
+      else if(w.fin === "drop") bits.push("하차");
+      row.querySelector(".zz").textContent = bits.join(" · ");
+      host.appendChild(row);
+    });
+    kbCount();
+  }
+  function openKindBulk(from){
+    var f = kindKey(from || ""), ok = false;
+    WKINDS.forEach(function(d){ if(d.k === f) ok = true; });
+    kbFrom = ok ? f : "drama";
+    kbTo = ""; kbSel = {};
+    kbPaint();
+    $("kbOverlay").hidden = false;
+  }
+  kbBuildSeg($("kbFrom"), true);
+  kbBuildSeg($("kbTo"), false);
+  /* 지금 보고 있는 종류로 열어준다 (전체 탭이면 드라마 — 옮길 일이 거기 몰려 있다) */
+  $("wkBulkBtn").onclick = function(){ openKindBulk(wkTab || "drama"); };
+  $("kbAll").onclick = function(){ kbNames().forEach(function(n){ kbSel[n] = 1; }); kbPaint(); };
+  $("kbNone").onclick = function(){ kbSel = {}; kbPaint(); };
+  $("kbClose").onclick = function(){ $("kbOverlay").hidden = true; };
+  $("kbOverlay").addEventListener("mousedown", function(e){ if(e.target === $("kbOverlay")) $("kbOverlay").hidden = true; });
+  $("kbForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var names = [], n;
+    for(n in kbSel) if(kbSel[n]) names.push(n);
+    if(!names.length || !kbTo) return;
+    var epi = isEpisodic(kbTo), moved = 0;
+    names.forEach(function(nm){
+      var w = works()[nm];
+      if(!w || !w.kind) return;
+      /* 바뀐 종류에 없는 칸은 비운다 — 작품 시트 저장과 같은 규칙.
+         안 그러면 "극장에서 본 스위치 게임" 같은 게 남는다. */
+      setWork(nm, {
+        kind: kbTo,
+        sea:  epi ? (w.sea || 0) : 0,
+        tot:  (epi || kbTo === "book") ? (w.tot || 0) : 0,
+        plat: (kbTo === "game")  ? (w.plat || "") : "",
+        how:  (kbTo === "movie") ? (w.how  || "") : ""
+      });
+      moved++;
+    });
+    $("kbOverlay").hidden = true;
+    save(); render();
+    if(!$("statsOverlay").hidden) renderStats();
+    toast(moved + "개를 " + kindDef(kbTo).label + "로 옮겼습니다", null);
+  });
+
   /* 끝낸 작품은 언젠가 목록에서 내려온다. 지우지는 않는다 — 통계가 세야 하니까. */
   function retireWish(name, fin){
     var arr = wishes(), i, it, n = wkey(name), hit = false;
@@ -6864,6 +7038,8 @@ var HOLIDAYS = {
     $("wkAllPane").hidden = !!wkTab;
     $("wkOnePane").hidden = !wkTab;
     $("wkAllTableBox").hidden = !!wkTab;
+    /* 다른 보드를 들여다보는 중이면 고치는 버튼은 숨긴다 — 보기 전용이다 */
+    $("wkBulkRow").hidden = (stProfile() !== profile);
     if(wkTab){ renderWorkOne(rows, wkTab); return; }
 
     var sum = wkKindSum(rows);
