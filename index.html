@@ -747,8 +747,21 @@
   .quick input::placeholder{color:var(--dim);}
   .quick .primary{padding:0 1.1rem;}
 
-  .empty{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.9rem;
-    border:1px dashed var(--line);border-radius:.9rem;padding:1.6rem;min-height:0;}
+  /* ⚠ flex:1 이 아니다 (v7.6). 빈 날에도 목록·입력칸이 같이 살아 있어야 해서
+     이 상자는 위쪽에 필요한 만큼만 차지한다. */
+  .empty{flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.7rem;
+    border:1px dashed var(--line);border-radius:.9rem;padding:1.2rem 1.6rem;min-height:0;}
+  .empty .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
+    font-size:.8rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s ease;}
+  .empty .q:hover{border-color:var(--accent);color:var(--accent);}
+  .empty .q.on{border-color:var(--accent);color:var(--accent);}
+  .rpick{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;max-width:46rem;}
+  .rp{display:inline-flex;align-items:center;gap:.35rem;background:var(--surface);
+    border:1px solid var(--line);border-radius:99px;color:var(--text);font:inherit;font-size:.82rem;
+    padding:.28rem .7rem;cursor:pointer;transition:all .15s ease;}
+  .rp:hover{border-color:var(--accent);}
+  .rp .rc{color:var(--c);font-size:.68rem;font-weight:700;}
+  .rp i{font-style:normal;font-size:.72rem;color:var(--dim);}
   .empty h2{margin:0;font-size:1.3rem;font-weight:600;}
   .empty p{margin:0;color:var(--muted);font-size:.88rem;text-align:center;}
   .composer{width:100%;max-width:40rem;display:flex;flex-direction:column;gap:.6rem;}
@@ -999,6 +1012,10 @@
   .kbrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .kbrow .zz{font-size:.78rem;color:var(--dim);flex:none;}
   .kblist .z{color:var(--dim);font-size:.84rem;padding:.6rem .45rem;}
+  .rnin{background:var(--surface);border:1px solid var(--line);border-radius:.45rem;color:var(--text);
+    font:inherit;font-size:.86rem;padding:.35rem .6rem;min-width:9rem;}
+  .rnin:focus{outline:none;border-color:var(--accent);}
+  .kbrow .rn2{font-size:.76rem;color:var(--dim);flex:none;}
 
   /* ---- 금전 관리 (v7.1) ---- */
   /* 금전 관리 상자 — 몸무게와 같은 모양·같은 잠금. 다만 두 보드 모두에서 보인다. */
@@ -1409,13 +1426,20 @@
 
     <div class="nowstrip" id="nowStrip"></div>
 
+    <!-- v7.6 — 비어 있어도 평소 화면(아래 한 줄 입력칸·자동완성·언젠가 줄)은 그대로 둔다.
+         v7.5 까지는 이 상자가 화면을 통째로 차지하면서 그것들이 같이 사라졌다. -->
     <div class="empty" id="emptyState" hidden>
       <h2 id="emptyTitle">오늘 할 일을 적어주세요</h2>
-      <p>한 줄에 하나씩. 번호나 <span style="font-family:'IBM Plex Mono',monospace">-</span> 로 시작해도 알아서 정리합니다.</p>
-      <form class="composer" id="seedForm">
+      <p id="emptyHint">아래 입력칸에 적으면 됩니다 — 예전에 적었던 이름은 치는 대로 자동으로 올라옵니다.</p>
+      <div class="composer-row" style="justify-content:center">
+        <button class="q" id="seedToggle" type="button">여러 줄로 한 번에 적기</button>
+        <button class="q" id="emptyRepeat" type="button" hidden>자주 하는 것 불러오기</button>
+      </div>
+      <div class="rpick" id="repeatPick" hidden></div>
+      <form class="composer" id="seedForm" hidden>
         <textarea id="seedText" placeholder="!! 09:30-11:00 기획 리뷰 회의&#10;! 배포 파일 전달&#10;월 10:00 주간 회의&#10;내일 제출 자료 정리"></textarea>
         <div class="composer-row">
-          <p class="hint">Ctrl + Enter 로도 추가됩니다.</p>
+          <p class="hint">한 줄에 하나씩. 번호나 - 로 시작해도 알아서 정리합니다. Ctrl + Enter 로도 추가됩니다.</p>
           <button class="primary" type="submit" style="padding:.6rem 1.4rem">보드 만들기</button>
         </div>
       </form>
@@ -1551,6 +1575,7 @@
       <button type="button" class="mrow monly" id="mStats"><b>통계 보기</b><span>기간·카테고리별 진행 현황</span></button>
       <button type="button" class="mrow" id="mMoney"><b>금전 관리</b><span id="mMoneySub">지출 장부 — 분류별 내역과 달마다 추이</span></button>
       <button type="button" class="mrow monly" id="mCats"><b>카테고리 관리</b><span>이름과 색상을 바꿉니다</span></button>
+      <button type="button" class="mrow" id="mRename"><b>이름 정리</b><span>같은 일인데 이름이 다른 것들을 하나로 맞춥니다</span></button>
       <button type="button" class="mrow monly" id="mBg"><b>배경 이미지</b><span>보드 뒷배경을 바꿉니다</span></button>
       <button type="button" class="mrow monly" id="mHelp"><b>입력 도움말</b><span>#카테고리 · 내일 · !! · @3/12 쓰는 법</span></button>
       <button type="button" class="mrow" id="mZen"><b>대기 화면</b><span>시계와 달력만 크게 — 아무거나 누르면 돌아옵니다</span></button>
@@ -1565,6 +1590,38 @@
       <span style="flex:1"></span>
       <button type="button" class="primary" id="moreClose" style="padding:.55rem 1.2rem">닫기</button>
     </div>
+  </div>
+</div>
+
+<!-- v7.6 — 이름 일괄 정리.
+     "오후 수유" / "오후 식사" 처럼 같은 일인데 표현이 갈린 것을 하나로 맞춘다.
+     ⚠ 비슷한 이름을 자동으로 묶어주지 않는다 — 고르는 건 사람이 한다 (함정 2와 같은 이유). -->
+<div class="overlay" id="rnOverlay" hidden>
+  <div class="sheet" style="width:min(40rem,100%)">
+    <h2>이름 정리</h2>
+    <p class="hint" style="font-size:.82rem;margin:0">
+      고른 것들의 <b>이름만</b> 바뀝니다. 날짜·완료 표시·메모·회차는 그대로예요.
+      지난 날 기록까지 전부 함께 바뀝니다.
+    </p>
+    <form class="composer" id="rnForm">
+      <div class="kbhead">
+        <input type="search" class="rnin" id="rnFind" placeholder="이름 찾기 (예: 수유)">
+        <button type="button" class="q" id="rnNone">전체 풀기</button>
+        <span class="hint" id="rnCount" style="font-size:.8rem;margin:0"></span>
+      </div>
+      <div class="kblist" id="rnList"></div>
+      <span class="fl">이 이름으로 바꾸기</span>
+      <div class="kbhead">
+        <input type="text" class="rnin" id="rnTo" placeholder="새 이름" style="flex:1">
+        <button type="button" class="q" id="rnPick">가장 많이 쓴 이름으로</button>
+      </div>
+      <p class="hint" id="rnNote" style="font-size:.8rem;margin:0"></p>
+      <div class="composer-row">
+        <span style="flex:1"></span>
+        <button type="button" class="ghost" id="rnClose">닫기</button>
+        <button type="submit" class="primary" id="rnSave" style="padding:.55rem 1.2rem">바꾸기</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2396,13 +2453,20 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.5";
-  var APP_BUILD = "2026-09-17 08:20";
+  var APP_VERSION = "v7.6";
+  var APP_BUILD = "2026-09-25 15:10";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.6",  d:"2026-09-25", n:[
+      "일감이 하나도 없는 날에도 평소 화면 그대로 — 아래 한 줄 입력칸과 자동완성이 살아 있다",
+      "여러 줄로 한 번에 적던 칸은 버튼 하나로 접었다 폈다 (예전에는 이게 화면을 다 차지했다)",
+      "빈 날에 \"자주 하는 것 불러오기\" — 최근 30일에 많이 적은 것을 눌러서 바로 담는다",
+      "이름 정리 창 신설 — \"오후 수유\" / \"오후 식사\" 처럼 갈린 이름을 골라서 한 번에 맞춘다",
+      "이름을 바꾸면 지난 날 기록·언젠가 목록·작품 등록부까지 같이 따라간다"
+    ]},
     { v:"v7.5",  d:"2026-09-17", n:[
       "카드 상세의 작품 단추를 \"엔딩·완주 기록하기\" 에서 \"작품으로 등록하기\" 로 — 끝내야 적는 곳으로 읽혔다",
       "이미 등록한 것은 단추에 종류와 플랫폼이 그대로 보인다 (게임 · 스위치 — 고치기)",
@@ -5439,8 +5503,11 @@ var HOLIDAYS = {
        숨겨진 채로 재면 너비가 0으로 나와서 한 줄짜리 보드가 만들어진다. */
     var isEmpty = items.length === 0;
     $("emptyState").hidden = !isEmpty;
-    list.hidden = isEmpty;
-    $("quickForm").hidden = isEmpty;
+    /* 비어 있어도 목록 칸과 한 줄 입력칸은 살려둔다 — 자동완성이 거기 붙어 있다 (v7.6) */
+    list.hidden = false;
+    $("quickForm").hidden = false;
+    if(!isEmpty) seedOpen = false;               /* 일감이 생기면 여러 줄 칸은 접어둔다 */
+    paintSeed();
     renderHabits();      /* 성공·실패 줄과 하단 언젠가 줄은 목록 높이에 영향을 주니 크기 재기 전에 */
     paintWishBar();
     layoutList();
@@ -6028,6 +6095,71 @@ var HOLIDAYS = {
     e.preventDefault();
     if(addLines($("wAddInput").value)) $("wAddInput").value = "";
   });
+  /* ---------- 빈 날 화면 (v7.6) ----------
+     여러 줄 칸은 접혀 있고, 자주 하는 것은 눌러서 바로 담는다.
+     평소 화면(아래 한 줄 입력칸·자동완성)은 그대로 살아 있다. */
+  var seedOpen = false, repeatOpen = false;
+  /* 최근 30일에 가장 자주 적은 이름들 — 오늘 이미 올라와 있는 것은 뺀다 */
+  function repeatPicks(){
+    /* ⚠ iso() 는 Date 를 받는다 (숫자 오프셋이 아니다) */
+    var f = fromIso(viewKey); f.setDate(f.getDate() - 30);
+    var from = iso(f), map = {}, k, i, it, key, on = {}, arr = [], today = day(viewKey);
+    for(i = 0; i < today.length; i++) on[String(today[i].text || "").trim()] = 1;
+    for(k in store.days){
+      if(k === SOMEDAY || k < from || k >= viewKey) continue;
+      for(i = 0; i < store.days[k].length; i++){
+        it = store.days[k][i];
+        if(!it || it.canceled) continue;
+        key = String(it.text || "").trim();
+        if(key.length < 2 || on[key]) continue;
+        if(!map[key]) map[key] = { text:key, n:0, cat:it.cat || null, last:k };
+        map[key].n++;
+        if(k > map[key].last){ map[key].last = k; map[key].cat = it.cat || null; }
+      }
+    }
+    for(k in map) arr.push(map[k]);
+    arr.sort(function(a, b){ return b.n - a.n || (a.text < b.text ? -1 : 1); });
+    return arr.slice(0, 10);
+  }
+  function paintSeed(){
+    var picks = repeatPicks();
+    $("emptyRepeat").hidden = !picks.length;
+    $("emptyRepeat").classList.toggle("on", repeatOpen);
+    $("seedToggle").classList.toggle("on", seedOpen);
+    $("seedForm").hidden = !seedOpen;
+    var host = $("repeatPick");
+    host.hidden = !(repeatOpen && picks.length);
+    if(host.hidden) return;
+    host.innerHTML = "";
+    picks.forEach(function(x){
+      var c = catById(x.cat);
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "rp";
+      if(c) b.style.setProperty("--c", c.color);
+      b.innerHTML = (c ? '<span class="rc"></span>' : '') + '<span class="rt"></span><i></i>';
+      if(c) b.querySelector(".rc").textContent = c.name;
+      b.querySelector(".rt").textContent = x.text;
+      b.querySelector("i").textContent = x.n + "회";
+      b.onclick = function(){
+        addLines((c ? "#" + c.name + " " : "") + x.text);   /* 한 줄 입력과 같은 길로 넣는다 */
+        paintSeed();
+      };
+      host.appendChild(b);
+    });
+  }
+  $("seedToggle").onclick = function(){
+    seedOpen = !seedOpen;
+    if(seedOpen) repeatOpen = false;
+    paintSeed();
+    if(seedOpen) $("seedText").focus();
+    layoutList();
+  };
+  $("emptyRepeat").onclick = function(){
+    repeatOpen = !repeatOpen;
+    if(repeatOpen) seedOpen = false;
+    paintSeed();
+    layoutList();
+  };
   $("seedForm").addEventListener("submit", function(e){
     e.preventDefault();
     if(addLines($("seedText").value)) $("seedText").value = "";
@@ -6050,6 +6182,7 @@ var HOLIDAYS = {
     if(!$("workOverlay").hidden){ closeWork(); return; }
     /* 종류 한꺼번에 바꾸기는 통계 위에 겹쳐 뜬다 */
     if(!$("kbOverlay").hidden){ $("kbOverlay").hidden = true; return; }
+    if(!$("rnOverlay").hidden){ $("rnOverlay").hidden = true; return; }
     if(!$("logOverlay").hidden){ $("logOverlay").hidden = true; return; }
     if(!$("habOverlay").hidden){ $("habOverlay").hidden = true; render(); return; }
     if(!$("tagOverlay").hidden){ $("tagOverlay").hidden = true; return; }
@@ -6336,6 +6469,141 @@ var HOLIDAYS = {
     save(); render();
     if(!$("statsOverlay").hidden) renderStats();
     toast(moved + "개를 " + kindDef(kbTo).label + "로 옮겼습니다", null);
+  });
+
+  /* ---------- 이름 정리 (v7.6) ----------
+     같은 일인데 표현이 갈린 것("오후 수유" / "오후 식사")을 하나로 맞춘다.
+     ⚠ 자동으로 묶어주지 않는다. 한국어 부분일치로 묶으면 반드시 사고가 난다(함정 2).
+       사람이 보고 고르게 하고, 여기는 고른 것을 한 번에 바꿔주기만 한다. */
+  var rnSel = {}, rnQ = "";
+  /* 보드에 쓰인 이름들 — 언젠가 목록까지 포함해 한 벌로 센다 */
+  function rnNames(){
+    var map = {}, k, i, it, key, arr = [];
+    for(k in store.days){
+      for(i = 0; i < store.days[k].length; i++){
+        it = store.days[k][i];
+        key = wkey(it && it.text);
+        if(!key) continue;
+        if(!map[key]) map[key] = { text:key, n:0, wish:0, cat:it.cat || null, last:"" };
+        map[key].n++;
+        if(k === SOMEDAY) map[key].wish++;
+        else if(k > map[key].last){ map[key].last = k; map[key].cat = it.cat || null; }
+      }
+    }
+    for(k in map) arr.push(map[k]);
+    arr.sort(function(a, b){ return b.n - a.n || (a.text < b.text ? -1 : 1); });
+    return arr;
+  }
+  function rnPicked(){
+    var k, out = [];
+    for(k in rnSel) if(rnSel[k]) out.push(k);
+    return out;
+  }
+  function rnPaint(){
+    var all = rnNames(), q = rnQ.trim(), host = $("rnList");
+    var rows = q ? all.filter(function(x){ return x.text.indexOf(q) >= 0 || rnSel[x.text]; }) : all;
+    host.innerHTML = "";
+    if(!rows.length){
+      host.innerHTML = '<div class="z">' + (q ? '"' + esc(q) + '" 이 들어간 이름이 없습니다' : "보드에 적힌 이름이 없습니다") + '</div>';
+    } else rows.forEach(function(x){
+      var row = document.createElement("label");
+      row.className = "kbrow";
+      row.innerHTML = '<input type="checkbox"><span class="nm"></span><span class="rn2"></span><span class="zz"></span>';
+      var cb = row.querySelector("input");
+      cb.checked = !!rnSel[x.text];
+      cb.onchange = function(){
+        if(cb.checked) rnSel[x.text] = 1; else delete rnSel[x.text];
+        rnCount(true);
+      };
+      row.querySelector(".nm").textContent = x.text;
+      var c = catById(x.cat);
+      if(c){ row.querySelector(".rn2").textContent = c.name; row.querySelector(".rn2").style.color = c.color; }
+      var bits = [x.n + "회"];
+      if(x.wish) bits.push("언젠가");
+      if(x.last){ var d = fromIso(x.last); bits.push("마지막 " + (d.getMonth()+1) + "/" + d.getDate()); }
+      row.querySelector(".zz").textContent = bits.join(" · ");
+      host.appendChild(row);
+    });
+    rnCount(false);
+  }
+  /* fill=true 면 아직 비어 있는 새 이름 칸을 가장 많이 쓴 이름으로 채워준다 */
+  function rnCount(fill){
+    var picked = rnPicked(), all = rnNames(), total = 0, top = "", topN = -1;
+    all.forEach(function(x){
+      if(picked.indexOf(x.text) < 0) return;
+      total += x.n;
+      if(x.n > topN){ topN = x.n; top = x.text; }
+    });
+    $("rnCount").textContent = picked.length ? picked.length + "개 이름 · 카드 " + total + "장" : "고른 것 없음";
+    if(fill && top && !$("rnTo").value.trim()) $("rnTo").value = top;
+    var to = wkey($("rnTo").value);
+    var left = picked.filter(function(t){ return t !== to; });
+    $("rnSave").disabled = !(left.length && to);
+    $("rnNote").textContent = (left.length && to)
+      ? ('"' + left.join('", "') + '" → "' + to + '" 로 바꿉니다 · 카드 ' + total + '장')
+      : (picked.length && !to ? "바꿀 이름을 적어주세요" : "");
+    return { picked:picked, to:to, top:top, total:total };
+  }
+  /* 실제 바꾸기. 이름은 작품 등록부의 열쇠이기도 해서 그쪽도 같이 옮긴다. */
+  function renameTexts(names, to){
+    var hit = 0, k, arr, i, it, now = Date.now();
+    for(k in store.days){
+      arr = store.days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || names.indexOf(wkey(it.text)) < 0) continue;
+        if(wkey(it.text) === to) continue;
+        it.text = to; it.at = now; hit++;
+      }
+    }
+    /* 작품 등록부 — 옛 이름에 붙어 있던 기록을 새 이름으로 옮긴다.
+       여러 개가 걸리면 가장 최근에 손댄 것을 남긴다. 옛 열쇠는 지우지 않고 비운다
+       (다른 기기가 옛 값으로 되살리지 못하게 — dropWork 과 같은 이유). */
+    var w = works(), best = w[to] || null, moved = 0;
+    names.forEach(function(nm){
+      if(nm === to) return;
+      var o = w[nm];
+      if(!o || !o.kind) return;
+      if(!best || !best.kind || (o.at || 0) > (best.at || 0)) best = o;
+      moved++;
+    });
+    if(moved && best && best.kind){
+      w[to] = { kind:best.kind, sea:best.sea || 0, tot:best.tot || 0,
+                plat:best.plat || "", how:best.how || "",
+                fin:best.fin || "", finAt:best.finAt || "", at:now };
+      names.forEach(function(nm){ if(nm !== to && w[nm]) dropWork(nm); });
+    }
+    return { cards:hit, works:moved };
+  }
+  function openRename(){
+    rnSel = {}; rnQ = "";
+    $("rnFind").value = ""; $("rnTo").value = "";
+    rnPaint();
+    $("rnOverlay").hidden = false;
+  }
+  $("rnFind").addEventListener("input", function(){ rnQ = this.value; rnPaint(); });
+  $("rnTo").addEventListener("input", function(){ rnCount(false); });
+  $("rnNone").onclick = function(){ rnSel = {}; $("rnTo").value = ""; rnPaint(); };
+  $("rnPick").onclick = function(){
+    var r = rnCount(false);
+    if(r.top) $("rnTo").value = r.top;
+    rnCount(false);
+  };
+  $("rnClose").onclick = function(){ $("rnOverlay").hidden = true; };
+  $("rnOverlay").addEventListener("mousedown", function(e){ if(e.target === $("rnOverlay")) $("rnOverlay").hidden = true; });
+  $("rnForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var r = rnCount(false);
+    if(!r.to) return;
+    var left = r.picked.filter(function(t){ return t !== r.to; });
+    if(!left.length) return;
+    var out = renameTexts(r.picked, r.to);
+    $("rnOverlay").hidden = true;
+    save(); render();
+    if(!$("wishOverlay").hidden) renderWishSheet();
+    if(!$("statsOverlay").hidden) renderStats();
+    toast("카드 " + out.cards + "장을 \"" + r.to + "\" 로 맞췄습니다" +
+          (out.works ? " · 작품 기록도 같이 옮겼습니다" : ""), null);
   });
 
   /* 끝낸 작품은 언젠가 목록에서 내려온다. 지우지는 않는다 — 통계가 세야 하니까. */
@@ -7943,6 +8211,7 @@ var HOLIDAYS = {
   $("mCal").onclick   = function(){ $("moreOverlay").hidden = true; setTimeout(openCal, 20); };
   $("mStats").onclick = function(){ $("statsBtn").click(); };
   $("mMoney").onclick = function(){ $("moreOverlay").hidden = true; setTimeout(function(){ $("moneyBtn").click(); }, 20); };
+  $("mRename").onclick = function(){ $("moreOverlay").hidden = true; setTimeout(openRename, 20); };
   $("mCats").onclick  = function(){ $("catBtn").click(); };
   $("mBg").onclick    = function(){ $("bgBtn").click(); };
   $("mHelp").onclick  = function(){ $("helpBtn").click(); };
@@ -8998,6 +9267,7 @@ var HOLIDAYS = {
                 mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres,
                 payload:payload, localNewerThan:localNewerThan,
                 openWork:openWork, workRows:workRows, setWork:setWork,
+                openRename:openRename, renameTexts:renameTexts,
                 get habFresh(){ return habFresh; } };
   window.QBtoast = toast;
   window.QBtouched = function(){ return touched; };          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
