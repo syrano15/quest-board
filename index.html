@@ -263,6 +263,16 @@
   .wtbox.lock .wtv,.wtbox.lock .wtd,.wtbox.lock .wtspark{
     filter:blur(6px);user-select:none;-webkit-user-select:none;pointer-events:none;}
   .wtbox.lock .wtl{color:var(--dim);}
+  /* 잠긴 성공·실패 항목 (v7.8) — 이름은 남기고 버튼만 흐리게 가린다.
+     ⚠ 상태 색(.ok/.no/.ex)은 JS 쪽에서 아예 안 붙인다. 여기서 색만 덮으면
+       테두리 한 줄로도 실패한 날이 그대로 새어 나간다. */
+  .hb.hlock,.wh.hlock{cursor:pointer;}
+  .hb.hlock .hok,.hb.hlock .hno,.hb.hlock .hex,
+  .wh.hlock .hok,.wh.hlock .hno,.wh.hlock .hex{
+    filter:blur(4px);user-select:none;-webkit-user-select:none;pointer-events:none;}
+  .hb.hlock .hn,.wh.hlock .whn{color:var(--dim);}
+  .hb.hlock::after,.wh.hlock::after{content:"잠김";font-size:.64rem;color:var(--dim);
+    letter-spacing:.04em;flex:none;}
   .pinbox{display:flex;gap:.4rem;align-items:center;}
   .pinbox .fi{flex:1;min-width:0;font-family:"IBM Plex Mono",monospace;letter-spacing:.4em;
     font-size:1.2rem;text-align:center;}
@@ -1600,8 +1610,8 @@
   <div class="sheet" style="width:min(40rem,100%)">
     <h2>이름 정리</h2>
     <p class="hint" style="font-size:.82rem;margin:0">
-      고른 것들의 <b>이름만</b> 바뀝니다. 날짜·완료 표시·메모·회차는 그대로예요.
-      지난 날 기록까지 전부 함께 바뀝니다.
+      고른 것들의 <b>이름과 카테고리</b>를 한 번에 맞춥니다. 날짜·완료 표시·메모·회차는 그대로예요.
+      지난 날 기록까지 전부 함께 바뀌고, <b>바꾼 뒤에도 이 창은 열려 있습니다</b> — 이어서 다음 것을 정리하세요.
     </p>
     <form class="composer" id="rnForm">
       <div class="kbhead">
@@ -1610,11 +1620,13 @@
         <span class="hint" id="rnCount" style="font-size:.8rem;margin:0"></span>
       </div>
       <div class="kblist" id="rnList"></div>
-      <span class="fl">이 이름으로 바꾸기</span>
+      <span class="fl">이 이름으로 바꾸기 <i style="font-style:normal;color:var(--dim)">— 이름은 그대로 두고 카테고리만 바꿔도 됩니다</i></span>
       <div class="kbhead">
-        <input type="text" class="rnin" id="rnTo" placeholder="새 이름" style="flex:1">
+        <input type="text" class="rnin" id="rnTo" placeholder="새 이름 (비워두면 이름은 그대로)" style="flex:1">
         <button type="button" class="q" id="rnPick">가장 많이 쓴 이름으로</button>
       </div>
+      <span class="fl">카테고리</span>
+      <div class="chips catpick" id="rnCats"></div>
       <p class="hint" id="rnNote" style="font-size:.8rem;margin:0"></p>
       <div class="composer-row">
         <span style="flex:1"></span>
@@ -2453,13 +2465,24 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.6";
-  var APP_BUILD = "2026-09-25 15:10";
+  var APP_VERSION = "v7.8";
+  var APP_BUILD = "2026-09-27 12:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.8",  d:"2026-09-27", n:[
+      "성공·실패 항목에 잠금이 생겼다 — 항목 관리에서 켜면 비밀번호를 넣어야 결과가 보인다",
+      "잠긴 항목은 색까지 지운다 — 빨간 테두리 하나로도 실패한 날이 보이던 것 해결",
+      "잠긴 항목은 금액·사유 단추도 안 뜨고, 통계의 성공률·사유·지출에서도 통째로 빠진다",
+      "몸무게·금전 관리와 같은 비밀번호 · 앱을 다시 켜면 다시 잠긴다"
+    ]},
+    { v:"v7.7",  d:"2026-09-27", n:[
+      "이름 정리에서 카테고리도 한꺼번에 바꾼다 — 이름은 그대로 두고 카테고리만 바꿔도 된다",
+      "바꾼 뒤에도 창이 닫히지 않는다 — 메뉴를 다시 타지 않고 이어서 다음 것을 정리한다",
+      "바꾸고 나면 찾기 칸에 커서가 돌아와 다음 이름을 바로 칠 수 있다"
+    ]},
     { v:"v7.6",  d:"2026-09-25", n:[
       "일감이 하나도 없는 날에도 평소 화면 그대로 — 아래 한 줄 입력칸과 자동완성이 살아 있다",
       "여러 줄로 한 번에 적던 칸은 버튼 하나로 접었다 폈다 (예전에는 이게 화면을 다 차지했다)",
@@ -3044,6 +3067,7 @@ var HOLIDAYS = {
     var cfg = PROFILES[profile];
     KEY = cfg.key;
     wtUnlocked = false;                       /* 보드를 바꾸면 몸무게는 다시 잠긴다 */
+    habUnlocked = false;                      /* 성공·실패 잠금도 마찬가지 */
     if($("calPop")) $("calPop").hidden = true;
     document.body.classList.toggle("home", profile === "home");
     document.title = cfg.title;
@@ -3846,6 +3870,12 @@ var HOLIDAYS = {
     if(h.amt === 0) return false;
     return /돈|지출|비용|소비|절약|용돈|카드|과금|결제/.test(String(h.name || ""));
   }
+  /* 잠글 항목인가 (v7.8) — 켜두면 몸무게·금전 관리와 같은 비밀번호를 넣어야 결과가 보인다.
+     ⚠ 잠금은 "있다/없다"가 아니라 "성공이었나 실패였나"를 가리는 것이다.
+       빨간 테두리 하나만 남아도 실패한 날이라는 게 다 보인다 — 색까지 반드시 지울 것. */
+  function habLock(h){ return !!(h && h.lock); }
+  var habUnlocked = false;                  /* 세션 값 — 저장하지 않는다. 앱을 다시 켜면 다시 잠긴다 */
+  function habHidden(h){ return habLock(h) && !habUnlocked; }
   /* 12000 → "12,000원" · 177212.35 → "177,212.35원" (소수는 있을 때만 붙인다) */
   function won(n){
     n = Math.round((+n || 0) * 100) / 100;
@@ -3958,8 +3988,13 @@ var HOLIDAYS = {
     }
     hs.forEach(function(h){
       var cur = habOf(viewKey, h.id);
+      /* 잠긴 항목은 "아직 안 찍은 것"과 똑같은 모양으로 그린다.
+         상태 class(.ok/.no/.ex)도, 버튼의 .on 도 붙이지 않는다 — 색이 곧 답이라서. */
+      var hid = habHidden(h);
+      if(hid) cur = null;
       var el = document.createElement("div");
-      el.className = cls + (cur === 1 ? " ok" : (cur === 0 ? " no" : (cur === 2 ? " ex" : "")));
+      el.className = cls + (hid ? " hlock" : "") +
+        (cur === 1 ? " ok" : (cur === 0 ? " no" : (cur === 2 ? " ex" : "")));
       el.innerHTML = '<span class="' + (withEdit ? "hn" : "whn") + '"></span>' +
         '<button type="button" class="hok' + (cur === 1 ? " on" : "") + '">성공</button>' +
         '<button type="button" class="hno' + (cur === 0 ? " on" : "") + '">실패</button>' +
@@ -3968,6 +4003,13 @@ var HOLIDAYS = {
       el.querySelector(withEdit ? ".hn" : ".whn").textContent = h.name;
       el.title = h.name + (h.desc ? " — " + h.desc : "") +
         (habAll(h) ? "" : "\n평일만 세는 항목입니다");
+      if(hid){
+        /* 눌러도 체크가 되면 안 된다 — 비밀번호 창만 연다 */
+        el.title = h.name + " — 잠김. 눌러서 비밀번호를 넣으세요";
+        el.onclick = function(){ askPin("hab"); };
+        host.appendChild(el);
+        return;
+      }
       /* 같은 버튼을 다시 누르면 기록을 지운다 (잘못 누른 경우) */
       el.querySelector(".hok").onclick = function(){ setHab(viewKey, h.id, cur === 1 ? null : 1); };
       /* 실패·예외를 찍으면 먼저 기록부터 남기고 사유 창을 연다.
@@ -4037,6 +4079,7 @@ var HOLIDAYS = {
         '</span>' +
         '<button type="button" class="haskb">사유 묻기</button>' +
         '<button type="button" class="haskb hamtb">금액</button>' +
+        '<button type="button" class="haskb hlockb">잠금</button>' +
         '<span class="catuse"></span>' +
         '<button class="icon" type="button" aria-label="삭제">' + XMARK + '</button>' +
         '<input type="text" class="hdesc" maxlength="40" placeholder="세부 기준 (예: 커피는 제외)">';
@@ -4059,6 +4102,14 @@ var HOLIDAYS = {
                            : "금액은 묻지 않습니다 (눌러서 켜기)";
       mb.onclick = function(){
         h.amt = habAmt(h) ? 0 : 1;
+        habTouch(); save(); renderHabList(); render();
+      };
+      var lb = row.querySelector(".hlockb");
+      lb.classList.toggle("on", habLock(h));
+      lb.title = habLock(h) ? "비밀번호를 넣어야 결과가 보입니다 (눌러서 끄기)"
+                            : "결과를 가립니다 — 몸무게·금전 관리와 같은 비밀번호 (눌러서 켜기)";
+      lb.onclick = function(){
+        if(habLock(h)) delete h.lock; else h.lock = 1;
         habTouch(); save(); renderHabList(); render();
       };
       Array.prototype.forEach.call(row.querySelector(".hmode").children, function(b){
@@ -5673,7 +5724,8 @@ var HOLIDAYS = {
   function askPin(what){
     pinFor = what;
     $("pinInput").value = ""; $("pinMsg").textContent = "";
-    $("pinTitle").textContent = (what === "money") ? "금전 관리 잠금" : "몸무게 잠금";
+    $("pinTitle").textContent = (what === "money") ? "금전 관리 잠금"
+                              : (what === "hab") ? "성공·실패 잠금" : "몸무게 잠금";
     $("pinOverlay").hidden = false;
     setTimeout(function(){ $("pinInput").focus(); }, 30);
   }
@@ -5695,6 +5747,10 @@ var HOLIDAYS = {
       mnUnlocked = true;
       mnPaintBtn();
       mnTab = "now"; mnYmView = mnNowYm(); openMoney();
+    } else if(pinFor === "hab"){
+      habUnlocked = true;
+      render();
+      if(!$("statsOverlay").hidden) renderStats();
     } else {
       wtUnlocked = true;
       renderWeight();
@@ -6475,7 +6531,7 @@ var HOLIDAYS = {
      같은 일인데 표현이 갈린 것("오후 수유" / "오후 식사")을 하나로 맞춘다.
      ⚠ 자동으로 묶어주지 않는다. 한국어 부분일치로 묶으면 반드시 사고가 난다(함정 2).
        사람이 보고 고르게 하고, 여기는 고른 것을 한 번에 바꿔주기만 한다. */
-  var rnSel = {}, rnQ = "";
+  var rnSel = {}, rnQ = "", rnCat = "";      /* rnCat: "" 그대로 · "none" 없음 · 그 외는 카테고리 id */
   /* 보드에 쓰인 이름들 — 언젠가 목록까지 포함해 한 벌로 센다 */
   function rnNames(){
     var map = {}, k, i, it, key, arr = [];
@@ -6526,6 +6582,36 @@ var HOLIDAYS = {
     });
     rnCount(false);
   }
+  /* "취미로" / "집안일으로" — 받침 있으면 "으로", 없으면 "로" (ㄹ 받침은 "로") */
+  function josaRo(w){
+    w = String(w || "");
+    var c = w.charCodeAt(w.length - 1) - 0xAC00;
+    if(c < 0 || c > 11171) return w + "로";          /* 한글이 아니면 그냥 붙인다 */
+    var jong = c % 28;
+    return w + ((jong === 0 || jong === 8) ? "로" : "으로");
+  }
+  function rnCatPick(){
+    var host = $("rnCats");
+    host.innerHTML = "";
+    var keep = document.createElement("button");
+    keep.type = "button"; keep.textContent = "그대로";
+    if(!rnCat){ keep.className = "on"; keep.style.background = "var(--line)"; keep.style.color = "var(--text)"; }
+    keep.onclick = function(){ rnCat = ""; rnCatPick(); rnCount(false); };
+    host.appendChild(keep);
+    var none = document.createElement("button");
+    none.type = "button"; none.textContent = "없음";
+    if(rnCat === "none"){ none.className = "on"; none.style.background = "var(--line)"; none.style.color = "var(--text)"; }
+    none.onclick = function(){ rnCat = "none"; rnCatPick(); rnCount(false); };
+    host.appendChild(none);
+    store.cats.forEach(function(c){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = c.name;
+      b.style.color = c.color; b.style.borderColor = c.color;
+      if(rnCat === c.id){ b.className = "on"; b.style.background = c.color; }
+      b.onclick = function(){ rnCat = c.id; rnCatPick(); rnCount(false); };
+      host.appendChild(b);
+    });
+  }
   /* fill=true 면 아직 비어 있는 새 이름 칸을 가장 많이 쓴 이름으로 채워준다 */
   function rnCount(fill){
     var picked = rnPicked(), all = rnNames(), total = 0, top = "", topN = -1;
@@ -6537,25 +6623,42 @@ var HOLIDAYS = {
     $("rnCount").textContent = picked.length ? picked.length + "개 이름 · 카드 " + total + "장" : "고른 것 없음";
     if(fill && top && !$("rnTo").value.trim()) $("rnTo").value = top;
     var to = wkey($("rnTo").value);
-    var left = picked.filter(function(t){ return t !== to; });
-    $("rnSave").disabled = !(left.length && to);
-    $("rnNote").textContent = (left.length && to)
-      ? ('"' + left.join('", "') + '" → "' + to + '" 로 바꿉니다 · 카드 ' + total + '장')
-      : (picked.length && !to ? "바꿀 이름을 적어주세요" : "");
-    return { picked:picked, to:to, top:top, total:total };
+    var left = to ? picked.filter(function(t){ return t !== to; }) : [];
+    var doName = !!(left.length && to);
+    var doCat = !!(picked.length && rnCat);
+    $("rnSave").disabled = !(doName || doCat);
+    /* 무엇이 바뀌는지 누르기 전에 글로 보여준다 */
+    var bits = [];
+    if(doName) bits.push('"' + left.join('", "') + '" → "' + to + '"');
+    if(doCat){
+      var c = (rnCat === "none") ? null : catById(rnCat);
+      bits.push("카테고리를 " + josaRo(c ? c.name : "없음"));
+    }
+    $("rnNote").textContent = bits.length
+      ? (bits.join(" · ") + " 바꿉니다 · 카드 " + total + "장")
+      : (picked.length ? "바꿀 이름을 적거나 카테고리를 고르세요" : "");
+    return { picked:picked, to:to, top:top, total:total, doName:doName, doCat:doCat };
   }
   /* 실제 바꾸기. 이름은 작품 등록부의 열쇠이기도 해서 그쪽도 같이 옮긴다. */
-  function renameTexts(names, to){
-    var hit = 0, k, arr, i, it, now = Date.now();
+  /* to 가 비어 있으면 이름은 그대로 두고 카테고리만 바꾼다.
+     cat: null 이면 카테고리는 손대지 않음 · "none" 이면 없음 · 그 외는 카테고리 id */
+  function renameTexts(names, to, cat){
+    var hit = 0, k, arr, i, it, now = Date.now(), cv;
+    var doName = !!to, doCat = (cat !== null && cat !== undefined && cat !== "");
+    if(doCat) cv = (cat === "none") ? null : cat;
     for(k in store.days){
       arr = store.days[k] || [];
       for(i = 0; i < arr.length; i++){
         it = arr[i];
         if(!it || names.indexOf(wkey(it.text)) < 0) continue;
-        if(wkey(it.text) === to) continue;
-        it.text = to; it.at = now; hit++;
+        var changed = false;
+        if(doName && wkey(it.text) !== to){ it.text = to; changed = true; }
+        if(doCat && (it.cat || null) !== cv){ it.cat = cv; changed = true; }
+        if(!changed) continue;
+        it.at = now; hit++;
       }
     }
+    if(!doName) return { cards:hit, works:0 };
     /* 작품 등록부 — 옛 이름에 붙어 있던 기록을 새 이름으로 옮긴다.
        여러 개가 걸리면 가장 최근에 손댄 것을 남긴다. 옛 열쇠는 지우지 않고 비운다
        (다른 기기가 옛 값으로 되살리지 못하게 — dropWork 과 같은 이유). */
@@ -6576,14 +6679,14 @@ var HOLIDAYS = {
     return { cards:hit, works:moved };
   }
   function openRename(){
-    rnSel = {}; rnQ = "";
+    rnSel = {}; rnQ = ""; rnCat = "";
     $("rnFind").value = ""; $("rnTo").value = "";
-    rnPaint();
+    rnCatPick(); rnPaint();
     $("rnOverlay").hidden = false;
   }
   $("rnFind").addEventListener("input", function(){ rnQ = this.value; rnPaint(); });
   $("rnTo").addEventListener("input", function(){ rnCount(false); });
-  $("rnNone").onclick = function(){ rnSel = {}; $("rnTo").value = ""; rnPaint(); };
+  $("rnNone").onclick = function(){ rnSel = {}; $("rnTo").value = ""; rnCat = ""; rnCatPick(); rnPaint(); };
   $("rnPick").onclick = function(){
     var r = rnCount(false);
     if(r.top) $("rnTo").value = r.top;
@@ -6594,16 +6697,23 @@ var HOLIDAYS = {
   $("rnForm").addEventListener("submit", function(e){
     e.preventDefault();
     var r = rnCount(false);
-    if(!r.to) return;
-    var left = r.picked.filter(function(t){ return t !== r.to; });
-    if(!left.length) return;
-    var out = renameTexts(r.picked, r.to);
-    $("rnOverlay").hidden = true;
+    if(!r.doName && !r.doCat) return;
+    var out = renameTexts(r.picked, r.doName ? r.to : "", r.doCat ? rnCat : null);
+    /* ⚠ 창을 닫지 않는다 (v7.7). 정리는 한 번에 끝나는 일이 아니라
+       "골라서 바꾸고 다음 것 고르고" 를 몇 번씩 반복하는 일이다.
+       메뉴를 다시 타고 들어오게 만들면 그 반복이 통째로 고통이 된다. */
+    rnSel = {}; rnCat = "";
+    $("rnTo").value = "";
     save(); render();
+    rnCatPick(); rnPaint();
     if(!$("wishOverlay").hidden) renderWishSheet();
     if(!$("statsOverlay").hidden) renderStats();
-    toast("카드 " + out.cards + "장을 \"" + r.to + "\" 로 맞췄습니다" +
-          (out.works ? " · 작품 기록도 같이 옮겼습니다" : ""), null);
+    var msg = r.doName
+      ? ("카드 " + out.cards + "장을 \"" + r.to + "\" 로 맞췄습니다")
+      : ("카드 " + out.cards + "장의 카테고리를 바꿨습니다");
+    toast(msg + (out.works ? " · 작품 기록도 같이 옮겼습니다" : ""), null);
+    /* 찾기 칸의 글자를 잡아둔 채로 넘겨준다 — 다음 이름을 바로 덮어 칠 수 있게 */
+    $("rnFind").focus(); $("rnFind").select();
   });
 
   /* 끝낸 작품은 언젠가 목록에서 내려온다. 지우지는 않는다 — 통계가 세야 하니까. */
@@ -7778,7 +7888,9 @@ var HOLIDAYS = {
   }
   /* 기간 안의 성공·실패 집계 (적용되는 날만) */
   function habTally(keys){
-    var hs = habSorted(), ok = {}, no = {}, ex = {}, tOk = 0, tNo = 0, tEx = 0, lastNo = null;
+    /* 잠긴 항목은 통계에서 통째로 뺀다 — 성공률·사유·요일 표 어디로도 새면 안 된다 */
+    var hs = habSorted().filter(function(h){ return !habHidden(h); });
+    var ok = {}, no = {}, ex = {}, tOk = 0, tNo = 0, tEx = 0, lastNo = null;
     var dowOk = {}, dowNo = {};
     hs.forEach(function(h){ dowOk[h.id] = [0,0,0,0,0,0,0]; dowNo[h.id] = [0,0,0,0,0,0,0]; });
     keys.forEach(function(k){
