@@ -2465,13 +2465,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v7.8";
-  var APP_BUILD = "2026-09-27 12:40";
+  var APP_VERSION = "v7.9";
+  var APP_BUILD = "2026-09-28 09:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v7.9",  d:"2026-09-28", n:[
+      "성공·실패 항목은 이제 기본이 잠김 — 켜둔 항목 전부가 비밀번호를 넣어야 보인다",
+      "새로 만드는 항목도 잠긴 채로 시작한다 · 옛 기기에서 받은 목록도 자동으로 채워진다",
+      "항목 관리에서 끈 항목은 다시 잠기지 않는다 (껐다는 표시를 따로 남긴다)"
+    ]},
     { v:"v7.8",  d:"2026-09-27", n:[
       "성공·실패 항목에 잠금이 생겼다 — 항목 관리에서 켜면 비밀번호를 넣어야 결과가 보인다",
       "잠긴 항목은 색까지 지운다 — 빨간 테두리 하나로도 실패한 날이 보이던 것 해결",
@@ -3739,7 +3744,7 @@ var HOLIDAYS = {
     try{ seed = +(localStorage.getItem(HABSEED_KEY) || 0) || 0; }catch(e){}
     if(!habList){
       habList = DEFAULT_HABITS.map(function(h){
-        return { id:h.id, name:h.name, ord:h.ord, mode:h.mode, desc:h.desc || "" };
+        return { id:h.id, name:h.name, ord:h.ord, mode:h.mode, desc:h.desc || "", lock:1 };
       });
       if(!habAt) habAt = 1;
       habFresh = true;                 /* 기본값이므로 원격 목록에 자리를 내준다 */
@@ -3748,12 +3753,25 @@ var HOLIDAYS = {
       DEFAULT_HABITS.forEach(function(d){
         var i, found = false;
         for(i = 0; i < habList.length; i++) if(habList[i].id === d.id) found = true;
-        if(!found) habList.push({ id:d.id, name:d.name, ord:d.ord, mode:d.mode, desc:d.desc || "" });
+        if(!found) habList.push({ id:d.id, name:d.name, ord:d.ord, mode:d.mode, desc:d.desc || "", lock:1 });
       });
       seed = DEFAULT_HABITS.length;
     }
     try{ localStorage.setItem(HABSEED_KEY, String(seed)); }catch(e){}
+    habDefaultLock();
     habSave();
+  }
+  /* 성공·실패 항목은 기본이 "잠김"이다 (v7.9).
+     lock 을 한 번도 정한 적 없는 항목(undefined)만 1 로 채운다 — 사람이 끈 것(0)은 건드리지 않는다.
+     그래서 이 함수는 몇 번을 돌려도 같은 결과다(멱등). 따로 표시를 남길 필요가 없다.
+     ⚠ 항목 관리에서 잠금을 끌 때 delete h.lock 을 하면 이 함수가 다시 잠가버린다. 0 을 넣을 것. */
+  function habDefaultLock(){
+    var list = habits(), i, changed = false;
+    for(i = 0; i < list.length; i++){
+      if(list[i] && (list[i].lock === undefined || list[i].lock === null)){ list[i].lock = 1; changed = true; }
+    }
+    if(changed) habSave();          /* habTouch 는 하지 않는다 — 기본값이라 원격을 이길 이유가 없다 */
+    return changed;
   }
   /* 원격·예전 자료를 기록에 합친다 (날짜·항목 단위로 나중에 적은 쪽이 이긴다) */
   function habMergeRes(src){
@@ -4109,7 +4127,9 @@ var HOLIDAYS = {
       lb.title = habLock(h) ? "비밀번호를 넣어야 결과가 보입니다 (눌러서 끄기)"
                             : "결과를 가립니다 — 몸무게·금전 관리와 같은 비밀번호 (눌러서 켜기)";
       lb.onclick = function(){
-        if(habLock(h)) delete h.lock; else h.lock = 1;
+        /* ⚠ 끌 때 delete 하면 안 된다. "정한 적 없음"이 되어 다음에 켤 때 기본 잠금이
+           다시 덮어쓴다. 껐다는 뜻으로 0 을 남긴다 (habDefaultLock 참고). */
+        h.lock = habLock(h) ? 0 : 1;
         habTouch(); save(); renderHabList(); render();
       };
       Array.prototype.forEach.call(row.querySelector(".hmode").children, function(b){
@@ -5836,7 +5856,7 @@ var HOLIDAYS = {
     if(habits().length >= 8){ toast("항목은 8개까지 만들 수 있습니다", null); return; }
     var mx = 0;
     habits().forEach(function(h){ if((h.ord||0) > mx) mx = h.ord || 0; });
-    habits().push({ id:"h" + Date.now().toString(36), name:"새 항목", ord: mx + 1, mode:"wd" });
+    habits().push({ id:"h" + Date.now().toString(36), name:"새 항목", ord: mx + 1, mode:"wd", lock:1 });
     habTouch();
     save(); renderHabList(); render();
     setTimeout(function(){
@@ -9198,6 +9218,8 @@ var HOLIDAYS = {
     }
     /* 성공·실패 기록: 날짜·항목 하나하나 나중에 적은 쪽이 이긴다 */
     if(habMergeRes(r.hres)) habChanged = true;
+    /* 옛 버전이 보낸 목록에는 lock 이 아예 없다 — 기본 잠금으로 채운다 (v7.9) */
+    habDefaultLock();
     if(habChanged){ habSave(); changed = true; }
     return changed;
   }
