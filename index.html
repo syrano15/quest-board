@@ -2542,13 +2542,17 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.4";
-  var APP_BUILD = "2026-10-02 16:00";
+  var APP_VERSION = "v8.5";
+  var APP_BUILD = "2026-10-02 17:50";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.5",  d:"2026-10-02", n:[
+      "게임·영화 플레이 횟수가 회차(56/56 같은)를 적은 카드를 빼고 세던 문제 수정 — 체크한 카드는 전부 한 번",
+      "게임 표에 진행 화수도 같이 보인다 (예: 12회 · 56/56화) · 엔딩까지 걸린 횟수도 같은 기준"
+    ]},
     { v:"v8.4",  d:"2026-10-02", n:[
       "1년이 지난 날도 요약으로 영구 보관 — 작품의 플레이 횟수·본 편수·시작한 날이 1년 뒤에도 줄지 않는다",
       "요약은 동기화·백업에 같이 실린다 (하루 몇십 바이트라 용량 걱정 없음)",
@@ -6821,8 +6825,9 @@ var HOLIDAYS = {
     $("wkTot").value = (w && w.tot) || "";
     $("wkFinAt").value = (w && w.finAt) || (dayK || todayKey);
     var bits = [];
-    if(t.sessions) bits.push("보드에서 " + t.sessions + "회");
-    if(t.eps) bits.push(t.eps + "편 기록");
+    var epiW = w && w.kind && isEpisodic(w.kind);
+    if(epiW){ if(t.sessions) bits.push("보드에서 " + t.sessions + "회"); if(t.eps) bits.push(t.eps + "편 기록"); }
+    else if(t.sessions + t.eps) bits.push("보드에서 " + (t.sessions + t.eps) + "회");
     if(t.maxSeq) bits.push("최고 " + t.maxSeq + "화");
     if(t.last){ var d = fromIso(t.last); bits.push("마지막 " + (d.getMonth()+1) + "/" + d.getDate()); }
     $("wkRec").textContent = bits.length ? bits.join(" · ") : "아직 보드 기록이 없습니다.";
@@ -6942,8 +6947,8 @@ var HOLIDAYS = {
       row.querySelector(".nm").textContent = n;
       var bits = [w.kind ? kindDef(w.kind).label : "종류 미정 · 언젠가"];
       if(w.sea) bits.push(w.sea + "시즌");
-      if(t.eps) bits.push(t.eps + "편 기록");
-      else if(t.sessions) bits.push(t.sessions + "회 기록");
+      if(w.kind && isEpisodic(w.kind)){ if(t.eps) bits.push(t.eps + "편 기록"); else if(t.sessions) bits.push(t.sessions + "회 기록"); }
+      else if(t.sessions + t.eps) bits.push((t.sessions + t.eps) + "회 기록");
       /* 이모지는 줄 끝에서 잘려 보인다 — 글자로 적는다 */
       if(w.fin === "end") bits.push(kindDef(w.kind).fin);
       else if(w.fin === "drop") bits.push("하차");
@@ -8010,6 +8015,9 @@ var HOLIDAYS = {
         fin: (w && w.fin) || "",
         finAt: (w && w.finAt) || "",
         sessions:t.sessions, eps:t.eps, maxSeq:t.maxSeq, last:t.last, first:t.first,
+        /* v8.5 — 보드에서 체크한 카드 수. 회차(@56/56)를 적은 카드도 한 번이다.
+           예전엔 게임·영화가 sessions(회차 없는 카드)만 세서, 슈로대처럼 화수를 적으며 한 게임이 "플레이 ·" 로 나왔다. */
+        plays:t.sessions + t.eps,
         wish: wishState[n] || "",
         touched: (t.sessions + t.eps) > 0
       });
@@ -8042,7 +8050,7 @@ var HOLIDAYS = {
     rows.forEach(function(r){
       var s = sum[kindKey(r.kind)] || sum.etc;
       s.n++;
-      s.eps += r.eps; s.sessions += r.sessions;
+      s.eps += r.eps; s.sessions += r.sessions; s.plays = (s.plays || 0) + r.plays;
       /* 시즌 수를 안 적었으면 편을 본 작품은 최소 1시즌으로 센다 */
       s.sea += r.sea || (r.eps ? 1 : 0);
       if(r.fin === "end") s.end++;
@@ -8054,7 +8062,7 @@ var HOLIDAYS = {
   }
   /* 종류마다 앞세울 숫자가 다르다 — 게임은 플레이 횟수, 드라마는 시즌·편수 */
   function wkKindBits(k, s){
-    if(k === "game") return [["타이틀", s.n + "개"], ["플레이", s.sessions + "회"]];
+    if(k === "game") return [["타이틀", s.n + "개"], ["플레이", (s.plays || 0) + "회"]];
     if(k === "movie") return [["편수", s.n + "편"]];
     if(k === "drama") return [["작품", s.n + "개"], ["시즌", s.sea + "개"], ["본 편수", s.eps + "편"]];
     if(k === "anime") return [["작품", s.n + "개"], ["쿨", s.sea + "개"], ["본 화수", s.eps + "화"]];
@@ -8204,8 +8212,9 @@ var HOLIDAYS = {
         if(r.tot) prog = r.tot + "권";
         if(r.sessions + r.eps) rec = (r.sessions + r.eps) + "회";
       } else {
-        if(r.sessions) rec = r.sessions + "회";
-        if(r.first && r.last && r.first !== r.last) prog = md(r.first) + " ~";
+        if(r.plays) rec = r.plays + "회";
+        if(r.maxSeq) prog = r.maxSeq + (r.tot ? " / " + r.tot : "") + "화";
+        else if(r.first && r.last && r.first !== r.last) prog = md(r.first) + " ~";
       }
       var ws = wkState(r); stt = ws.t; cls = ws.cls;
       body += '<tr><td class="nm"></td>' +
@@ -8259,7 +8268,7 @@ var HOLIDAYS = {
     var tiles = [];
     if(kind === "game"){
       tiles = [["타이틀", s.n + "개", "rest"], [def.done, s.end + "개" + (s.n ? " · " + Math.round(s.end / s.n * 100) + "%" : ""), "done"],
-               ["플레이", s.sessions + "회", "defer"], [def.todo, s.idle + "개", "cancel"]];
+               ["플레이", (s.plays || 0) + "회", "defer"], [def.todo, s.idle + "개", "cancel"]];
     } else if(kind === "movie"){
       /* v8.3 — 예전엔 "보다 말았음"이 아직 안 본 것(idle)까지 더해 셌다. 볼 예정과 보는 중을 가른다.
          보는 중이 없으면(영화는 대개 한 번에 본다) 그 칸에 하차를 보여준다. */
@@ -8282,7 +8291,7 @@ var HOLIDAYS = {
     function md(k){ if(!k) return "·"; var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
     var cols, sorted = rows.slice();
     if(kind === "game"){
-      sorted.sort(function(a, b){ return b.sessions - a.sessions || (a.name < b.name ? -1 : 1); });
+      sorted.sort(function(a, b){ return b.plays - a.plays || (a.name < b.name ? -1 : 1); });
       cols = ["이름", "플랫폼", "플레이", "마지막", "상태"];
       $("wkOneListH").textContent = "타이틀 — 많이 한 순";
     } else if(kind === "movie"){
@@ -8306,12 +8315,13 @@ var HOLIDAYS = {
       if(kind === "game"){
         cells = ['<td><span class="chip plat' + (r.plat ? "" : " unset") + '" style="--pc:' +
                    platColor(r.plat) + '">' + esc(platName(r.plat)) + '</span></td>',
-                 '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
+                 '<td class="' + (r.plays ? "ok" : "z") + '">' + (r.plays ? r.plays + "회" : "·") +
+                   (r.maxSeq ? ' <span class="z">· ' + r.maxSeq + (r.tot ? "/" + r.tot : "") + '화</span>' : '') + '</td>',
                  '<td class="z">' + md(r.last) + '</td>'];
       } else if(kind === "movie"){
         cells = ['<td><span class="chip plat' + (r.how ? "" : " unset") + '" style="--pc:' +
                    howColor(r.how) + '">' + esc(howName(r.how)) + '</span></td>',
-                 '<td class="' + (r.sessions ? "ok" : "z") + '">' + (r.sessions ? r.sessions + "회" : "·") + '</td>',
+                 '<td class="' + (r.plays ? "ok" : "z") + '">' + (r.plays ? r.plays + "회" : "·") + '</td>',
                  '<td class="z">' + md(r.finAt || r.last) + '</td>'];
       } else if(isEpisodic(kind)){
         cells = ['<td class="' + (r.sea ? "" : "z") + '">' + (r.sea ? r.sea + "시즌" : "·") + '</td>',
@@ -8351,9 +8361,9 @@ var HOLIDAYS = {
         var sumS = 0, sumD = 0, cnt = 0;
         ends.slice(0, 6).forEach(function(r){
           var days = (r.first && r.finAt) ? Math.max(1, Math.round((fromIso(r.finAt) - fromIso(r.first)) / 864e5)) : 0;
-          if(r.sessions){ sumS += r.sessions; cnt++; }
+          if(r.plays){ sumS += r.plays; cnt++; }
           if(days) sumD += days;
-          eh += '<tr><td class="nm2"></td><td>' + (r.sessions ? r.sessions + "회" : "·") + '</td>' +
+          eh += '<tr><td class="nm2"></td><td>' + (r.plays ? r.plays + "회" : "·") + '</td>' +
                 '<td class="z">' + (days ? days + "일" : "·") + '</td></tr>';
         });
         eh += '</tbody></table>';
