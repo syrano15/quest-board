@@ -1340,6 +1340,23 @@
     font:inherit;font-size:.78rem;padding:.3rem .7rem;cursor:pointer;}
   .wunset button:hover{border-color:var(--accent);}
   /* v8.1 — 언젠가 카드는 누르면 바로 보드로 가지 않고 빠른 편집 창을 연다 */
+  .q.isfin{flex:none;border-color:var(--done);color:var(--done);font-weight:700;}
+  /* v8.2 마무리 바 — 취미 카드를 체크하면 "다 봤나요?" 를 바로 묻는다 */
+  .finbar{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);z-index:23;
+    display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:center;max-width:min(36rem,94vw);
+    background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--done);
+    border-radius:.6rem;padding:.55rem .75rem;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:.86rem;}
+  .finbar[hidden]{display:none;}
+  /* ⚠ .ft 는 입력칸(textarea) 클래스다 — 겹치면 제목이 입력칸 모양이 된다 (v8.2 에서 실제로 그랬다) */
+  .finbar .fbt{color:var(--text);font-weight:600;max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .finbar .fh{color:var(--muted);font-size:.78rem;}
+  .finbar button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
+    font:inherit;font-size:.78rem;padding:.25rem .65rem;cursor:pointer;}
+  .finbar button:hover{color:var(--text);border-color:var(--muted);}
+  .finbar button.go{border-color:var(--done);color:var(--done);font-weight:700;}
+  .finbar button.go:hover{background:color-mix(in srgb,var(--done) 14%,transparent);}
+  .finbar button[style*="--pc"]{border-color:color-mix(in srgb,var(--pc) 45%,transparent);color:var(--pc);}
+  .finbar .fx{border:0;padding:.2rem .35rem;}
   .wcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .wcard .wkk{font-weight:700;letter-spacing:.06em;}
   .wcard .wqk{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.25rem;}
@@ -2282,6 +2299,7 @@
   <p class="calfoot" id="calFoot"></p>
 </div>
 
+<div class="finbar" id="finBar" role="status" hidden></div>
 <div class="toast" id="toast" hidden><p id="toastText"></p><button type="button" id="toastGo">보기</button></div>
 
 <div class="overlay" id="itemOverlay" hidden>
@@ -2306,9 +2324,10 @@
         <input type="number" id="isSeqTot" min="0" max="9999" placeholder="전체">
         <span>비워두면 일반 항목</span>
       </div>
-      <span class="fl">작품 등록 (게임·영화·드라마처럼 여러 날에 걸치는 것)</span>
+      <span class="fl">게임·영화 기록 — 무슨 종류인지, 다 봤는지</span>
       <div class="fdate">
-        <button type="button" class="q" id="isWork" style="flex:1;text-align:left">＋ 작품으로 등록하기</button>
+        <button type="button" class="q" id="isWork" style="flex:1;text-align:left">＋ 게임·영화로 기록하기</button>
+        <button type="button" class="q isfin" id="isFin" hidden>🏁 다 봤음</button>
       </div>
       <div class="chips wkpick" id="isKinds" hidden></div>
       <p class="hint" id="isWorkNote" style="font-size:.76rem;margin:-.15rem 0 0"></p>
@@ -2429,7 +2448,7 @@
       <span class="fl">마무리</span>
       <div class="seg" id="wkFin">
         <button type="button" data-v="">진행 중</button>
-        <button type="button" data-v="end">엔딩</button>
+        <button type="button" data-v="end">🏁 끝냈음</button>
         <button type="button" data-v="drop">하차</button>
       </div>
       <div id="wkFinWrap" style="display:flex;flex-direction:column;gap:.4rem">
@@ -2438,7 +2457,7 @@
       </div>
       <p class="hint" id="wkRec" style="font-size:.8rem;margin:.1rem 0 0"></p>
       <p class="hint" id="wkNeed" style="font-size:.8rem;margin:.1rem 0 0;color:var(--accent)" hidden>
-        종류를 골라야 작품으로 등록됩니다. 그냥 할 일이면 닫으세요 — 통계에 안 잡힙니다.
+        종류를 골라야 기록됩니다. 그냥 할 일이면 닫으세요 — 통계에 안 잡힙니다.
       </p>
       <div class="composer-row">
         <button type="button" class="ghost danger" id="wkClear">작품에서 빼기</button>
@@ -2458,7 +2477,7 @@
     <h2 id="wqTitle" style="word-break:keep-all"></h2>
     <p class="hint" id="wqMeta" style="font-size:.8rem;margin:0"></p>
     <div class="composer">
-      <span class="fl">작품 종류 — 누르면 바로 등록돼요</span>
+      <span class="fl">종류 — 누르면 바로 기록돼요</span>
       <div class="chips wkpick" id="wqKinds"></div>
       <span class="fl">카테고리</span>
       <div class="chips catpick" id="wqCats"></div>
@@ -2466,7 +2485,7 @@
       <div class="chips wkpick" id="wqBy"></div>
       <div class="composer-row wqfoot">
         <button type="button" class="ghost" id="wqDel">지우기</button>
-        <button type="button" class="ghost" id="wqMore" hidden>작품 자세히…</button>
+        <button type="button" class="ghost" id="wqMore" hidden>플랫폼·시즌…</button>
         <span style="flex:1"></span>
         <button type="button" class="ghost" id="wqClose">닫기</button>
         <button type="button" class="primary" id="wqPull" style="padding:.55rem 1.1rem">오늘로 가져오기</button>
@@ -2519,13 +2538,20 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.1";
-  var APP_BUILD = "2026-10-02 12:50";
+  var APP_VERSION = "v8.2";
+  var APP_BUILD = "2026-10-02 14:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.2",  d:"2026-10-02", n:[
+      "취미 카드를 체크하면 아래에 '🏁 다 봤음' 이 바로 뜬다 — 편집까지 안 들어가도 된다",
+      "아직 종류를 안 고른 취미는 체크할 때 종류부터 묻고, 고르면 바로 🏁 로 바뀐다",
+      "드라마 회차(3/12)는 마지막 화를 체크할 때만 묻는다",
+      "카드 상세에서도 진행 중인 작품이면 🏁 한 번으로 끝",
+      "'관람'·'엔딩' 대신 '다 봤음'·'엔딩 봤음' · '작품 등록' 은 '게임·영화 기록' 으로 이름을 바꿨다"
+    ]},
     { v:"v8.1",  d:"2026-10-02", n:[
       "언젠가 카드를 누르면 보드로 옮겨지지 않고 빠른 편집 창이 뜬다 — 종류·카테고리·기한·오늘로·지우기를 한 곳에서",
       "종류는 누르는 순간 등록된다 (되돌리기 있음) · 보드로 꺼냈다 다시 넣을 필요가 없다",
@@ -2784,6 +2810,7 @@ var HOLIDAYS = {
     it.done = !!on;
     if(on){ if(!it.doneAt) it.doneAt = Date.now(); } else { delete it.doneAt; }
     save(); render();
+    if(on) askFinish(it); else hideFinBar();
   }
   function seqChip(it){
     var p = (it.seqTot ? Math.min(100, Math.round(it.seq / it.seqTot * 100)) : 0);
@@ -2832,12 +2859,14 @@ var HOLIDAYS = {
        애니는 자동으로 못 가른다(v5.4의 추측 금지 원칙). 사람이 다시 고르면 된다.
      ⚠ 구버전 앱이 movie/drama/anime 를 받으면 kindDef 폴백으로 "기타"로 보일 뿐 값은 안 날아간다. */
   var WKINDS = [
-    { k:"game",  label:"게임",   fin:"엔딩", unit:"판", color:"#6FA8DC" },
-    { k:"movie", label:"영화",   fin:"관람", unit:"편", color:"#E0A23C" },
-    { k:"drama", label:"드라마", fin:"완주", unit:"편", color:"#D55181" },
-    { k:"anime", label:"애니",   fin:"완주", unit:"화", color:"#9B8CF5" },
-    { k:"book",  label:"책",     fin:"완독", unit:"권", color:"#3FA08C" },
-    { k:"etc",   label:"기타",   fin:"끝냄", unit:"회", color:"#8896A6" }
+    /* done — 버튼에 쓰는 사람 말 (v8.2). "관람"은 "보는 중"으로도 읽혀서 영화를 다 본 버튼이 없는 줄 알았다.
+       fin 은 통계 표의 짧은 단위("관람 3편")라 그대로 둔다. */
+    { k:"game",  label:"게임",   fin:"엔딩", done:"엔딩 봤음", unit:"판", color:"#6FA8DC" },
+    { k:"movie", label:"영화",   fin:"관람", done:"다 봤음",   unit:"편", color:"#E0A23C" },
+    { k:"drama", label:"드라마", fin:"완주", done:"다 봤음",   unit:"편", color:"#D55181" },
+    { k:"anime", label:"애니",   fin:"완주", done:"다 봤음",   unit:"화", color:"#9B8CF5" },
+    { k:"book",  label:"책",     fin:"완독", done:"다 읽음",   unit:"권", color:"#3FA08C" },
+    { k:"etc",   label:"기타",   fin:"끝냄", done:"끝냈음",    unit:"회", color:"#8896A6" }
   ];
   var KIND_ALIAS = { show:"drama" };            /* v7.2 이하 기록 */
   function kindKey(k){ k = String(k || ""); return KIND_ALIAS[k] || k; }
@@ -3492,11 +3521,22 @@ var HOLIDAYS = {
       if(bd) bits.push(bd.t);
       if(w.fin === "end") bits.push("🏁 " + kd.fin);
       else if(w.fin === "drop") bits.push("하차");
+      if(!w.fin) bits.push("진행 중");
       b.textContent = bits.join(" · ") + " — 고치기";
-      note.textContent = "작품으로 등록돼 있습니다. 통계의 작품 탭에서 세어집니다.";
+      note.textContent = w.fin ? "통계의 작품 탭에 기록돼 있습니다." : "다 봤으면 🏁 를 누르세요. 통계의 작품 탭에 기록됩니다.";
     } else {
-      b.textContent = "＋ 작품으로 등록하기 — 게임 · 영화 · 드라마 · 애니 · 책";
-      note.textContent = "아래 종류를 누르면 바로 등록됩니다. 끝냈는지와 상관없이 시작할 때 한 번이면 돼요. 플랫폼·시즌은 위 버튼에서.";
+      b.textContent = "＋ 게임·영화로 기록하기 — 플랫폼·시즌까지";
+      note.textContent = "종류만 누르면 바로 기록됩니다. 다 봤는지는 체크할 때 물어봐요.";
+    }
+    /* v8.2 — 진행 중인 작품이면 여기서 바로 🏁. 예전엔 고치기 → 마무리 → 저장이었다. */
+    var fb = $("isFin");
+    fb.hidden = !(w && w.kind && !w.fin);
+    if(!fb.hidden){
+      fb.textContent = "🏁 " + kindDef(w.kind).done;
+      fb.onclick = function(){
+        finishWork(nm, sheetItem ? viewKey : todayKey);
+        paintIsWork($("isText").value);
+      };
     }
     /* v8.1 — 등록 전에는 종류 버튼을 바로 띄운다. 예전에는 상세 → 작품 창 → 종류 → 저장 네 번이었다. */
     var kh = $("isKinds");
@@ -4642,11 +4682,11 @@ var HOLIDAYS = {
       var kd = kindDef((wrec && wrec.kind) || "etc");
       /* ⚠ 종류 이름은 WKINDS 에서 가져온다. v7.3 에서 6종으로 늘렸는데 여기만 옛 4종 표를
          들고 있어서 영화·드라마·애니가 전부 "작품"으로 보였다 (v7.5 에서 고침). */
-      var short = (wrec && wrec.kind) ? kd.label : "작품";
+      var short = (wrec && wrec.kind) ? kd.label : "종류";
       wkb.hidden = false;
       wkb.textContent = (wrec && wrec.fin === "end") ? ("🏁 " + kd.fin)
                       : (wrec && wrec.fin === "drop") ? "하차"
-                      : (wrec && wrec.kind) ? short : "작품 +";
+                      : (wrec && wrec.kind) ? short : "종류 +";
       wkb.classList.toggle("on", !!(wrec && wrec.kind));
       wkb.title = (wrec && wrec.kind)
         ? ("작품 기록 — 종류·분량·" + kd.fin + " 여부를 고칩니다")
@@ -4774,13 +4814,13 @@ var HOLIDAYS = {
     });
     if(cur){
       var x = document.createElement("button");
-      x.type = "button"; x.textContent = "작품 아님";
-      x.title = "작품 등록을 풉니다 (통계에서 빠집니다)";
+      x.type = "button"; x.textContent = "종류 없음";
+      x.title = "게임·영화 기록을 풉니다 (통계에서 빠집니다)";
       x.onclick = function(){
         var n = wkey(it.text), prev = JSON.parse(JSON.stringify(works()[n]));
         closeWishQuick();
         dropWork(n); save(); refreshWishViews();
-        toast('"' + n + '" 작품 등록을 풀었습니다', function(){ setWork(n, prev); save(); refreshWishViews(); }, "되돌리기", 6000);
+        toast('"' + n + '" 기록을 풀었습니다', function(){ setWork(n, prev); save(); refreshWishViews(); }, "되돌리기", 6000);
       };
       kh.appendChild(x);
     }
@@ -6565,6 +6605,7 @@ var HOLIDAYS = {
     /* 작품 시트는 언젠가 목록 위에 겹쳐 뜬다 — 먼저 닫혀야 한다 */
     if(!$("workOverlay").hidden){ closeWork(); return; }
     if(!$("wqOverlay").hidden){ closeWishQuick(); return; }
+    if(!$("finBar").hidden){ hideFinBar(); return; }
     /* 종류 한꺼번에 바꾸기는 통계 위에 겹쳐 뜬다 */
     if(!$("kbOverlay").hidden){ $("kbOverlay").hidden = true; return; }
     if(!$("rnOverlay").hidden){ $("rnOverlay").hidden = true; return; }
@@ -6659,7 +6700,7 @@ var HOLIDAYS = {
     Array.prototype.forEach.call($("wkKind").children, function(b){ b.classList.toggle("on", b.dataset.k === kk); });
     Array.prototype.forEach.call($("wkFin").children, function(b){ b.classList.toggle("on", (b.dataset.v || "") === wkFin); });
     /* 끝냈다는 말은 종류마다 다르다 — 게임은 엔딩, 드라마는 완주, 책은 완독 */
-    $("wkFin").children[1].textContent = picked ? d.fin : "끝냄";
+    $("wkFin").children[1].textContent = "🏁 " + (picked ? d.done : "끝냈음");
     /* 종류마다 묻는 게 다르다 */
     $("wkPlatWrap").style.display = (kk === "game") ? "flex" : "none";
     $("wkHowWrap").style.display = (kk === "movie") ? "flex" : "none";
@@ -6673,7 +6714,7 @@ var HOLIDAYS = {
       ? "분량 — 전체 몇 권인지 (모르면 비워두기)"
       : "분량 — 시즌은 내가 본 만큼, " + (kk === "anime" ? "화수" : "편수") + "는 전체 (모르면 비워두기)";
     $("wkFinWrap").style.display = wkFin ? "flex" : "none";
-    $("wkFinLabel").textContent = (picked ? d.fin : "끝낸") + "한 날";
+    $("wkFinLabel").textContent = "끝낸 날";
     if(wkFin === "drop") $("wkFinLabel").textContent = "그만둔 날";
     /* 종류를 안 고르면 저장할 수 없다 — 잘못 분류된 항목이 통계에 쌓이는 걸 막는 지점 */
     var sv = $("wkSave");
@@ -6743,7 +6784,7 @@ var HOLIDAYS = {
     retireWish(n, wkFin);
     closeWork(); save(); render();
     if(!$("wishOverlay").hidden) renderWishSheet();      /* 언젠가 목록 위에서 열었으면 그 줄도 고쳐 그린다 */
-    if(wkFin === "end") toast('"' + n + '" ' + kindDef(wkKind).fin + " 기록했습니다 🏁", null);
+    if(wkFin === "end") toast('"' + n + '" ' + kindDef(wkKind).done + " 🏁", null);
     else if(wkFin === "drop") toast('"' + n + '" 하차로 정리했습니다', null);
   });
   /* ---------- 종류 한꺼번에 바꾸기 (v7.4) ----------
@@ -7056,6 +7097,76 @@ var HOLIDAYS = {
   });
 
   /* 끝낸 작품은 언젠가 목록에서 내려온다. 지우지는 않는다 — 통계가 세야 하니까. */
+  /* ---------- 다 봤음 (v8.2) ----------
+     카드를 체크한 그 자리에서 "다 봤나요?" 를 묻는다. 예전엔 편집 → 작품 → 종류 → 마무리 → 저장이었고,
+     영화의 끝냄 버튼이 "관람" 이라 다 본 걸 찍는 버튼이 없는 줄 알았다(사용자 지적). */
+  function finishWork(text, dayK){
+    var n = wkey(text), w = workOf(n);
+    if(!n || !w || !w.kind) return;
+    var prev = { fin:w.fin || "", finAt:w.finAt || "" };
+    setWork(n, { fin:"end", finAt:dayK || todayKey });
+    retireWish(n, "end");
+    save(); render();
+    if(!$("wishOverlay").hidden) renderWishSheet();
+    hideFinBar();
+    toast('"' + n + '" ' + kindDef(w.kind).done + " 🏁", function(){
+      setWork(n, prev); retireWish(n, prev.fin);
+      save(); render();
+      if(!$("itemOverlay").hidden) paintIsWork($("isText").value);
+    }, "되돌리기", 7000);
+  }
+  var finTimer = null, finItem = null;
+  function hideFinBar(){ clearTimeout(finTimer); var fb = $("finBar"); if(fb) fb.hidden = true; finItem = null; }
+  function armFinBar(){ clearTimeout(finTimer); finTimer = setTimeout(hideFinBar, 12000); }
+  /* 물을 만한 카드인가 — 취미이거나 이미 기록된 작품. 이미 끝낸 것·회차가 남은 연재물은 묻지 않는다. */
+  function askFinish(it){
+    var n = wkey(it && it.text), w = workOf(n);
+    if(!n) return;
+    var reg = !!(w && w.kind);
+    if(!reg && !isHobbyItem(it)) return;
+    if(reg && w.fin === "end") return;
+    /* 드라마 3/12 같은 회차는 마지막 화일 때만 */
+    if(it.seq && !(it.seqTot && it.seq >= it.seqTot)) return;
+    finItem = it;
+    paintFinBar();
+  }
+  function paintFinBar(){
+    var it = finItem, fb = $("finBar");
+    if(!it) return hideFinBar();
+    var n = wkey(it.text), w = workOf(n), dk = viewKey;
+    fb.innerHTML = '<span class="fbt"></span>';
+    fb.querySelector(".fbt").textContent = "✓ " + n;
+    if(w && w.kind){
+      var go = document.createElement("button");
+      go.type = "button"; go.className = "go";
+      go.textContent = "🏁 " + kindDef(w.kind).done;
+      go.onclick = function(){ finishWork(n, dk); };
+      fb.appendChild(go);
+      var no = document.createElement("button");
+      no.type = "button"; no.textContent = "아직 하는 중";
+      no.onclick = hideFinBar;
+      fb.appendChild(no);
+    } else {
+      /* 등록 전 취미 — 종류부터. 고르면 바로 🏁 단추로 바뀐다 */
+      var h = document.createElement("span");
+      h.className = "fh"; h.textContent = "무슨 종류예요?";
+      fb.appendChild(h);
+      WKINDS.forEach(function(k){
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = k.label;
+        b.style.setProperty("--pc", k.color);
+        b.onclick = function(){ quickKind(n, k.k); render(); paintFinBar(); };
+        fb.appendChild(b);
+      });
+    }
+    var x = document.createElement("button");
+    x.type = "button"; x.className = "fx"; x.textContent = "✕"; x.title = "닫기";
+    x.onclick = hideFinBar;
+    fb.appendChild(x);
+    $("toast").hidden = true;            /* 같은 자리라 겹치지 않게 */
+    fb.hidden = false;
+    armFinBar();
+  }
   function retireWish(name, fin){
     var arr = wishes(), i, it, n = wkey(name), hit = false;
     for(i = 0; i < arr.length; i++){
