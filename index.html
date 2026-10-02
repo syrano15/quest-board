@@ -2546,13 +2546,17 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.6";
-  var APP_BUILD = "2026-10-02 18:30";
+  var APP_VERSION = "v8.7";
+  var APP_BUILD = "2026-10-02 18:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.7",  d:"2026-10-02", n:[
+      "이름 정리에 '카드 없음 · 기록만' 인 이름도 나온다 — 통계에만 보이고 이름 정리에선 못 찾던 문제 수정",
+      "작품 통계에서 보드·언젠가 어디에도 카드가 없는 예정은 '볼 예정 · 카드 없음' 으로 표시된다"
+    ]},
     { v:"v8.6",  d:"2026-10-02", n:[
       "드라마·애니 '시즌' 수가 아직 안 본 작품에 적어둔 시즌까지 세던 문제 수정 — 이제 '본 시즌'만 센다 ('쿨' → '본 시즌')",
       "시즌 도넛에서 안 본 작품은 '볼 예정' 으로 따로 묶는다 · 연재물 표가 오른쪽에서 잘리던 것 수정",
@@ -7040,6 +7044,13 @@ var HOLIDAYS = {
         else if(k > map[key].last){ map[key].last = k; map[key].cat = it.cat || null; }
       }
     }
+    /* v8.7 — 카드는 하나도 없고 게임·영화 기록만 남은 이름도 보여준다.
+       통계(작품 탭)는 등록부를 보고 이 창은 카드를 봐서, 통계에만 보이는 이름을 여기서 못 찾았다(사용자 지적). */
+    var wk = works(), wn;
+    for(wn in wk){
+      if(!wk[wn] || !wk[wn].kind || map[wn]) continue;
+      map[wn] = { text:wn, n:0, wish:0, cat:null, last:"", orphan:true };
+    }
     for(k in map) arr.push(map[k]);
     arr.sort(function(a, b){ return b.n - a.n || (a.text < b.text ? -1 : 1); });
     return arr;
@@ -7068,7 +7079,8 @@ var HOLIDAYS = {
       row.querySelector(".nm").textContent = x.text;
       var c = catById(x.cat);
       if(c){ row.querySelector(".rn2").textContent = c.name; row.querySelector(".rn2").style.color = c.color; }
-      var bits = [x.n + "회"];
+      var bits = x.orphan ? ["카드 없음 · 기록만"] : [x.n + "회"];
+      if(x.orphan) row.querySelector(".zz").style.color = "var(--defer)";
       if(x.wish) bits.push("언젠가");
       if(x.last){ var d = fromIso(x.last); bits.push("마지막 " + (d.getMonth()+1) + "/" + d.getDate()); }
       row.querySelector(".zz").textContent = bits.join(" · ");
@@ -8074,6 +8086,8 @@ var HOLIDAYS = {
   /* 작품 하나의 상태 — 표·카드·타일이 전부 이 함수를 쓴다 (v8.3). 따로 적으면 또 어긋난다. */
   function wkState(r){
     var d = kindDef(r.kind);
+    /* v8.7 — 보드에도 언젠가에도 카드가 없는 예정은 "기록만 남은 것" 이라고 알려준다 (정리 대상) */
+    if(!r.fin && !r.touched && !r.wish) return { k:"idle", t:d.todo + " · 카드 없음", cls:"z" };
     if(r.fin === "end")  return { k:"end",  t:"🏁 " + d.done, cls:"ok" };
     if(r.fin === "drop") return { k:"drop", t:"하차",           cls:"cx" };
     if(r.touched)        return { k:"go",   t:d.doing,          cls:"df" };
