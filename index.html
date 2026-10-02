@@ -976,7 +976,11 @@
   .sttable td.nm{max-width:24rem;overflow:hidden;text-overflow:ellipsis;}
   /* v8.3 — 상태 문구가 길어져("🏁 다 봤음", "볼 예정") 표가 옆으로 넘쳐 상태 칸이 잘렸다.
      작품 이름은 줄바꿈을 허용하고, 상태 칸은 글꼴을 본문으로 돌려 폭을 줄인다. */
-  #wkOneTable td.nm,#wkTable td.nm{white-space:normal;word-break:keep-all;min-width:7rem;max-width:16rem;}
+  #wkOneTable td.nm,#wkTable td.nm{white-space:normal;word-break:keep-all;min-width:6rem;max-width:13rem;}
+  /* v8.6 — 연재물 표는 칸이 여섯이라 상태가 오른쪽으로 잘렸다. 칸 간격을 줄인다. */
+  #wkOneTable th,#wkOneTable td{padding-left:.3rem;padding-right:.3rem;}
+  #wkOneTable{font-size:.82rem;}
+  #wkOneTable td.nm{max-width:11rem;}
   #wkOneTable td:last-child,#wkTable td.ok,#wkTable td.df,#wkTable td.cx,#wkOneTable td.z:last-child{font-family:inherit;}
   .stempty{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem 0;}
 
@@ -2542,13 +2546,19 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.5";
-  var APP_BUILD = "2026-10-02 17:50";
+  var APP_VERSION = "v8.6";
+  var APP_BUILD = "2026-10-02 18:30";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.6",  d:"2026-10-02", n:[
+      "드라마·애니 '시즌' 수가 아직 안 본 작품에 적어둔 시즌까지 세던 문제 수정 — 이제 '본 시즌'만 센다 ('쿨' → '본 시즌')",
+      "시즌 도넛에서 안 본 작품은 '볼 예정' 으로 따로 묶는다 · 연재물 표가 오른쪽에서 잘리던 것 수정",
+      "언젠가에서 지운 항목이 한 번도 안 본 작품이면 통계의 '볼 예정' 에서도 빠진다",
+      "이름 정리로 여러 이름을 하나로 합치면 언젠가의 겹친 카드도 한 장으로 합쳐진다"
+    ]},
     { v:"v8.5",  d:"2026-10-02", n:[
       "게임·영화 플레이 횟수가 회차(56/56 같은)를 적은 카드를 빼고 세던 문제 수정 — 체크한 카드는 전부 한 번",
       "게임 표에 진행 화수도 같이 보인다 (예: 12회 · 56/56화) · 엔딩까지 걸린 횟수도 같은 기준"
@@ -2980,6 +2990,18 @@ var HOLIDAYS = {
       how:  (to === "movie") ? (w.how  || "") : "" };
   }
   /* 누르는 순간 종류를 정한다. 되돌리기 함수를 돌려준다 — 처음 등록이었으면 비워두고(dropWork), 아니면 예전 값으로. */
+  /* v8.6 — 언젠가에서 지운 이름이 아직 한 번도 안 본 작품이면 등록도 푼다.
+     안 그러면 통계에 "볼 예정" 줄이 영영 남는다(중복을 지워도 줄이 안 사라졌다).
+     보드에서 체크한 적이 있거나 끝낸 기록이 있으면 손대지 않는다 — 그건 진짜 기록이다. */
+  function dropIdleWork(text){
+    var n = wkey(text), w = workOf(n);
+    if(!n || !w || !w.kind || w.fin) return false;
+    var t = workTally(n);
+    if(t.sessions + t.eps) return false;
+    if(wishLive().some(function(x){ return wkey(x.text) === n; })) return false;   /* 같은 이름이 아직 남아 있으면 둔다 */
+    dropWork(n);
+    return true;
+  }
   function quickKind(text, to){
     var n = wkey(text);
     if(!n) return null;
@@ -4789,6 +4811,7 @@ var HOLIDAYS = {
     row.querySelector(".pull").onclick = function(){ pullWish(it); renderWishSheet(); paintWishCount(); };
     row.querySelector(".del").onclick = function(){
       var a = wishes(), i = a.indexOf(it); if(i >= 0) a.splice(i, 1);
+      dropIdleWork(it.text);
       save(); renderWishSheet(); paintWishCount(); render();
     };
     return row;
@@ -4964,8 +4987,9 @@ var HOLIDAYS = {
     var it = wqItem, a = wishes(), i = a.indexOf(it);
     closeWishQuick();
     if(i >= 0) a.splice(i, 1);
+    var dropped = dropIdleWork(it.text);
     save(); refreshWishViews(); paintWishCount();
-    toast('"' + it.text + '" 을(를) 언젠가에서 지웠습니다', null);
+    toast('"' + it.text + '" 을(를) 언젠가에서 지웠습니다' + (dropped ? " · 통계의 볼 예정에서도 뺐습니다" : ""), null);
   };
   $("wqMore").onclick = function(){
     if(!wqItem) return;
@@ -7129,6 +7153,19 @@ var HOLIDAYS = {
       }
     }
     if(!doName) return { cards:hit, works:0 };
+    /* v8.6 — 여러 이름을 하나로 합치면 언젠가에 같은 이름 카드가 여러 장 남았다. 하나만 남긴다.
+       먼저 담은 것을 남기고, 기한·카테고리가 비어 있으면 지우는 쪽에서 채운다. 보드의 날짜 카드는 건드리지 않는다
+       (같은 날 같은 이름 두 번은 진짜로 두 번 한 것일 수 있다). */
+    var sw = store.days[SOMEDAY] || [], keep = null, merged = 0;
+    for(i = 0; i < sw.length; i++){
+      it = sw[i];
+      if(!it || it.done || it.canceled || wkey(it.text) !== to) continue;
+      if(!keep){ keep = it; continue; }
+      if(!keep.by && it.by) keep.by = it.by;
+      if(!keep.cat && it.cat) keep.cat = it.cat;
+      sw.splice(i, 1); i--; merged++;
+    }
+    if(merged) keep.at = now;
     /* 작품 등록부 — 옛 이름에 붙어 있던 기록을 새 이름으로 옮긴다.
        여러 개가 걸리면 가장 최근에 손댄 것을 남긴다. 옛 열쇠는 지우지 않고 비운다
        (다른 기기가 옛 값으로 되살리지 못하게 — dropWork 과 같은 이유). */
@@ -7146,7 +7183,7 @@ var HOLIDAYS = {
                 fin:best.fin || "", finAt:best.finAt || "", at:now };
       names.forEach(function(nm){ if(nm !== to && w[nm]) dropWork(nm); });
     }
-    return { cards:hit, works:moved };
+    return { cards:hit, works:moved, merged:merged };
   }
   function openRename(){
     rnSel = {}; rnQ = ""; rnCat = "";
@@ -7181,7 +7218,7 @@ var HOLIDAYS = {
     var msg = r.doName
       ? ("카드 " + out.cards + "장을 \"" + r.to + "\" 로 맞췄습니다")
       : ("카드 " + out.cards + "장의 카테고리를 바꿨습니다");
-    toast(msg + (out.works ? " · 작품 기록도 같이 옮겼습니다" : ""), null);
+    toast(msg + (out.works ? " · 작품 기록도 같이 옮겼습니다" : "") + (out.merged ? " · 언젠가의 겹친 " + out.merged + "장은 하나로 합쳤습니다" : ""), null);
     /* 찾기 칸의 글자를 잡아둔 채로 넘겨준다 — 다음 이름을 바로 덮어 칠 수 있게 */
     $("rnFind").focus(); $("rnFind").select();
   });
@@ -8051,8 +8088,10 @@ var HOLIDAYS = {
       var s = sum[kindKey(r.kind)] || sum.etc;
       s.n++;
       s.eps += r.eps; s.sessions += r.sessions; s.plays = (s.plays || 0) + r.plays;
-      /* 시즌 수를 안 적었으면 편을 본 작품은 최소 1시즌으로 센다 */
-      s.sea += r.sea || (r.eps ? 1 : 0);
+      /* 시즌 수를 안 적었으면 편을 본 작품은 최소 1시즌으로 센다.
+         v8.6 — 아직 안 본 것(예정)의 시즌은 세지 않는다. 언젠가에 "2시즌" 이라 적어둔 작품까지 더해 "쿨 6개"가 나왔다. */
+      var stK = wkState(r).k;
+      if(stK !== "idle") s.sea += r.sea || (r.eps ? 1 : 0);
       if(r.fin === "end") s.end++;
       else if(r.fin === "drop") s.drop++;
       else if(r.touched) s.go++;
@@ -8064,8 +8103,8 @@ var HOLIDAYS = {
   function wkKindBits(k, s){
     if(k === "game") return [["타이틀", s.n + "개"], ["플레이", (s.plays || 0) + "회"]];
     if(k === "movie") return [["편수", s.n + "편"]];
-    if(k === "drama") return [["작품", s.n + "개"], ["시즌", s.sea + "개"], ["본 편수", s.eps + "편"]];
-    if(k === "anime") return [["작품", s.n + "개"], ["쿨", s.sea + "개"], ["본 화수", s.eps + "화"]];
+    if(k === "drama") return [["작품", s.n + "개"], ["본 시즌", s.sea + "개"], ["본 편수", s.eps + "편"]];
+    if(k === "anime") return [["작품", s.n + "개"], ["본 시즌", s.sea + "개"], ["본 화수", s.eps + "화"]];
     if(k === "book") return [["책", s.n + "권"], ["기록", (s.sessions + s.eps) + "회"]];
     return [["작품", s.n + "개"], ["기록", (s.sessions + s.eps) + "회"]];
   }
@@ -8277,8 +8316,8 @@ var HOLIDAYS = {
                s.go ? [def.doing, s.go + "편", "defer"] : ["하차", s.drop + "편", "cancel"]];
     } else if(isEpisodic(kind)){
       var unit = (kind === "anime") ? "화" : "편";
-      tiles = [["작품", s.n + "개", "rest"], [(kind === "anime" ? "쿨" : "시즌"), s.sea + "개", "defer"],
-               ["본 " + unit + "수", s.eps + unit, "rest"], [def.fin, s.end + "개", "done"]];
+      tiles = [["작품", s.n + "개", "rest"], ["본 시즌", s.sea + "개", "defer"],
+               ["본 " + unit + "수", s.eps + unit, "rest"], [def.done, s.end + "개", "done"]];
     } else {
       tiles = [["작품", s.n + "개", "rest"], [def.done, s.end + "개", "done"],
                [def.doing, s.go + "개", "defer"], [def.todo, s.idle + "개", "cancel"]];
@@ -8376,11 +8415,13 @@ var HOLIDAYS = {
       groups = {};
       rows.forEach(function(r){ var k2 = r.how || "?"; groups[k2] = (groups[k2] || 0) + 1; });
     } else if(isEpisodic(kind)){
-      gLabel = "시즌 수";
+      gLabel = "본 시즌 수";
       groups = {};
       rows.forEach(function(r){
-        var n2 = r.sea || (r.eps ? 1 : 0);
-        var k2 = n2 ? (n2 + "시즌") : "?";
+        /* v8.6 — 안 본 작품은 시즌이 아니라 "볼 예정" 묶음으로 */
+        var k2;
+        if(wkState(r).k === "idle") k2 = def.todo;
+        else { var n2 = r.sea || (r.eps ? 1 : 0); k2 = n2 ? (n2 + "시즌") : "?"; }
         groups[k2] = (groups[k2] || 0) + 1;
       });
     }
