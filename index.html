@@ -974,6 +974,10 @@
   .sttable .ok{color:var(--done);} .sttable .df{color:var(--defer);} .sttable .cx{color:var(--dim);}
   .sttable .bad{color:var(--urgent);}
   .sttable td.nm{max-width:24rem;overflow:hidden;text-overflow:ellipsis;}
+  /* v8.3 — 상태 문구가 길어져("🏁 다 봤음", "볼 예정") 표가 옆으로 넘쳐 상태 칸이 잘렸다.
+     작품 이름은 줄바꿈을 허용하고, 상태 칸은 글꼴을 본문으로 돌려 폭을 줄인다. */
+  #wkOneTable td.nm,#wkTable td.nm{white-space:normal;word-break:keep-all;min-width:7rem;max-width:16rem;}
+  #wkOneTable td:last-child,#wkTable td.ok,#wkTable td.df,#wkTable td.cx,#wkOneTable td.z:last-child{font-family:inherit;}
   .stempty{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem 0;}
 
   /* ---- 작품 종류별 카드 (v7.3) ---- */
@@ -1904,8 +1908,8 @@
       <div class="tiles">
         <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">담아둔 것</span></div>
         <div class="tile done"><span class="tn" id="wsTried">0</span><span class="tl">해본 것</span></div>
-        <div class="tile defer"><span class="tn" id="wsNever">0</span><span class="tl">한 번도 안 함</span></div>
-        <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일+ 방치</span></div>
+        <div class="tile defer"><span class="tn" id="wsNever">0</span><span class="tl">아직 안 해봄</span></div>
+        <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일 넘게 대기</span></div>
       </div>
       <p class="hint" id="wsNote" style="font-size:.78rem;margin-top:.5rem"></p>
       <div class="stbox" style="margin-top:.6rem">
@@ -1935,7 +1939,7 @@
           <div class="tile rest"><span class="tn" id="wkAll">0</span><span class="tl">작품</span></div>
           <div class="tile done"><span class="tn" id="wkEnd">0</span><span class="tl">끝낸 것</span></div>
           <div class="tile defer"><span class="tn" id="wkGo">0</span><span class="tl">진행 중</span></div>
-          <div class="tile cancel"><span class="tn" id="wkDrop">0</span><span class="tl">하차</span></div>
+          <div class="tile cancel"><span class="tn" id="wkDrop">0</span><span class="tl">예정</span></div>
         </div>
         <div class="kgrid" id="wkCards"></div>
         <div class="stgrid" style="margin-top:.7rem">
@@ -2538,13 +2542,19 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.2";
-  var APP_BUILD = "2026-10-02 14:40";
+  var APP_VERSION = "v8.3";
+  var APP_BUILD = "2026-10-02 15:20";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.3",  d:"2026-10-02", n:[
+      "작품 통계의 '안 시작'·'손도 안 댐' → '볼 예정·할 예정·읽을 예정' · '진행 중' → '보는 중·하는 중'",
+      "영화 '보다 말았음'이 아직 안 본 것까지 세던 문제 수정 — 볼 예정과 보는 중을 따로 센다",
+      "상태 '🏁 관람' → '🏁 다 봤음' · 전체 탭 네 칸의 합이 전체와 맞게 '하차' 칸을 '예정'으로",
+      "언젠가 통계 '30일+ 방치' → '30일 넘게 대기', '한 번도 안 함' → '아직 안 해봄'"
+    ]},
     { v:"v8.2",  d:"2026-10-02", n:[
       "취미 카드를 체크하면 아래에 '🏁 다 봤음' 이 바로 뜬다 — 편집까지 안 들어가도 된다",
       "아직 종류를 안 고른 취미는 체크할 때 종류부터 묻고, 고르면 바로 🏁 로 바뀐다",
@@ -2859,14 +2869,16 @@ var HOLIDAYS = {
        애니는 자동으로 못 가른다(v5.4의 추측 금지 원칙). 사람이 다시 고르면 된다.
      ⚠ 구버전 앱이 movie/drama/anime 를 받으면 kindDef 폴백으로 "기타"로 보일 뿐 값은 안 날아간다. */
   var WKINDS = [
-    /* done — 버튼에 쓰는 사람 말 (v8.2). "관람"은 "보는 중"으로도 읽혀서 영화를 다 본 버튼이 없는 줄 알았다.
+    /* doing·todo — 통계의 상태 문구 (v8.3). "안 시작"·"손도 안 댐"·"보다 말았음"을 걷어냈다.
+       todo 는 등록만 하고 아직 보드에서 한 번도 체크 안 한 것, doing 은 체크한 날이 있지만 끝냈다고 안 한 것.
+       done — 버튼에 쓰는 사람 말 (v8.2). "관람"은 "보는 중"으로도 읽혀서 영화를 다 본 버튼이 없는 줄 알았다.
        fin 은 통계 표의 짧은 단위("관람 3편")라 그대로 둔다. */
-    { k:"game",  label:"게임",   fin:"엔딩", done:"엔딩 봤음", unit:"판", color:"#6FA8DC" },
-    { k:"movie", label:"영화",   fin:"관람", done:"다 봤음",   unit:"편", color:"#E0A23C" },
-    { k:"drama", label:"드라마", fin:"완주", done:"다 봤음",   unit:"편", color:"#D55181" },
-    { k:"anime", label:"애니",   fin:"완주", done:"다 봤음",   unit:"화", color:"#9B8CF5" },
-    { k:"book",  label:"책",     fin:"완독", done:"다 읽음",   unit:"권", color:"#3FA08C" },
-    { k:"etc",   label:"기타",   fin:"끝냄", done:"끝냈음",    unit:"회", color:"#8896A6" }
+    { k:"game",  label:"게임",   fin:"엔딩", done:"엔딩 봤음", doing:"하는 중", todo:"할 예정", unit:"판", color:"#6FA8DC" },
+    { k:"movie", label:"영화",   fin:"관람", done:"다 봤음",   doing:"보는 중", todo:"볼 예정", unit:"편", color:"#E0A23C" },
+    { k:"drama", label:"드라마", fin:"완주", done:"다 봤음",   doing:"보는 중", todo:"볼 예정", unit:"편", color:"#D55181" },
+    { k:"anime", label:"애니",   fin:"완주", done:"다 봤음",   doing:"보는 중", todo:"볼 예정", unit:"화", color:"#9B8CF5" },
+    { k:"book",  label:"책",     fin:"완독", done:"다 읽음",   doing:"읽는 중", todo:"읽을 예정", unit:"권", color:"#3FA08C" },
+    { k:"etc",   label:"기타",   fin:"끝냄", done:"끝냈음",    doing:"하는 중", todo:"할 예정", unit:"회", color:"#8896A6" }
   ];
   var KIND_ALIAS = { show:"drama" };            /* v7.2 이하 기록 */
   function kindKey(k){ k = String(k || ""); return KIND_ALIAS[k] || k; }
@@ -7921,6 +7933,14 @@ var HOLIDAYS = {
     return out;
   }
   var wkTab = "";           /* "" = 전체, 아니면 종류 키 */
+  /* 작품 하나의 상태 — 표·카드·타일이 전부 이 함수를 쓴다 (v8.3). 따로 적으면 또 어긋난다. */
+  function wkState(r){
+    var d = kindDef(r.kind);
+    if(r.fin === "end")  return { k:"end",  t:"🏁 " + d.done, cls:"ok" };
+    if(r.fin === "drop") return { k:"drop", t:"하차",           cls:"cx" };
+    if(r.touched)        return { k:"go",   t:d.doing,          cls:"df" };
+    return                      { k:"idle", t:d.todo,           cls:"z"  };
+  }
   function wkKindSum(rows){
     var sum = {};
     WKINDS.forEach(function(d){
@@ -7961,16 +7981,16 @@ var HOLIDAYS = {
     if(wkTab){ renderWorkOne(rows, wkTab); return; }
 
     var sum = wkKindSum(rows);
-    var endN = 0, goN = 0, dropN = 0;
+    var endN = 0, goN = 0, dropN = 0, idleN = 0;
     rows.forEach(function(r){
-      if(r.fin === "end") endN++;
-      else if(r.fin === "drop") dropN++;
-      else if(r.touched) goN++;
+      var k = wkState(r).k;
+      if(k === "end") endN++; else if(k === "drop") dropN++; else if(k === "go") goN++; else idleN++;
     });
+    /* 네 칸의 합이 전체와 맞아야 한다 — 예전엔 "안 시작"이 빠져 있어 숫자가 안 맞았다. 하차는 아래 줄에 적는다. */
     $("wkAll").textContent = rows.length;
     $("wkEnd").textContent = endN;
     $("wkGo").textContent = goN;
-    $("wkDrop").textContent = dropN;
+    $("wkDrop").textContent = idleN;
 
     /* 종류별 카드 — 누르면 그 종류만 본다 */
     var host = $("wkCards");
@@ -7999,7 +8019,7 @@ var HOLIDAYS = {
         e.querySelector("em").textContent = p[1];
         rw.appendChild(e);
       });
-      [["진행", s.go], ["안 시작", s.idle], ["하차", s.drop]].forEach(function(p){
+      [[d.doing, s.go], [d.todo, s.idle], ["하차", s.drop]].forEach(function(p){
         if(!p[1]) return;
         var e = document.createElement("span");
         e.innerHTML = esc(p[0]) + " <em></em>";
@@ -8094,10 +8114,7 @@ var HOLIDAYS = {
         if(r.sessions) rec = r.sessions + "회";
         if(r.first && r.last && r.first !== r.last) prog = md(r.first) + " ~";
       }
-      if(r.fin === "end"){ stt = "🏁 " + d.fin; cls = "ok"; }
-      else if(r.fin === "drop"){ stt = "하차"; cls = "cx"; }
-      else if(r.touched){ stt = "진행 중"; cls = "df"; }
-      else { stt = "안 시작"; cls = "z"; }
+      var ws = wkState(r); stt = ws.t; cls = ws.cls;
       body += '<tr><td class="nm"></td>' +
         '<td><span class="z">' + esc(d.label) + '</span></td>' +
         '<td class="' + (prog === "·" ? "z" : "") + '">' + prog + '</td>' +
@@ -8132,11 +8149,11 @@ var HOLIDAYS = {
     });
     $("wkNote").innerHTML = rows.length
       ? ("작품 " + rows.length + "개 중 <b>" + endN + "개를 끝냈습니다</b>" +
-         (goN ? " · " + goN + "개는 진행 중" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
-         "<br>여기에는 <b>내가 직접 등록한 작품만</b> 나옵니다. 종류 버튼을 누르면 그 종류만 자세히 봅니다. " +
-         "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
-      : "아직 등록한 작품이 없습니다. 게임·영화·드라마처럼 남겨둘 만한 것만 " +
-        "언젠가 목록의 <b>작품 +</b> 버튼이나 카드 상세의 <b>🏁</b> 버튼으로 등록하세요.";
+         (goN ? " · " + goN + "개는 진행 중" : "") + (idleN ? " · " + idleN + "개는 예정" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
+         "<br><b>예정</b>은 종류만 고르고 아직 보드에서 체크한 적이 없는 것, <b>진행 중</b>은 체크한 날은 있는데 끝냈다고 안 한 것입니다. " +
+         "종류 버튼을 누르면 그 종류만 자세히 봅니다. 보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
+      : "아직 기록한 게임·영화가 없습니다. 언젠가 카드나 보드 카드 상세에서 종류를 누르면 바로 기록되고, " +
+        "다 봤으면 체크할 때 뜨는 <b>🏁</b> 를 누르세요.";
   }
 
   /* ---------- 종류 하나만 자세히 ----------
@@ -8148,18 +8165,21 @@ var HOLIDAYS = {
     var s = wkKindSum(rows)[kind];
     var tiles = [];
     if(kind === "game"){
-      tiles = [["타이틀", s.n + "개", "rest"], [def.fin, s.end + "개" + (s.n ? " · " + Math.round(s.end / s.n * 100) + "%" : ""), "done"],
-               ["플레이", s.sessions + "회", "defer"], ["손도 안 댐", s.idle + "개", "cancel"]];
+      tiles = [["타이틀", s.n + "개", "rest"], [def.done, s.end + "개" + (s.n ? " · " + Math.round(s.end / s.n * 100) + "%" : ""), "done"],
+               ["플레이", s.sessions + "회", "defer"], [def.todo, s.idle + "개", "cancel"]];
     } else if(kind === "movie"){
-      tiles = [["편수", s.n + "편", "rest"], ["본 것", s.end + "편", "done"],
-               ["보다 말았음", (s.go + s.idle) + "편", "defer"], ["하차", s.drop + "편", "cancel"]];
+      /* v8.3 — 예전엔 "보다 말았음"이 아직 안 본 것(idle)까지 더해 셌다. 볼 예정과 보는 중을 가른다.
+         보는 중이 없으면(영화는 대개 한 번에 본다) 그 칸에 하차를 보여준다. */
+      tiles = [["편수", s.n + "편", "rest"], [def.done, s.end + "편", "done"],
+               [def.todo, s.idle + "편", "cancel"],
+               s.go ? [def.doing, s.go + "편", "defer"] : ["하차", s.drop + "편", "cancel"]];
     } else if(isEpisodic(kind)){
       var unit = (kind === "anime") ? "화" : "편";
       tiles = [["작품", s.n + "개", "rest"], [(kind === "anime" ? "쿨" : "시즌"), s.sea + "개", "defer"],
                ["본 " + unit + "수", s.eps + unit, "rest"], [def.fin, s.end + "개", "done"]];
     } else {
-      tiles = [["작품", s.n + "개", "rest"], [def.fin, s.end + "개", "done"],
-               ["진행 중", s.go + "개", "defer"], ["안 시작", s.idle + "개", "cancel"]];
+      tiles = [["작품", s.n + "개", "rest"], [def.done, s.end + "개", "done"],
+               [def.doing, s.go + "개", "defer"], [def.todo, s.idle + "개", "cancel"]];
     }
     $("wkOneTiles").innerHTML = tiles.map(function(t){
       return '<div class="tile ' + t[2] + '"><span class="tn">' + esc(t[1]) + '</span><span class="tl">' + esc(t[0]) + '</span></div>';
@@ -8188,10 +8208,7 @@ var HOLIDAYS = {
     var body = "";
     sorted.forEach(function(r){
       var stt, cls;
-      if(r.fin === "end"){ stt = "🏁 " + def.fin; cls = "ok"; }
-      else if(r.fin === "drop"){ stt = "하차"; cls = "cx"; }
-      else if(r.touched){ stt = "진행 중"; cls = "df"; }
-      else { stt = "안 시작"; cls = "z"; }
+      var ws = wkState(r); stt = ws.t; cls = ws.cls;
       var cells;
       if(kind === "game"){
         cells = ['<td><span class="chip plat' + (r.plat ? "" : " unset") + '" style="--pc:' +
@@ -8307,7 +8324,8 @@ var HOLIDAYS = {
       var gap = Math.round((fromIso(todayKey) - fromIso(stuck.last)) / 864e5);
       if(gap >= 45) msg = "진행 중인 것 중 <b>" + esc(stuck.name) + "</b>은 마지막 기록이 " + gap + "일 전입니다 — 사실상 멈춘 것 같습니다";
     }
-    if(!msg && rows.length) msg = esc(def.label) + " " + rows.length + "개 중 <b>" + s.end + "개를 " + esc(def.fin) + "</b>했습니다";
+    if(!msg && rows.length) msg = esc(def.label) + " " + rows.length + "개 중 <b>" + s.end + "개 " + esc(def.done) + "</b>" +
+      (s.idle ? " · " + s.idle + "개 " + esc(def.todo) : "") + (s.go ? " · " + s.go + "개 " + esc(def.doing) : "");
     $("wkNote").innerHTML = msg;
   }
 
