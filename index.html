@@ -360,6 +360,10 @@
   .habits .hedit{flex:none;background:none;border:1px dashed var(--line);border-radius:.4rem;color:var(--dim);
     font-size:.74rem;padding:.22rem .5rem;cursor:pointer;transition:all .12s ease;}
   .habits .hedit:hover{border-color:var(--muted);color:var(--text);border-style:solid;}
+  .habits .hoff.on{border-style:solid;border-color:var(--defer);color:var(--defer);font-weight:700;}
+  .hlockt{flex:none;}
+  .hlockt.open{border-style:solid!important;border-color:var(--urgent)!important;color:var(--urgent)!important;font-weight:700;}
+  .w-habits .hlockt{background:none;border:1px dashed var(--line);border-radius:.4rem;color:var(--dim);font-size:.74rem;padding:.2rem .5rem;cursor:pointer;}
   .hrow{display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:.3rem .5rem;align-items:center;
     padding:.35rem 0;border-bottom:1px solid var(--line-soft);}
   .hrow input[type=text]{min-width:0;background:var(--surface);border:1px solid var(--line);
@@ -2546,13 +2550,20 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.7";
-  var APP_BUILD = "2026-10-02 18:40";
+  var APP_VERSION = "v8.9";
+  var APP_BUILD = "2026-10-02 22:50";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.9",  d:"2026-10-02", n:[
+      "카드 아이콘 줄에 ↓ 단추 — 한 번 누르면 바로 언젠가로 간다 (되돌리기 있음) · 끝낸 카드에는 안 뜬다"
+    ]},
+    { v:"v8.8",  d:"2026-10-02", n:[
+      "'쉬는 날' 단추 — 갑자기 회사가 쉬면 눌러서 평일 항목(출근 버스·퇴근 자전거)을 그 날 빼고 통계에서도 뺀다 · 다시 누르면 해제",
+      "숨김 모드 한 번에 켜고 끄기 — 🔒 를 눌러 비밀번호 한 번이면 성공·실패·몸무게·금전 관리가 다 보이고, 🔓 잠그기 한 번이면 다 가려진다"
+    ]},
     { v:"v8.7",  d:"2026-10-02", n:[
       "이름 정리에 '카드 없음 · 기록만' 인 이름도 나온다 — 통계에만 보이고 이름 정리에선 못 찾던 문제 수정",
       "작품 통계에서 보드·언젠가 어디에도 카드가 없는 예정은 '볼 예정 · 카드 없음' 으로 표시된다"
@@ -2837,6 +2848,8 @@ var HOLIDAYS = {
   var CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="#0B0F14" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var PENCIL = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M9.4 1.9l2.7 2.7L4.7 12 1.5 12.5 2 9.3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
   var XMARK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  /* v8.9 — 언젠가로 보내기 (아래 화살표) */
+  var TOWISH = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v8.2M3.4 6.8L7 10.4l3.6-3.6M2.5 12.5h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var SKIP = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 3l4 4-4 4M7.5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function idxOf(it){ return day(viewKey).indexOf(it); }
   function markDone(it, on){
@@ -3697,6 +3710,7 @@ var HOLIDAYS = {
       '<span class="acts">' +
         '<button class="icon js-pri p' + (item.pri||0) + '" type="button" title="우선순위" aria-label="우선순위">' + (item.pri === 2 ? "!!" : "!") + '</button>' +
         '<button class="icon js-defer' + (item.defer ? " on" : "") + '" type="button" title="연기 / 지연" aria-label="연기">' + SKIP + '</button>' +
+        (item.done ? '' : '<button class="icon js-wish" type="button" title="언젠가로 보내기" aria-label="언젠가로 보내기">' + TOWISH + '</button>') +
         '<button class="icon js-edit" type="button" aria-label="수정">' + PENCIL + '</button>' +
         '<button class="icon js-del" type="button" aria-label="삭제">' + XMARK + '</button>' +
       '</span>';
@@ -3715,6 +3729,7 @@ var HOLIDAYS = {
     };
     row.querySelector(".js-del").onclick = function(){ var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); render(); };
     row.querySelector(".js-edit").onclick = function(){ openItemSheet(item, "edit"); };
+    if(row.querySelector(".js-wish")) row.querySelector(".js-wish").onclick = function(){ quickToWish(item); };
     if(canNext(item)) row.querySelector(".nextep").onclick = function(){ makeNext(item); };
     return row;
   }
@@ -4033,7 +4048,26 @@ var HOLIDAYS = {
   }
   function isWorkday(k){
     var wd = fromIso(k).getDay();
-    return wd >= 1 && wd <= 5 && !holidayOf(k);
+    return wd >= 1 && wd <= 5 && !holidayOf(k) && !isOffDay(k);
+  }
+  /* ---------- 회사 쉬는 날 (v8.8) ----------
+     공휴일 표에 없는 갑작스런 휴무(창립기념일·임시 휴무)를 사람이 찍는다. 찍으면 공휴일과 똑같이
+     평일만 세는 항목이 그 날 안 뜨고, 통계·연속 기록에서도 빠진다(isWorkday 를 거치므로 한 곳에서 끝난다).
+     저장은 성공·실패 기록 안의 특수 칸 hres[날짜]._off = {v, at}.
+       v:1 쉬는 날 / v:0 해제(지우지 않고 0 으로 남긴다 — 그래야 해제도 다른 기기로 넘어간다)
+     성공·실패 기록과 같은 병합(habMergeRes, 날짜·칸 단위로 나중에 적은 쪽)을 타서 따로 동기화 코드가 필요 없다.
+     ⚠ hres[날짜] 의 열쇠를 전부 습관 id 로 여기는 코드를 새로 짜면 "_off" 를 걸러야 한다. */
+  var OFF_ID = "_off";
+  function isOffDay(k){ var d = hres()[k], o = d && d[OFF_ID]; return !!(o && o.v === 1); }
+  function canMarkOff(k){ var wd = fromIso(k).getDay(); return wd >= 1 && wd <= 5 && !holidayOf(k); }
+  function setOffDay(k, on){
+    var d = hres();
+    if(!d[k]) d[k] = {};
+    d[k][OFF_ID] = { v: on ? 1 : 0, at: Date.now() };
+    habSave();
+    if(typeof queuePush === "function") queuePush();
+    render();
+    if(!$("statsOverlay").hidden) renderStats();
   }
   function habAll(h){ return !!h && h.mode === "all"; }
   /* 이 항목을 그 날 체크해야 하는가 */
@@ -4240,7 +4274,9 @@ var HOLIDAYS = {
     /* 평일만인 항목은 토·일·공휴일에 아예 띄우지 않는다. 쉬는 날에 실패로 찍히면 안 된다. */
     var hs = habSorted().filter(function(h){ return habApplies(h, viewKey); });
     host.innerHTML = "";
-    if(!hs.length){ host.hidden = true; return; }
+    /* 쉬는 날로 찍어 평일 항목이 다 빠져도, 해제하러 올 자리는 남겨둔다 */
+    var offNow = withEdit && isOffDay(viewKey);
+    if(!hs.length && !offNow){ host.hidden = true; return; }
     host.hidden = false;
     if(withEdit){
       var head = document.createElement("span");
@@ -4314,6 +4350,30 @@ var HOLIDAYS = {
       }
       host.appendChild(el);
     });
+    if(withEdit && canMarkOff(viewKey) && habits().some(function(h){ return !habAll(h); })){
+      var off = document.createElement("button");
+      off.type = "button"; off.className = "hedit hoff" + (offNow ? " on" : "");
+      off.textContent = offNow ? "🏖 쉬는 날 · 해제" : "쉬는 날";
+      off.title = offNow ? "회사 쉬는 날 표시를 풉니다 — 평일 항목이 다시 뜹니다"
+                         : "갑자기 회사가 쉬는 날이면 누르세요. 평일만 세는 항목(" +
+                           habits().filter(function(h){ return !habAll(h); }).map(function(h){ return h.name; }).join(", ") +
+                           ")이 이 날 빠지고 통계에서도 빠집니다";
+      off.onclick = function(){ setOffDay(viewKey, !offNow); };
+      host.appendChild(off);
+    }
+    if(withEdit || host === $("wHabits")){
+      /* v8.8 — 숨김 모드 한 번에 켜고 끄기. 비밀번호 한 번이면 성공·실패·몸무게·금전 관리가 다 열리고,
+         한 번 누르면 다 다시 잠긴다. 예전엔 각각 따로 풀고, 다시 잠그려면 앱을 껐다 켜야 했다. */
+      if(privacyAny()){
+        var lk = document.createElement("button");
+        lk.type = "button"; lk.className = "hedit hlockt" + (privacyOpen() ? " open" : "");
+        lk.textContent = privacyOpen() ? "🔓 잠그기" : "🔒";
+        lk.title = privacyOpen() ? "숨김 모드로 — 성공·실패·몸무게·금전 관리를 다시 가립니다"
+                                 : "숨김 해제 — 비밀번호를 넣으면 전부 보입니다";
+        lk.onclick = function(){ if(privacyOpen()) privacyLock(); else askPin("all"); };
+        host.appendChild(lk);
+      }
+    }
     if(withEdit){
       var ed = document.createElement("button");
       ed.type = "button"; ed.className = "hedit"; ed.textContent = "항목 관리";
@@ -4604,6 +4664,22 @@ var HOLIDAYS = {
   }
   /* 보드에 있는 일을 다시 언젠가 목록으로 되돌린다.
      날짜·시간·연기 같은 "그 날에만 뜻이 있는" 값은 떼고 담은 시각을 지금으로 새로 잡는다. */
+  /* v8.9 — 카드의 ↓ 한 번으로 언젠가로. 예전엔 상세를 열어 "언젠가로" 를 눌러야 했다.
+     잘못 눌렀을 때를 위해 알림에 되돌리기를 단다 — 보내기 전 모양 그대로 원래 날로 돌려놓는다. */
+  function quickToWish(it){
+    var from = null, k;
+    for(k in store.days){ if(k !== SOMEDAY && store.days[k].indexOf(it) >= 0){ from = k; break; } }
+    var snap = JSON.parse(JSON.stringify(it));
+    if(!sendToWish(it)) return;
+    toast('"' + it.text + '" 을(를) 언젠가로 보냈습니다', function(){
+      var a = wishes(), i = a.indexOf(it);
+      if(i >= 0) a.splice(i, 1);
+      for(var f in it) if(!(f in snap)) delete it[f];
+      for(var g in snap) it[g] = snap[g];
+      day(from || viewKey).push(it);
+      save(); render();
+    }, "되돌리기", 7000);
+  }
   function sendToWish(it){
     var k, arr, i, moved = false;
     for(k in store.days){
@@ -5788,6 +5864,7 @@ var HOLIDAYS = {
     sp.innerHTML =
       '<button class="icon js-pri p' + (item.pri||0) + '" type="button" title="우선순위">' + (item.pri === 2 ? "!!" : "!") + '</button>' +
       '<button class="icon js-defer' + (item.defer ? " on" : "") + '" type="button" title="연기 / 지연">' + SKIP + '</button>' +
+      (item.done ? '' : '<button class="icon js-wish" type="button" title="언젠가로 보내기">' + TOWISH + '</button>') +
       '<button class="icon js-edit" type="button" title="수정">' + PENCIL + '</button>' +
       '<button class="icon js-del" type="button" title="삭제">' + XMARK + '</button>';
     sp.querySelector(".js-pri").onclick = function(e){ e.stopPropagation(); item.pri = ((item.pri||0)+1)%3; save(); render(); };
@@ -5796,6 +5873,7 @@ var HOLIDAYS = {
       else openItemSheet(item, "defer"); };
     sp.querySelector(".js-del").onclick = function(e){ e.stopPropagation(); var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); render(); };
     sp.querySelector(".js-edit").onclick = function(e){ e.stopPropagation(); openItemSheet(item, "edit"); };
+    if(sp.querySelector(".js-wish")) sp.querySelector(".js-wish").onclick = function(e){ e.stopPropagation(); quickToWish(item); };
     return sp;
   }
   function wEdit(host, item){
@@ -6197,11 +6275,26 @@ var HOLIDAYS = {
   };
   /* 비밀번호 창은 몸무게와 금전 관리가 같이 쓴다. 어느 쪽에서 열었는지만 기억해 둔다. */
   var pinFor = "wt";
+  /* ---------- 숨김 모드 (v8.8) ---------- */
+  function privacyAny(){ return habits().some(function(h){ return habLock(h); }) || !!$("wtBox") || !!$("moneyBtn"); }
+  function privacyOpen(){ return habUnlocked || wtUnlocked || mnUnlocked; }
+  function privacyUnlock(){ habUnlocked = true; wtUnlocked = true; mnUnlocked = true; }
+  function privacyLock(){
+    habUnlocked = false; wtUnlocked = false; mnUnlocked = false;
+    /* 열려 있는 창도 닫는다 — 잠갔는데 숫자가 화면에 남아 있으면 안 된다 */
+    ["wtOverlay","moneyOverlay","spendOverlay","whyOverlay"].forEach(function(id){ if($(id)) $(id).hidden = true; });
+    if(typeof mnPaintBtn === "function") mnPaintBtn();
+    renderWeight();
+    render();
+    if(!$("statsOverlay").hidden) renderStats();
+    toast("숨김 모드 — 다시 가렸습니다", null);
+  }
   function askPin(what){
     pinFor = what;
     $("pinInput").value = ""; $("pinMsg").textContent = "";
     $("pinTitle").textContent = (what === "money") ? "금전 관리 잠금"
-                              : (what === "hab") ? "성공·실패 잠금" : "몸무게 잠금";
+                              : (what === "hab") ? "성공·실패 잠금"
+                              : (what === "all") ? "숨김 해제" : "몸무게 잠금";
     $("pinOverlay").hidden = false;
     setTimeout(function(){ $("pinInput").focus(); }, 30);
   }
@@ -6219,17 +6312,13 @@ var HOLIDAYS = {
       return;
     }
     $("pinOverlay").hidden = true;
+    /* v8.8 — 어디서 열었든 비밀번호를 맞히면 전부 연다(숨김 해제). 다시 가리는 건 🔓 잠그기 한 번. */
+    privacyUnlock();
+    mnPaintBtn(); renderWeight(); render();
+    if(!$("statsOverlay").hidden) renderStats();
     if(pinFor === "money"){
-      mnUnlocked = true;
-      mnPaintBtn();
       mnTab = "now"; mnYmView = mnNowYm(); openMoney();
-    } else if(pinFor === "hab"){
-      habUnlocked = true;
-      render();
-      if(!$("statsOverlay").hidden) renderStats();
-    } else {
-      wtUnlocked = true;
-      renderWeight();
+    } else if(pinFor === "wt"){
       openWt();
     }
   });
