@@ -2542,13 +2542,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.3";
-  var APP_BUILD = "2026-10-02 15:20";
+  var APP_VERSION = "v8.4";
+  var APP_BUILD = "2026-10-02 16:00";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v8.4",  d:"2026-10-02", n:[
+      "1년이 지난 날도 요약으로 영구 보관 — 작품의 플레이 횟수·본 편수·시작한 날이 1년 뒤에도 줄지 않는다",
+      "요약은 동기화·백업에 같이 실린다 (하루 몇십 바이트라 용량 걱정 없음)",
+      "백업 불러오기가 금전 관리 기록·직접 만든 카테고리를 빠뜨리던 문제 수정"
+    ]},
     { v:"v8.3",  d:"2026-10-02", n:[
       "작품 통계의 '안 시작'·'손도 안 댐' → '볼 예정·할 예정·읽을 예정' · '진행 중' → '보는 중·하는 중'",
       "영화 '보다 말았음'이 아직 안 본 것까지 세던 문제 수정 — 볼 예정과 보는 중을 따로 센다",
@@ -2996,12 +3001,60 @@ var HOLIDAYS = {
   var esc = function(s){ var d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
 
   /* ---------- storage ---------- */
-  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, works:{}, meta:{ dayAt:{}, catsAt:0 } };
+  var store = { days:{}, dismissed:{}, cats:DEFAULT_CATS.slice(), tomb:{}, weights:{}, works:{}, sum:{}, meta:{ dayAt:{}, catsAt:0 } };
   var prevJSON = {}, prevCats = "", prevSig = {}, prevWhere = {};
   var TOMB_TTL = 60 * 864e5;
   /* 할 일을 며칠치 보관할지. 1년치면 하루 12건을 꽉 채워 써도 자료가 700KB 정도라
      동기화(Gist는 1MB를 넘으면 잘린다) 안쪽에 들어온다. */
   var KEEP_DAYS = 365;
+  /* ---------- 지난 날 요약 (v8.4) ----------
+     1년이 지난 날을 지우면 작품 통계(플레이 횟수·본 편수·처음/마지막 날·진행 중 여부)가 줄어들었다(함정 40).
+     지우기 직전에 그 날을 아주 작은 요약으로 접어 store.sum 에 영구히 남긴다.
+       store.sum["2025-10-03"] = { t:전체 건수, d:완료 건수, c:{카테고리id:[전체,완료]}, w:{이름:[회,편,최대회차,전체회차]} }
+     - w 에는 취미이거나 작품으로 등록된 이름만 넣는다 (매일 하는 집안일까지 넣으면 금방 커진다).
+     - 날짜가 열쇠라 두 기기가 각자 접어도 같은 날은 같은 열쇠 → 병합에서 겹쳐 세지 않는다.
+       (달 단위로 더해 넣으면 두 기기가 같은 날을 두 번 더하게 된다 — 그래서 날 단위다)
+     - 하루 수십~수백 바이트, 1년에 수십 KB. Gist 1MB 안쪽. */
+  function foldDay(k, arr){
+    var rec = { t:0, d:0, c:{}, w:{} }, i, it, n, w, cc, ok;
+    for(i = 0; i < (arr || []).length; i++){
+      it = arr[i];
+      if(!it) continue;
+      ok = !!(it.done && !it.canceled);
+      rec.t++; if(ok) rec.d++;
+      cc = it.cat || "_";
+      if(!rec.c[cc]) rec.c[cc] = [0, 0];
+      rec.c[cc][0]++; if(ok) rec.c[cc][1]++;
+      if(!ok) continue;
+      n = wkey(it.text); if(!n) continue;
+      var wr = workOf(n);
+      if(!(isHobbyItem(it) || (wr && wr.kind))) continue;
+      w = rec.w[n] || (rec.w[n] = [0, 0, 0, 0]);
+      if(it.seq){ w[1]++; if(it.seq > w[2]) w[2] = it.seq; if(it.seqTot) w[3] = it.seqTot; }
+      else w[0]++;
+    }
+    if(!rec.t) return;
+    if(!store.sum) store.sum = {};
+    var old = store.sum[k];
+    if(!old || rec.t >= (old.t || 0)) store.sum[k] = rec;
+  }
+  /* 요약 병합 — 날짜마다 건수가 많은 쪽(더 온전히 본 쪽)을 남긴다. 지우지 않는다. */
+  function mergeSum(r){
+    var rs = (r && r.sum) || {}, ls = store.sum || (store.sum = {}), k, changed = false;
+    for(k in rs){
+      if(!rs[k] || typeof rs[k] !== "object") continue;
+      if(!ls[k] || (rs[k].t || 0) > (ls[k].t || 0)){ ls[k] = rs[k]; changed = true; }
+      else if((ls[k].t || 0) > (rs[k].t || 0)) needPush = true;
+    }
+    for(k in ls) if(!rs[k]) needPush = true;
+    return changed;
+  }
+  /* 통계용 — 지금 남아 있는 날(days)에 없는 요약만 돌려준다 (같은 날을 두 번 세지 않게) */
+  function sumOnly(src){
+    var out = [], k, sm = (src && src.sum) || {}, dd = (src && src.days) || {};
+    for(k in sm) if(!dd[k] && sm[k]) out.push([k, sm[k]]);
+    return out;
+  }
   /* 언젠가 목록은 몇 달치 아이디어가 쌓이는 곳이라 한 번 날아가면 복구할 방법이 없다.
      마지막으로 비어 있지 않았던 목록을 따로 한 부 남겨둔다. 동기화에는 실려가지 않는다. */
   var WBAK_KEY = "questboard:wishbak:";
@@ -3108,6 +3161,7 @@ var HOLIDAYS = {
           store.tomb = p.tomb || {};
           store.weights = p.weights || {};
           store.works = p.works || {};
+          store.sum = p.sum || {};
           store.meta = p.meta || { dayAt:{}, catsAt:0 };
           /* v4.1 이전에는 성공·실패를 보드별 store 안에 넣었다. 공통 저장소로 한 번 옮긴다. */
           if(p.habits && p.habits.length){
@@ -3123,6 +3177,7 @@ var HOLIDAYS = {
     if(!store.meta.dayAt) store.meta.dayAt = {};
     if(!store.tomb) store.tomb = {};
     if(!store.works) store.works = {};
+    if(!store.sum) store.sum = {};
     habSeedIfNeeded();
     mnSeedCats();
     /* 옛 지출(hres 안의 sp)을 장부로 한 번 옮긴다. 원본은 안 지운다. */
@@ -3175,6 +3230,7 @@ var HOLIDAYS = {
       }
       while(keys.length > KEEP_DAYS){
         var old = keys.shift();
+        foldDay(old, store.days[old]);         /* v8.4 — 지우기 전에 요약으로 남긴다 */
         /* 보관 기간이 지난 날은 로컬에서만 비운다. 묘비를 남기면 다른 기기 기록까지 지워버린다. */
         (store.days[old] || []).forEach(function(it){
           if(it && it.id){ delete prevSig[it.id]; delete prevWhere[it.id]; }
@@ -4496,6 +4552,14 @@ var HOLIDAYS = {
         if(k > m[t].last) m[t].last = k;
       }
     }
+    sumOnly(store).forEach(function(p){       /* v8.4 — 지운 날의 요약 (취미·작품 이름만 남아 있다) */
+      var ww = p[1].w || {}, nm;
+      for(nm in ww){
+        if(!m[nm]) m[nm] = { n:0, last:"" };
+        m[nm].n += (ww[nm][0] || 0) + (ww[nm][1] || 0);
+        if(p[0] > m[nm].last) m[nm].last = p[0];
+      }
+    });
     wishDoneMap = m;
     return m;
   }
@@ -6666,6 +6730,15 @@ var HOLIDAYS = {
           var cur = works()[wn], inc = p.works[wn];
           if(inc && (!cur || (inc.at || 0) > (cur.at || 0))) works()[wn] = inc;
         }
+        /* v8.4 — 예전엔 백업에 들어 있어도 아래 셋을 되살리지 않았다. 새 PC 에서 불러오면 지출 장부·내가 만든 카테고리가 빠졌다. */
+        if(p.money) mnMerge(p);
+        if(p.sum) mergeSum(p);
+        if(p.cats && p.cats.length){
+          var have = {};
+          store.cats.forEach(function(c){ have[c.id] = 1; });
+          p.cats.forEach(function(c){ if(c && c.id && !have[c.id]){ store.cats.push(c); have[c.id] = 1; } });
+          store.meta.catsAt = Date.now();
+        }
         save(); render();
       }catch(e){ alert("불러올 수 없는 파일입니다."); }
     };
@@ -7208,6 +7281,13 @@ var HOLIDAYS = {
         if(k > o.last) o.last = k;
       }
     }
+    sumOnly(store).forEach(function(p){       /* v8.4 — 지운 날의 요약 */
+      var v = (p[1].w || {})[n];
+      if(!v) return;
+      o.sessions += v[0] || 0; o.eps += v[1] || 0;
+      if((v[2] || 0) > o.maxSeq) o.maxSeq = v[2];
+      if(p[0] > o.last) o.last = p[0];
+    });
     return o;
   }
   $("isClose").onclick = closeItemSheet;
@@ -7692,6 +7772,7 @@ var HOLIDAYS = {
           o.cats = (s.cats && s.cats.length) ? s.cats : DEFAULT_CATS.slice();
           o.weights = s.weights || {};
           o.works = s.works || {};
+          o.sum = s.sum || {};
           o.meta = s.meta || o.meta;
         }
       }
@@ -7889,6 +7970,18 @@ var HOLIDAYS = {
         if(!s.first || k < s.first) s.first = k;
       }
     }
+    /* v8.4 — 보관 기간이 지나 지운 날은 요약(sum)에서 센다 */
+    sumOnly(sd()).forEach(function(p){
+      var kk = p[0], ww = p[1].w || {}, nm, v, s2;
+      for(nm in ww){
+        v = ww[nm]; s2 = slot(nm);
+        s2.sessions += v[0] || 0; s2.eps += v[1] || 0;
+        if((v[2] || 0) > s2.maxSeq) s2.maxSeq = v[2];
+        if(v[3] && !s2.tot) s2.tot = v[3];
+        if(kk > s2.last) s2.last = kk;
+        if(!s2.first || kk < s2.first) s2.first = kk;
+      }
+    });
     /* 어떤 이름을 작품으로 볼 것인가 — 내가 직접 등록한 것만.
        취미 태그가 붙었다고 끌어오지 않는다. 취미 칸에는 "건담 자세 다시 잡기" 같은
        그냥 할 일도 잔뜩 있어서, 자동으로 긁어오면 목록이 못 쓰게 된다. */
@@ -9497,7 +9590,7 @@ var HOLIDAYS = {
   var verWarned = false;            /* 버전 안내는 한 번만 */
   function payload(){
     var o = { v:4, days:store.days, dismissed:store.dismissed, cats:store.cats,
-              tomb:store.tomb, weights:store.weights, works:works(),
+              tomb:store.tomb, weights:store.weights, works:works(), sum:store.sum || {},
               hres:hres(), money:mn(), meta:store.meta, at:Date.now() };
     /* 기본값 그대로인 기기는 목록을 올리지 않는다. 기록(hres)만 올린다. */
     if(!habFresh){ o.habits = habits(); o.habAt = habAt; }
@@ -9587,6 +9680,7 @@ var HOLIDAYS = {
       /* 구버전이 쓴 자료 — 더하기만 한다. 묘비·카테고리·덮어쓰기는 적용하지 않는다. */
       if(addOnly(rdays, rda)) changed = true;
       if(mergeWorks(r)) changed = true;        /* 작품 기록은 이름 단위라 구버전 자료에서도 안전하다 */
+      if(mergeSum(r)) changed = true;          /* v8.4 요약도 날짜 단위라 안전하다 — 여기 빠뜨리면 함정 5 를 또 밟는다 */
       if(mnMerge(r)) changed = true;           /* 지출 장부도 id 단위라 안전하다 — 여기를 빠뜨리면 지출이 사라진다 */
       if(habMergeRes(r.hres)){ habSave(); changed = true; }
       needPush = true;                       /* 정리된 자료를 내가 올려 바로잡는다 */
@@ -9652,6 +9746,7 @@ var HOLIDAYS = {
       if(!lw[k] || (rw[k].at || 0) > (lw[k].at || 0)){ lw[k] = rw[k]; changed = true; }
     }
     if(mergeWorks(r)) changed = true;
+    if(mergeSum(r)) changed = true;
     if(mnMerge(r)) changed = true;
     /* 성공·실패 항목 목록: 나중에 고친 쪽이 이긴다 (카테고리와 같은 방식) */
     var habChanged = false;
@@ -9849,7 +9944,7 @@ var HOLIDAYS = {
                 mergeRemote:mergeRemote, setHab:setHab, habits:habits, hres:hres,
                 payload:payload, localNewerThan:localNewerThan,
                 openWork:openWork, workRows:workRows, setWork:setWork,
-                openRename:openRename, renameTexts:renameTexts,
+                openRename:openRename, renameTexts:renameTexts, workTally:workTally, mn:mn,
                 get habFresh(){ return habFresh; } };
   window.QBtoast = toast;
   window.QBtouched = function(){ return touched; };          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
