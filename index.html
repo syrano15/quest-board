@@ -2370,8 +2370,10 @@
         <button type="button" class="q" data-d="1">내일</button>
         <button type="button" class="q" data-d="mon">다음 월요일</button>
       </div>
-      <span class="fl">회차 (드라마·연재물처럼 이어지는 일)</span>
+      <span class="fl">회차 (이어지는 일 · 하루에 여러 화면 부터~까지)</span>
       <div class="fnum">
+        <input type="number" id="isSeqFrom" min="0" max="9999" placeholder="부터" title="여러 화를 한 번에 했으면 시작 화 (비워두면 한 화)">
+        <span>~</span>
         <input type="number" id="isSeq" min="0" max="9999" placeholder="현재">
         <span>/</span>
         <input type="number" id="isSeqTot" min="0" max="9999" placeholder="전체">
@@ -2591,13 +2593,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v9.0";
-  var APP_BUILD = "2026-10-20 23:40";
+  var APP_VERSION = "v9.1";
+  var APP_BUILD = "2026-10-21 00:20";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v9.1",  d:"2026-10-21", n:[
+      "회차를 범위로 — 하루에 여러 화를 했으면 '@21~67/67' 또는 상세의 '부터 ~ 현재 / 전체' 칸에 적는다",
+      "체크해 둔 카드의 회차를 마지막 화까지 고치면 그 자리에서 🏁 끝냈음을 묻는다 (예전엔 체크하는 순간에만 물었다)",
+      "언젠가 통계에는 기타도 다시 나온다 — 하드 정리 같은 일도 🏁 로 끝내면 거기서 보인다 (작품 탭에서는 계속 뺀다)"
+    ]},
     { v:"v9.0",  d:"2026-10-20", n:[
       "돈 쓴 내역마다 분류를 따로 — 하루에 여러 건이면 줄을 누르고 위에서 분류를 고른다 (예전엔 첫 분류가 전부에 들어갔다)",
       "금전 관리 목록에서 지난 기록의 분류를 바로 바꿀 수 있다",
@@ -2911,9 +2918,10 @@ var HOLIDAYS = {
     var p = (it.seqTot ? Math.min(100, Math.round(it.seq / it.seqTot * 100)) : 0);
     var fin = it.seqTot && it.seq >= it.seqTot;
     var left = it.seqTot ? (it.seqTot - it.seq) : 0;
-    var tip = it.seqTot ? (it.seqTot + "화 중 " + it.seq + "화" + (left > 0 ? " · " + left + "화 남음" : " · 완결")) : (it.seq + "화");
+    var rng = it.seqFrom ? it.seqFrom + "~" + it.seq : String(it.seq);
+    var tip = it.seqTot ? (it.seqTot + "화 중 " + rng + "화" + (left > 0 ? " · " + left + "화 남음" : " · 완결")) : (rng + "화");
     return '<span class="seqchip' + (fin ? " fin" : "") + '" style="--p:' + p + '%" title="' + tip + '">' +
-      '<b>' + it.seq + '</b>' + (it.seqTot ? '<span class="tot">/' + it.seqTot + '</span>' : '') +
+      (it.seqFrom ? '<span class="tot">' + it.seqFrom + '~</span>' : '') + '<b>' + it.seq + '</b>' + (it.seqTot ? '<span class="tot">/' + it.seqTot + '</span>' : '') +
       '<span class="un">화</span></span>';
   }
   /* 같은 시리즈에서 가장 앞선 회차 찾기 — 지난 회차 카드마다 "＋ 다음 회차"가 뜨면 중복이 생긴다 */
@@ -3501,12 +3509,19 @@ var HOLIDAYS = {
       if((dm = eatDate(text))){ dateKey = dm.key; text = dm.rest.trim(); continue; }
       break;
     }
-    var seq = 0, seqTot = 0;
-    var sm = text.match(/\s*@\s*(\d{1,4})(?:\s*\/\s*(\d{1,4}))?\s*$/);
-    if(sm){ seq = +sm[1]; seqTot = sm[2] ? +sm[2] : 0; text = text.slice(0, sm.index).trim(); }
+    var seq = 0, seqTot = 0, seqFrom = 0;
+    /* v9.0 — "@21~67/67" 처럼 하루에 여러 화를 한 카드로 (하드 세부 정리 21~67번 같은 것) */
+    var sm = text.match(/\s*@\s*(\d{1,4})(?:\s*[~\-–]\s*(\d{1,4}))?(?:\s*\/\s*(\d{1,4}))?\s*$/);
+    if(sm){
+      if(sm[2]){ var a1 = +sm[1], a2 = +sm[2]; seqFrom = Math.min(a1, a2); seq = Math.max(a1, a2); }
+      else seq = +sm[1];
+      seqTot = sm[3] ? +sm[3] : 0;
+      if(seqFrom >= seq) seqFrom = 0;
+      text = text.slice(0, sm.index).trim();
+    }
     if(!text) return null;
     var item = { id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7), text:text, done:false, pri:pri, cat:catId };
-    if(seq){ item.seq = seq; if(seqTot) item.seqTot = seqTot; }
+    if(seq){ item.seq = seq; if(seqTot) item.seqTot = seqTot; if(seqFrom) item.seqFrom = seqFrom; }
     if(dateKey) item._date = dateKey;
     var m = text.match(/^(\d{1,2}:\d{2})\s*(?:[-–—~]\s*(\d{1,2}:\d{2}))?\s+(.+)$/);
     if(m){
@@ -3552,7 +3567,7 @@ var HOLIDAYS = {
     var c = catById(it.cat);
     return (it.pri ? "!".repeat(it.pri)+" " : "") + (c ? "#"+c.name+" " : "") +
            (it.time ? it.time.replace(" – ","-")+" " : "") + it.text +
-           (it.seq ? " @" + it.seq + (it.seqTot ? "/" + it.seqTot : "") : "");
+           (it.seq ? " @" + (it.seqFrom ? it.seqFrom + "~" : "") + it.seq + (it.seqTot ? "/" + it.seqTot : "") : "");
   }
 
   /* ---------- urgency ---------- */
@@ -3657,6 +3672,7 @@ var HOLIDAYS = {
     $("isDate").value = viewKey;
     $("isNote").value = item.note || "";
     $("isSeq").value = item.seq || "";
+    $("isSeqFrom").value = item.seqFrom || "";
     $("isSeqTot").value = item.seqTot || "";
     sheetCat = item.cat || null;
     sheetColor = item.color || null;
@@ -6107,7 +6123,7 @@ var HOLIDAYS = {
       var b = document.createElement("button");
       b.type = "button"; b.className = "wopen"; b.setAttribute("aria-label","상세 보기");
       b.innerHTML = '<span class="wt">' + catChip(r.it, "w-cat") + platChip(r.it) +
-        (r.it.seq ? '<span class="w-seq">' + r.it.seq + (r.it.seqTot ? '/' + r.it.seqTot : '') + '화</span>' : '') + '<span class="wtx"></span>' +
+        (r.it.seq ? '<span class="w-seq">' + (r.it.seqFrom ? r.it.seqFrom + '~' : '') + r.it.seq + (r.it.seqTot ? '/' + r.it.seqTot : '') + '화</span>' : '') + '<span class="wtx"></span>' +
         (r.it.defer && r.it.reason ? '<span class="w-rsn">' + esc(r.it.reason) + '</span>' : '') +
         (r.it.note ? '<span class="w-note">' + esc(r.it.note) + '</span>' : '') + '</span>' +
         (tag ? '<span class="ws">' + esc(tag) + '</span>' : '');
@@ -7598,14 +7614,24 @@ var HOLIDAYS = {
     var p = parseLine($("isText").value);
     if(p){ sheetItem.text = p.text; sheetItem.time = p.time; sheetItem.from = p.from; sheetItem.to = p.to; sheetItem.pri = p.pri;
            if(p.cat) sheetItem.cat = p.cat;
-           if(p.seq){ sheetItem.seq = p.seq; if(p.seqTot) sheetItem.seqTot = p.seqTot; } }
+           if(p.seq){ sheetItem.seq = p.seq; if(p.seqTot) sheetItem.seqTot = p.seqTot;
+                      if(p.seqFrom) sheetItem.seqFrom = p.seqFrom; } }
     var newKey = $("isDate").value;
     sheetItem.note = $("isNote").value.trim();
     sheetItem.cat = sheetCat;
     if(sheetColor) sheetItem.color = sheetColor; else delete sheetItem.color;
-    var sq = parseInt($("isSeq").value, 10), st = parseInt($("isSeqTot").value, 10);
-    if(sq > 0){ sheetItem.seq = sq; if(st > 0) sheetItem.seqTot = st; else delete sheetItem.seqTot; }
-    else { delete sheetItem.seq; delete sheetItem.seqTot; }
+    var sq = parseInt($("isSeq").value, 10), st = parseInt($("isSeqTot").value, 10), sf = parseInt($("isSeqFrom").value, 10);
+    var seqWas = sheetItem.seq, totWas = sheetItem.seqTot;
+    if(sq > 0){
+      sheetItem.seq = sq;
+      if(st > 0) sheetItem.seqTot = st; else delete sheetItem.seqTot;
+      if(sf > 0 && sf < sq) sheetItem.seqFrom = sf; else delete sheetItem.seqFrom;
+    }
+    else { delete sheetItem.seq; delete sheetItem.seqTot; delete sheetItem.seqFrom; }
+    /* v9.0 — 체크한 카드의 회차를 고쳐서 마지막 화에 닿았으면 그 자리에서 🏁 를 묻는다.
+       예전엔 체크하는 순간에만 물어서, 나중에 "21~67/67" 로 고쳐도 끝냈다고 찍을 길이 없었다. */
+    var reachEnd = sheetItem.done && sheetItem.seqTot && sheetItem.seq >= sheetItem.seqTot &&
+                   !(totWas && seqWas >= totWas);
     sheetItem.defer = (sheetState === "defer");
     if(sheetItem.defer) sheetItem.everDefer = true;
     sheetItem.canceled = (sheetState === "cancel");
@@ -7616,8 +7642,10 @@ var HOLIDAYS = {
       var i = idxOf(sheetItem);
       if(i >= 0){ day(viewKey).splice(i,1); day(newKey).push(sheetItem); moved = newKey; }
     }
+    var finIt = (reachEnd && !moved && !sheetItem.canceled) ? sheetItem : null;
     closeItemSheet(); save(); render();
     if(moved) toast(fmtDay(moved) + " 보드로 옮겼습니다", moved);
+    else if(finIt) askFinish(finIt);
   });
   $("isNote").addEventListener("keydown", function(e){
     if((e.ctrlKey||e.metaKey) && e.key === "Enter"){ e.preventDefault(); $("itemForm").requestSubmit(); }
@@ -8251,7 +8279,6 @@ var HOLIDAYS = {
     var out = [], n;
     for(n in map){
       var o3 = map[n], w = reg[n], isW = !!(w && w.kind), b = dn[n] || null, st, when = "";
-      if(isW && kindKey(w.kind) === "etc") continue;   /* 기타(구매 인증 같은 것)는 통계에서 뺀다 — 작품 탭과 같은 규칙 */
       var start = b ? b.first : "";
       if(o3.pulled && (!start || o3.pulled < start)) start = o3.pulled;
       var wEnd = isW && w.fin === "end", wDrop = isW && w.fin === "drop";
