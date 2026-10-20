@@ -564,6 +564,12 @@
     width:1.7rem;height:1.7rem;display:grid;place-items:center;color:var(--dim);
     font-size:.9rem;line-height:1;cursor:pointer;transition:all .12s ease;}
   .sprow .spx:hover{border-color:var(--urgent);color:var(--urgent);}
+  /* v9.0 — 줄마다 분류. 앞의 딱지를 누르거나 줄 안을 누르면 그 줄이 "고르는 줄"이 되고 위 칩이 그 줄에 걸린다 */
+  .sprow .spc{flex:none;max-width:7.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:none;border:1px solid var(--c);color:var(--c);border-radius:.35rem;
+    font-size:.74rem;font-weight:700;padding:.32rem .5rem;cursor:pointer;opacity:.75;}
+  .sprow.act .spc{opacity:1;background:color-mix(in srgb, var(--c) 18%, transparent);}
+  .sprow.act{box-shadow:inset 3px 0 0 var(--c);padding-left:.35rem;border-radius:.2rem;}
   .sptools{display:flex;align-items:center;gap:.5rem;}
   .sptools .ghost{padding:.3rem .6rem;font-size:.78rem;}
   .sptot{font-family:"IBM Plex Mono",monospace;font-size:.92rem;font-weight:700;color:var(--accent);}
@@ -924,6 +930,23 @@
   /* ---- 통계 ---- */
   .statsheet{width:min(58rem,100%);max-height:88vh;overflow-y:auto;}
   .seg.periods{flex-wrap:wrap;}
+  /* v9.0 기간 고르기 */
+  .strow{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+  .strbtn{display:inline-flex;align-items:center;gap:.45rem;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:.5rem;color:var(--text);font:inherit;font-size:.86rem;padding:.42rem .7rem;cursor:pointer;}
+  .strbtn:hover,.strbtn[aria-expanded="true"]{border-color:var(--accent);}
+  .strbtn svg{color:var(--accent);flex:none;}
+  .strbtn b{font-weight:700;}
+  .strbtn i{font-style:normal;color:var(--dim);font-size:.7rem;}
+  .calpop.strpop{position:static;width:min(19rem,100%);box-shadow:0 8px 24px rgba(0,0,0,.35);margin-top:-.1rem;}
+  .strpop .cal-d.rin{background:color-mix(in srgb, var(--accent) 22%, transparent);border-radius:.15rem;}
+  .strpop .cal-d.rend{background:var(--accent);color:var(--ink);font-weight:700;}
+  .strpop .cal-d.pick{background:var(--accent);color:var(--ink);font-weight:700;box-shadow:0 0 0 2px var(--accent-dim);}
+  .strq{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.45rem;padding-top:.45rem;border-top:1px solid var(--line-soft);}
+  .strq button{flex:1 1 4rem;background:none;border:1px solid var(--line);border-radius:.35rem;color:var(--muted);
+    font:inherit;font-size:.74rem;padding:.25rem .3rem;cursor:pointer;}
+  .strq button:hover{color:var(--text);border-color:var(--muted);}
+  .strq button.on{border-color:var(--accent);color:var(--accent);font-weight:700;}
   .seg.periods button{font-weight:600;flex:1 1 6.5rem;}
   .seg.periods button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .stgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:1.1rem;}
@@ -1061,6 +1084,9 @@
   .sttable td.mnamt{color:var(--accent);font-weight:600;}
   .mtag{display:inline-block;font-size:.72rem;font-weight:700;padding:.02rem .4rem;border-radius:.28rem;
     border:1px solid var(--c);color:var(--c);white-space:nowrap;}
+  select.mnsel{background:var(--surface-2);font-family:inherit;cursor:pointer;padding:.12rem .3rem;
+    -webkit-appearance:none;appearance:none;max-width:9rem;}
+  select.mnsel option{color:var(--ink);background:var(--surface);}
   .mnx{background:none;border:1px solid var(--line);border-radius:.3rem;color:var(--dim);
     font-size:.72rem;padding:.1rem .38rem;cursor:pointer;}
   .mnx:hover{border-color:var(--urgent);color:var(--urgent);}
@@ -1848,7 +1874,7 @@
     <h2 id="spTitle">지출 적기</h2>
     <p class="hint" id="spSub" style="font-size:.82rem;margin:0"></p>
     <form class="composer" id="spForm">
-      <span class="fl">분류</span>
+      <span class="fl">분류 <span class="spcnt" id="spCatHint">— 고른 줄에 적용</span></span>
       <div class="chips catpick" id="spCats"></div>
       <span class="fl">내역</span>
       <div class="splist" id="spList"></div>
@@ -1902,26 +1928,41 @@
       <button type="button" data-t="work">작품</button>
       <button type="button" data-t="hab">성공·실패</button>
     </div>
-    <div class="seg periods" id="stPeriods">
-      <button type="button" data-r="week">이번 주</button>
-      <button type="button" data-r="prev">지난 주</button>
-      <button type="button" data-r="m30">최근 30일</button>
-      <button type="button" data-r="month">이번 달</button>
-      <button type="button" data-r="year">올해</button>
-      <button type="button" data-r="y12">최근 12개월</button>
+    <!-- v9.0 — 기간 버튼 6개 대신 달력에서 시작~끝을 고른다 -->
+    <div class="strow">
+      <button type="button" class="strbtn" id="stRangeBtn" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><b id="stRangeTxt"></b><i>▾</i></button>
+      <p class="hint" id="stRange" style="font-size:.78rem;margin:0"></p>
     </div>
-    <p class="hint" id="stRange" style="font-size:.8rem"></p>
+    <div class="calpop strpop" id="stRangePop" hidden>
+      <div class="ch">
+        <button class="nav" id="strPrev" type="button" aria-label="이전 달">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2L3.5 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <b id="strTitle">—</b>
+        <button class="nav" id="strNext" type="button" aria-label="다음 달">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="calgrid" id="strGrid"></div>
+      <p class="calfoot" id="strFoot"></p>
+      <div class="strq" id="strQuick">
+        <button type="button" data-r="week">이번 주</button>
+        <button type="button" data-r="month">이번 달</button>
+        <button type="button" data-r="m30">최근 30일</button>
+        <button type="button" data-r="y12">최근 1년</button>
+      </div>
+    </div>
 
     <div id="stWishPane" hidden>
       <div class="tiles">
-        <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">담아둔 것</span></div>
-        <div class="tile done"><span class="tn" id="wsTried">0</span><span class="tl">해본 것</span></div>
-        <div class="tile defer"><span class="tn" id="wsNever">0</span><span class="tl">아직 안 해봄</span></div>
+        <div class="tile rest"><span class="tn" id="wsWait">0</span><span class="tl">지금 대기 중</span></div>
+        <div class="tile defer"><span class="tn" id="wsTried">0</span><span class="tl">이 기간 시작</span></div>
+        <div class="tile done"><span class="tn" id="wsNever">0</span><span class="tl">이 기간 끝냄</span></div>
         <div class="tile cancel"><span class="tn" id="wsOld">0</span><span class="tl">30일 넘게 대기</span></div>
       </div>
       <p class="hint" id="wsNote" style="font-size:.78rem;margin-top:.5rem"></p>
       <div class="stbox" style="margin-top:.6rem">
-        <h3>담아둔 것 — 안 해본 것부터</h3>
+        <h3>언젠가 — 오래 기다린 것부터</h3>
         <div style="overflow-x:auto;max-height:26rem;overflow-y:auto"><table class="sttable" id="wsWaitTable"></table></div>
       </div>
     </div>
@@ -1934,10 +1975,10 @@
         <button type="button" data-k="drama">드라마</button>
         <button type="button" data-k="anime">애니</button>
         <button type="button" data-k="book">책</button>
-        <button type="button" data-k="etc">기타</button>
       </div>
       <div class="wkbulkrow" id="wkBulkRow">
         <button type="button" class="qb" id="wkBulkBtn">종류 한꺼번에 바꾸기</button>
+        <button type="button" class="qb" id="wkRenameBtn" title="같은 작품이 이름이 달라 두 줄이면 하나로 합칩니다">같은 작품 합치기</button>
         <span class="hint" style="font-size:.76rem;margin:0">예전 기록은 드라마로 들어와 있습니다 — 애니는 여기서 한 번에 옮기세요</span>
       </div>
 
@@ -1952,7 +1993,7 @@
         <div class="kgrid" id="wkCards"></div>
         <div class="stgrid" style="margin-top:.7rem">
           <div class="stbox">
-            <h3>달마다 끝낸 것 — 최근 12개월</h3>
+            <h3>달마다 끝낸 것 — 고른 기간</h3>
             <div class="bars" id="wkBars"></div>
             <div class="klgd" id="wkBarLgd"></div>
           </div>
@@ -2550,13 +2591,21 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v8.9";
-  var APP_BUILD = "2026-10-02 22:50";
+  var APP_VERSION = "v9.0";
+  var APP_BUILD = "2026-10-20 23:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v9.0",  d:"2026-10-20", n:[
+      "돈 쓴 내역마다 분류를 따로 — 하루에 여러 건이면 줄을 누르고 위에서 분류를 고른다 (예전엔 첫 분류가 전부에 들어갔다)",
+      "금전 관리 목록에서 지난 기록의 분류를 바로 바꿀 수 있다",
+      "보드를 바꿔도 숨김 상태가 그대로 — 성공·실패만 다시 가려지던 것 수정",
+      "통계 기간은 달력에서 시작~끝을 골라서 본다 (버튼 6개 정리) · 언젠가·작품 탭도 그 기간을 따른다",
+      "언젠가 통계를 다시 짰다 — 꺼내서 한 것·끝낸 것도 잡히고, '한 횟수·마지막' 대신 상태(대기·하는 중·끝냄)와 날짜",
+      "작품 통계에서 기타는 뺐다 · 같은 작품이 두 줄이면 '같은 작품 합치기'로 바로 이름 정리"
+    ]},
     { v:"v8.9",  d:"2026-10-02", n:[
       "카드 아이콘 줄에 ↓ 단추 — 한 번 누르면 바로 언젠가로 간다 (되돌리기 있음) · 끝낸 카드에는 안 뜬다"
     ]},
@@ -3301,8 +3350,9 @@ var HOLIDAYS = {
     profile = (p === "home") ? "home" : "work";
     var cfg = PROFILES[profile];
     KEY = cfg.key;
-    wtUnlocked = false;                       /* 보드를 바꾸면 몸무게는 다시 잠긴다 */
-    habUnlocked = false;                      /* 성공·실패 잠금도 마찬가지 */
+    /* v9.0 — 보드를 바꿔도 숨김 상태는 그대로 둔다. 성공·실패·몸무게·돈은 하루 단위로 같이 가는 것이라
+       예전처럼 둘만 다시 잠그면 "성공·실패는 가려졌는데 돈은 열려 있는" 어긋난 화면이 됐다(사용자 지적).
+       다시 가리는 길은 🔓 잠그기와 앱 다시 켜기 두 가지뿐이다(함정 46). */
     if($("calPop")) $("calPop").hidden = true;
     document.body.classList.toggle("home", profile === "home");
     document.title = cfg.title;
@@ -5501,7 +5551,7 @@ var HOLIDAYS = {
       var d = fromIso(x.date);
       html += '<tr><td class="z">' + (d.getMonth() + 1) + '/' + d.getDate() +
         ' (' + DAYS[d.getDay()] + ')</td>' +
-        '<td style="text-align:left"><span class="mtag" style="--c:' + mnCatColor(x.cat) + '"></span></td>' +
+        '<td style="text-align:left"><select class="mtag mnsel" title="분류 바꾸기" style="--c:' + mnCatColor(x.cat) + '"></select></td>' +
         '<td class="mnm"><span class="memo"></span></td>' +
         '<td class="mnamt">' + won(x.amt) + '</td>' +
         '<td><button type="button" class="mnx" data-id="' + x.id + '">빼기</button></td></tr>';
@@ -5510,7 +5560,23 @@ var HOLIDAYS = {
     var t = $("mnTable");
     t.innerHTML = rows.length ? html : "";
     Array.prototype.forEach.call(t.querySelectorAll("tbody tr"), function(tr, i){
-      tr.querySelector(".mtag").textContent = mnCatName(rows[i].cat);
+      /* v9.0 — 지난 기록의 분류를 여기서 바로 고친다 (예전엔 빼고 다시 적는 수밖에 없었다) */
+      var sel = tr.querySelector(".mnsel"), x = rows[i], has = false;
+      mnCatsSorted().forEach(function(c){
+        var o = document.createElement("option");
+        o.value = c.id; o.textContent = c.name;
+        if(c.id === (x.cat || "")){ o.selected = true; has = true; }
+        sel.appendChild(o);
+      });
+      if(!has){
+        var o2 = document.createElement("option");
+        o2.value = x.cat || ""; o2.textContent = mnCatName(x.cat); o2.selected = true;
+        sel.insertBefore(o2, sel.firstChild);
+      }
+      sel.onchange = function(){
+        mnSetTx(x.id, { cat:sel.value }); mnSave(); mnPaint(); mnPaintBtn();
+        toast('"' + (x.memo || "—") + '" → ' + mnCatName(sel.value));
+      };
       tr.querySelector(".memo").textContent = rows[i].memo || "—";
       tr.querySelector(".mnx").onclick = function(){
         mnDelTx(rows[i].id); mnSave(); mnPaint(); render();
@@ -5638,7 +5704,7 @@ var HOLIDAYS = {
       b.type = "button"; b.textContent = c.name;
       b.style.color = c.color; b.style.borderColor = c.color;
       if(spCat === c.id){ b.className = "on"; b.style.background = c.color; }
-      b.onclick = function(){ spCat = c.id; spPaintCats(); };
+      b.onclick = function(){ spSetActiveCat(c.id); };
       host.appendChild(b);
     });
     var add = document.createElement("button");
@@ -5647,11 +5713,57 @@ var HOLIDAYS = {
       var n = prompt("새 분류 이름");
       if(!n) return;
       var c = mnAddCat(n);
-      if(c){ spCat = c.id; mnSave(); spPaintCats(); }
+      if(c){ mnSave(); spSetActiveCat(c.id); }
     };
     host.appendChild(add);
   }
+  /* ---- v9.0 줄마다 분류 ----
+     v8.9 까지는 분류가 "그날 전체"에 하나라서, 하루에 두 건을 쓰면 둘 다 첫 분류로 저장됐다
+     (모던 워페어4 가 생필품으로 찍힌 사고). 이제 줄(row.dataset.cat)마다 분류를 갖는다.
+     spCat 은 "지금 고르는 줄"의 분류를 비춰 보일 뿐이다. */
+  var spActive = null;
+  function spDecorate(row, cat){
+    if(row.querySelector(".spc")) return row;
+    row.dataset.cat = cat || "";
+    var t = document.createElement("button");
+    t.type = "button"; t.className = "spc"; t.title = "이 줄의 분류 — 누르고 위에서 고르기";
+    row.insertBefore(t, row.firstChild);
+    t.onclick = function(){ spActivate(row); };
+    row.addEventListener("focusin", function(){ spActivate(row); });
+    spPaintTag(row);
+    return row;
+  }
+  function spPaintTag(row){
+    var t = row.querySelector(".spc"), id = row.dataset.cat || "";
+    if(!t) return;
+    t.textContent = id ? mnCatName(id) : "분류 없음";
+    row.style.setProperty("--c", id ? mnCatColor(id) : "#6B7686");
+  }
+  function spActivate(row){
+    if(!row || !row.parentNode) return;
+    spActive = row;
+    Array.prototype.forEach.call($("spList").children, function(r){ r.classList.toggle("act", r === row); });
+    spCat = row.dataset.cat || "";
+    spPaintCats();
+  }
+  function spSetActiveCat(id){
+    var rows = $("spList").children;
+    if(!spActive || !spActive.parentNode) spActive = rows[rows.length - 1] || null;
+    if(spActive){ spActive.dataset.cat = id; spPaintTag(spActive); spActivate(spActive); }
+    else { spCat = id; spPaintCats(); }
+  }
+  /* 지우기(×)로 새로 생긴 빈 줄, ＋ 한 건 더 로 생긴 줄 모두 여기서 분류 딱지를 단다 */
+  function spSyncRows(){
+    var rows = $("spList").children, i, prev = "";
+    for(i = 0; i < rows.length; i++){
+      if(!rows[i].querySelector(".spc")) spDecorate(rows[i], prev || spDefaultCat());
+      prev = rows[i].dataset.cat || prev;
+    }
+    if(!spActive || !spActive.parentNode) spActivate(rows[rows.length - 1]);
+  }
+  function spDefaultCat(){ return (mnCatsSorted()[0] || {}).id || ""; }
   function spPaintTotal(){
+    spSyncRows();
     var sp = cleanSp(readSpFrom($("spList"))), t = spTotal(sp);
     $("spTot").textContent = t > 0 ? ("합계 " + won(t)) : "";
   }
@@ -5667,17 +5779,19 @@ var HOLIDAYS = {
     var exist = mnDayTx(k, spHab ? spHab.id : null);
     /* 항목 없이 연 경우에도 그날 항목 없는 지출을 다시 손볼 수 있게 한다 */
     if(!spHab) exist = mnDayTx(k).filter(function(x){ return !x.hab; });
-    spCat = exist.length ? (exist[0].cat || "") : (mnCatsSorted()[0] || {}).id || "";
+    spCat = exist.length ? (exist[0].cat || "") : spDefaultCat();
+    spActive = null;
     var d = fromIso(k);
     $("spTitle").textContent = spHab ? spHab.name : "지출 적기";
     $("spSub").textContent = (d.getMonth() + 1) + "/" + d.getDate() + " (" + DAYS[d.getDay()] + ")" +
       " · 이번 달 " + won(mnSum(mnInMonth(mnYm(k))));
     var host = $("spList");
     host.innerHTML = "";
-    if(!exist.length) host.appendChild(spRow("", 0, host, spPaintTotal));
-    else exist.forEach(function(x){ host.appendChild(spRow(x.memo, x.amt, host, spPaintTotal)); });
-    spPaintCats();
+    if(!exist.length) host.appendChild(spDecorate(spRow("", 0, host, spPaintTotal), spDefaultCat()));
+    else exist.forEach(function(x){ host.appendChild(spDecorate(spRow(x.memo, x.amt, host, spPaintTotal), x.cat || "")); });
     spPaintTotal();
+    spActivate(host.children[0]);
+    $("spCatHint").hidden = host.children.length < 2;
     var lw = $("spLinkWrap");
     lw.hidden = !spHab;
     if(spHab) $("spLinkText").textContent = '저장하면 "' + spHab.name + '"가 오늘 실패로 같이 찍힙니다';
@@ -5685,17 +5799,28 @@ var HOLIDAYS = {
     $("spendOverlay").hidden = false;
     setTimeout(function(){ var f = host.querySelector(".spw"); if(f) f.focus(); }, 30);
   }
-  function closeSpend(){ $("spendOverlay").hidden = true; spK = null; spHab = null; }
+  function closeSpend(){ $("spendOverlay").hidden = true; spK = null; spHab = null; spActive = null; }
+  /* 줄마다 {w, a, c}. 빈 줄은 버린다(cleanSp 와 같은 규칙) */
+  function spReadRows(){
+    var out = [];
+    Array.prototype.forEach.call($("spList").children, function(r){
+      var w = String(r.querySelector(".spw").value || "").trim().slice(0, 120),
+          a = moneyRound(parseFloat(r.querySelector(".spa").value) || 0);
+      if(!w && !a) return;
+      if(out.length < 20) out.push({ w:w, a:a, c:r.dataset.cat || "" });
+    });
+    return out;
+  }
   function spSave(){
     if(!spK) return;
-    var sp = cleanSp(readSpFrom($("spList")));
+    var sp = spReadRows();
     var habId = spHab ? spHab.id : null;
     /* 그날 그 항목의 기록을 통째로 다시 쓴다 — 줄을 지운 것도 반영되어야 한다 */
     var old = habId ? mnDayTx(spK, habId) : mnDayTx(spK).filter(function(x){ return !x.hab; });
     old.forEach(function(x){ mnDelTx(x.id); });
     sp.forEach(function(x){
       if(!(x.a > 0) && !x.w) return;
-      mnAddTx({ date:spK, cat:spCat, amt:x.a, memo:x.w, hab:habId });
+      mnAddTx({ date:spK, cat:x.c, amt:x.a, memo:x.w, hab:habId });
     });
     mnSave();
     if(spHab && $("spLink").checked && sp.length && habOf(spK, spHab.id) !== 0 && habOf(spK, spHab.id) !== 2)
@@ -6369,8 +6494,10 @@ var HOLIDAYS = {
   $("spSkip").onclick = closeSpend;
   $("spendOverlay").addEventListener("mousedown", function(e){ if(e.target === $("spendOverlay")) closeSpend(); });
   $("spAdd").onclick = function(){
-    var host = $("spList"), row = spRow("", 0, host, spPaintTotal);
-    host.appendChild(row); spPaintTotal(); row.querySelector(".spw").focus();
+    var host = $("spList"), last = host.children[host.children.length - 1],
+        row = spDecorate(spRow("", 0, host, spPaintTotal), last ? (last.dataset.cat || "") : spDefaultCat());
+    host.appendChild(row); spPaintTotal(); spActivate(row); row.querySelector(".spw").focus();
+    $("spCatHint").hidden = host.children.length < 2;
   };
   $("spClear").onclick = function(){
     if(!spK) return;
@@ -6793,6 +6920,7 @@ var HOLIDAYS = {
     if(e.key !== "Escape") return;
     if(zenOn){ zenClose(); return; }
     if(!$("calPop").hidden){ $("calPop").hidden = true; return; }
+    if(!$("stRangePop").hidden){ strClose(); return; }      /* v9.0 통계 기간 달력 */
     if(!$("pinOverlay").hidden){ $("pinOverlay").hidden = true; return; }
     /* 사유 창은 항목 관리 위에 겹쳐 뜰 수 있다 — 먼저 닫는다 (기록 자체는 남는다) */
     if(!$("whyOverlay").hidden){ closeWhy(); return; }
@@ -7087,6 +7215,8 @@ var HOLIDAYS = {
   /* 지금 보고 있는 종류로 열어준다 (전체 탭이면 드라마 — 옮길 일이 거기 몰려 있다) */
   $("wishUnsetBtn").onclick = function(){ openKindBulk("?"); };
   $("wkBulkBtn").onclick = function(){ openKindBulk(wkTab || "drama"); };
+  /* v9.0 — 같은 작품이 이름이 달라 두 줄로 잡힐 때(기어워 신작 / 기어즈 오브 워 E-Day) 통계에서 바로 합치러 간다 */
+  $("wkRenameBtn").onclick = function(){ $("statsOverlay").hidden = true; setTimeout(openRename, 20); };
   $("kbAll").onclick = function(){ kbNames().forEach(function(n){ kbSel[n] = 1; }); kbPaint(); };
   $("kbNone").onclick = function(){ kbSel = {}; kbPaint(); };
   $("kbClose").onclick = function(){ $("kbOverlay").hidden = true; };
@@ -7898,7 +8028,62 @@ var HOLIDAYS = {
   }
 
   /* ---------- 통계 ---------- */
-  var stRange = "week", stTab = "task";
+  var stRange = "week", stTab = "task", stKeys = [];
+  var ST_PRESET = { week:"이번 주", prev:"지난 주", month:"이번 달", m30:"최근 30일", year:"올해", y12:"최근 1년" };
+  function stRangeLabel(keys){
+    var fs = fromIso(keys[0]), fe = fromIso(keys[keys.length - 1]);
+    var same = fs.getFullYear() === fe.getFullYear() && fs.getFullYear() === fromIso(todayKey).getFullYear();
+    function f(d){ return (same ? "" : d.getFullYear() + ".") + (d.getMonth() + 1) + "/" + d.getDate(); }
+    var pre = (typeof stRange === "string" && ST_PRESET[stRange]) ? ST_PRESET[stRange] + " · " : "";
+    return pre + (keys.length === 1 ? f(fs) : f(fs) + " ~ " + f(fe) + " (" + keys.length + "일)");
+  }
+  function inStRange(k){ return !!k && stKeys.length && k >= stKeys[0] && k <= stKeys[stKeys.length - 1]; }
+  /* ---- 기간 달력: 한 번 누르면 시작, 한 번 더 누르면 끝 ---- */
+  var strMonth = null, strPick = null;
+  function strOpen(){
+    var r = rangeOf(stRange);
+    strMonth = iso(r.end).slice(0, 7);
+    strPick = null;
+    $("stRangePop").hidden = false;
+    $("stRangeBtn").setAttribute("aria-expanded", "true");
+    strPaint();
+  }
+  function strClose(){
+    $("stRangePop").hidden = true; strPick = null;
+    $("stRangeBtn").setAttribute("aria-expanded", "false");
+  }
+  function strPaint(){
+    var y = +strMonth.slice(0, 4), m = +strMonth.slice(5, 7);
+    $("strTitle").textContent = y + "년 " + m + "월";
+    var r = rangeOf(stRange), rs = iso(r.start), re = iso(r.end);
+    var first = new Date(y, m - 1, 1), cur = new Date(first), g = $("strGrid"), i;
+    cur.setDate(1 - first.getDay());
+    g.innerHTML = "";
+    DAYS.forEach(function(w){ var h = document.createElement("div"); h.className = "cw"; h.textContent = w; g.appendChild(h); });
+    for(i = 0; i < 42; i++){
+      var k = iso(cur), wd = cur.getDay(), b = document.createElement("button");
+      b.type = "button";
+      b.className = "cal-d" + (cur.getMonth() + 1 !== m ? " oth" : "") +
+        ((holidayOf(k) || wd === 0) ? " sun" : (wd === 6 ? " sat" : "")) +
+        (k === todayKey ? " tod" : "") +
+        (strPick ? (k === strPick ? " pick" : "") : ((k === rs || k === re) ? " rend" : (k > rs && k < re ? " rin" : "")));
+      b.dataset.k = k;
+      b.textContent = cur.getDate();
+      b.onclick = function(){ strTap(this.dataset.k); };
+      g.appendChild(b);
+      cur.setDate(cur.getDate() + 1);
+      if(i === 34 && cur.getMonth() + 1 !== m) break;
+    }
+    $("strFoot").textContent = strPick ? "끝 날을 누르세요 (같은 날을 다시 누르면 하루만)" : "시작 날을 누르세요";
+    Array.prototype.forEach.call($("strQuick").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
+  }
+  function strTap(k){
+    if(!strPick){ strPick = k; strPaint(); return; }
+    var a = strPick < k ? strPick : k, b = strPick < k ? k : strPick;
+    stRange = { s:a, e:b };
+    strClose();
+    renderStats();
+  }
   /* 통계에서만 다른 보드를 들여다본다. 앱 전체를 전환하지 않고 그 보드의 저장분만 읽어온다.
      (통계를 끄고 → 보드 바꾸고 → 다시 통계를 켜는 왕복이 번거로워서 넣었다) */
   var stBoard = null, stCache = {};
@@ -7945,6 +8130,7 @@ var HOLIDAYS = {
   /* 지난 기록을 보는 기간. 이번 달·올해는 앞날까지 세면 "기록한 날" 같은 숫자가
      엉뚱해지므로 오늘까지로 끊는다. */
   function rangeOf(kind){
+    if(kind && typeof kind === "object") return { start:fromIso(kind.s), end:fromIso(kind.e) };
     var today = logicalNow(); today.setHours(0,0,0,0);
     var end = new Date(today), start;
     if(kind === "week"){ start = mondayOf(today); end = new Date(start); end.setDate(start.getDate()+6); }
@@ -8009,10 +8195,14 @@ var HOLIDAYS = {
     return c ? '<span class="cat" style="--c:' + safeCatColor(c.color) + '">' + esc(c.name) + '</span>'
              : '<span class="z">·</span>';
   }
-  /* 보드에서 완료된 일감을 "이름 → 횟수·마지막 날"로 모아둔다.
-     소닉처럼 하루에 안 끝나는 건 "오늘로" 버튼을 안 쓰고 그날 직접 적게 되는데,
-     그러면 꺼낸 표시(wsrc)가 없어 통계에 안 잡혔다. 이름으로 이으면 적어도 잡힌다. */
-  function doneByName(){
+  /* ---------- v9.0 언젠가 통계 ----------
+     v8.9 까지는 "지금 언젠가에 남아 있는 것"만 셌다. 그래서 꺼내서 한 것(wsrc)·🏁 로 끝내서 목록에서 빠진 것이
+     통계에서 통째로 사라져 "해본 것 0" 이 나왔다(사용자 지적). 또 "한 횟수·마지막"은 영화처럼 한 번 보면 끝인
+     것에 뜻이 없었다. 이제 언젠가를 거쳐 간 것 전부를 이름 하나로 모아 상태(대기·하는 중·끝냄·하차)로 본다.
+       - 대기 중: 기간과 상관없이 전부 (지금 쌓여 있는 것을 보는 게 이 탭의 목적)
+       - 나머지: 이 기간에 담았거나·시작했거나·끝낸 것만
+     ⚠ 보드 카드와는 글자가 똑같은 이름으로만 잇는다 (함정 2 — 부분일치로 짐작하지 않는다). */
+  function boardDoneByName(){
     var m = {}, k, arr, i, it, t;
     for(k in sd().days){
       if(k === SOMEDAY) continue;
@@ -8020,68 +8210,123 @@ var HOLIDAYS = {
       for(i = 0; i < arr.length; i++){
         it = arr[i];
         if(!it || it.canceled || !it.done) continue;
-        t = String(it.text || "").trim();
+        t = wkey(it.text);
         if(!t) continue;
-        if(!m[t]) m[t] = { n:0, last:"" };
-        m[t].n++;
+        if(!m[t]) m[t] = { first:k, last:k };
+        if(k < m[t].first) m[t].first = k;
         if(k > m[t].last) m[t].last = k;
       }
     }
     return m;
   }
-  /* 이 탭은 "지금 담아둔 것이 어떤 상태인가"를 보는 곳이다.
-     기간을 나눠 볼 대상이 아니므로 기간 버튼은 숨기고, 보관 기간(1년) 전체로 센다.
-     기간별 횟수는 할 일 탭의 "반복 횟수" 표가 담당한다. */
-  function renderWishStats(){
-    var live = stWishLive(), dn = doneByName();
-    function hit(x){ return dn[String(x.text || "").trim()] || null; }
-    var triedN = 0, neverN = 0, oldN = 0;
-    live.forEach(function(x){
-      var h = hit(x), w = waitDays(x);
-      if(h){ triedN++; return; }
-      neverN++;
-      if(w !== null && w >= 30) oldN++;      /* 해본 적 있으면 방치가 아니다 */
+  function wishLedger(){
+    var reg = stWorks(), dn = boardDoneByName(), map = {}, k, arr, i, it;
+    function slot(it){
+      var n = wkey(it.text);
+      if(!n) return null;
+      if(!map[n]) map[n] = { name:n, cat:null, added:"", live:false, liveIt:null, pulled:"", wdone:"", wdrop:false };
+      return map[n];
+    }
+    stWishes().forEach(function(x){
+      var o = slot(x); if(!o) return;
+      var add = (x.ord && x.ord >= 1e12) ? iso(new Date(x.ord)) : "";
+      if(add && (!o.added || add < o.added)) o.added = add;
+      if(x.cat && !o.cat) o.cat = x.cat;
+      if(!x.done && !x.canceled){ o.live = true; o.liveIt = x; }
+      else if(x.done){ var dd = x.doneAt ? iso(new Date(x.doneAt)) : "?"; if(!o.wdone || dd > o.wdone) o.wdone = dd; }
+      else o.wdrop = true;
     });
-    $("wsWait").textContent = live.length;
-    $("wsTried").textContent = triedN;
-    $("wsNever").textContent = neverN;
-    $("wsOld").textContent = oldN;
-    $("wsNote").innerHTML = live.length
-      ? ("담아둔 " + live.length + "건 중 <b>" + triedN + "건은 한 번이라도 해봤고, " + neverN +
-         "건은 아직 손도 안 댔습니다</b>" + (oldN ? " · 그중 " + oldN + "건은 담은 지 30일이 넘었습니다" : "") +
-         "<br>보드에 같은 이름으로 완료된 것을 세므로, 목록에서 꺼내지 않고 그날 직접 적어도 잡힙니다. " +
-         "보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
-      : "아직 담아둔 게 없습니다.";
-
-    /* 안 해본 것 → 오래 묵은 것 순. 해본 것은 아래로 내리고 최근에 한 것부터. */
-    var head = '<thead><tr><th>담아둔 것</th><th>태그</th><th>담은 지</th>' +
-               '<th>한 횟수</th><th>마지막</th><th>기한</th></tr></thead>', body = "";
-    function md(k){ var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
-    var sorted = live.slice().sort(function(a, b){
-      var ha = hit(a), hb = hit(b);
-      if(!ha !== !hb) return ha ? 1 : -1;                 /* 안 해본 것이 위 */
-      if(!ha && !hb){                                     /* 둘 다 안 해봤으면 오래 묵은 것부터 */
-        var wa = waitDays(a), wb = waitDays(b);
-        if(wa === null) return 1;
-        if(wb === null) return -1;
-        return wb - wa;
+    for(k in sd().days){
+      if(k === SOMEDAY) continue;
+      arr = sd().days[k] || [];
+      for(i = 0; i < arr.length; i++){
+        it = arr[i];
+        if(!it || !it.wsrc) continue;               /* 언젠가에서 꺼낸 카드 */
+        var o2 = slot(it); if(!o2) continue;
+        if(it.wadd && (!o2.added || it.wadd < o2.added)) o2.added = it.wadd;
+        if(!o2.pulled || it.wsrc < o2.pulled) o2.pulled = it.wsrc;
+        if(it.cat && !o2.cat) o2.cat = it.cat;
       }
-      return hb.last < ha.last ? -1 : 1;                  /* 해본 것은 최근에 한 것부터 */
+    }
+    var out = [], n;
+    for(n in map){
+      var o3 = map[n], w = reg[n], isW = !!(w && w.kind), b = dn[n] || null, st, when = "";
+      if(isW && kindKey(w.kind) === "etc") continue;   /* 기타(구매 인증 같은 것)는 통계에서 뺀다 — 작품 탭과 같은 규칙 */
+      var start = b ? b.first : "";
+      if(o3.pulled && (!start || o3.pulled < start)) start = o3.pulled;
+      var wEnd = isW && w.fin === "end", wDrop = isW && w.fin === "drop";
+      if(o3.live && !wEnd && !wDrop){
+        /* 언젠가에 아직 있는 것. 같은 이름으로 보드에서 해봤으면 "하는 중" */
+        st = start ? "go" : "wait"; when = start;
+      } else if(wEnd || (!isW && (o3.wdone || b))){
+        st = "end"; when = (wEnd && w.finAt) || o3.wdone || (b && b.last) || o3.pulled || "";
+      } else if(wDrop || o3.wdrop){
+        st = "drop"; when = (wDrop && w.finAt) || "";
+      } else if(start){
+        st = "go"; when = start;
+      } else continue;                              /* 꺼냈다가 지운 것 — 남은 자취가 없다 */
+      if(when === "?") when = "";
+      out.push({ name:n, cat:o3.cat, it:o3.liveIt, added:o3.added,
+                 st:st, when:when, start:start, kind:isW ? kindKey(w.kind) : "" });
+    }
+    return out;
+  }
+  function wishStateText(r){
+    var d = r.kind ? kindDef(r.kind) : null;
+    if(r.st === "wait") return { t:"대기", cls:"z" };
+    if(r.st === "go")   return { t:d ? d.doing : "해봄", cls:"df" };
+    if(r.st === "end")  return { t:d ? "🏁 " + d.done : "했음", cls:"ok" };
+    return { t:"하차", cls:"cx" };
+  }
+  function renderWishStats(){
+    var all = wishLedger();
+    function waitN(r){ return r.added ? Math.max(0, Math.round((fromIso(todayKey) - fromIso(r.added)) / 864e5)) : null; }
+    var rows = all.filter(function(r){
+      if(r.st === "wait") return true;
+      return inStRange(r.added) || inStRange(r.start) || inStRange(r.when);
     });
-    sorted.forEach(function(x){
-      var h = hit(x), w = waitDays(x);
-      var stale = !h && w !== null && w >= 30;
-      body += '<tr><td class="nm"></td><td>' + catCell(x.cat) + '</td>' +
-        '<td class="' + (stale ? "bad" : "z") + '">' + (w === null ? "·" : w + "일") + '</td>' +
-        '<td class="' + (h ? "ok" : "z") + '">' + (h ? "<b>" + h.n + "</b>회" : "—") + '</td>' +
-        '<td class="z">' + (h && h.last ? md(h.last) : "·") + '</td>' +
-        '<td class="' + (x.by ? "df" : "z") + '">' + (byLabel(x) || "·") + '</td></tr>';
+    var waitAll = all.filter(function(r){ return r.st === "wait"; });
+    var startN = all.filter(function(r){ return inStRange(r.start); }).length;
+    var endN = all.filter(function(r){ return r.st === "end" && inStRange(r.when); }).length;
+    var oldN = waitAll.filter(function(r){ var w = waitN(r); return w !== null && w >= 30; }).length;
+    $("wsWait").textContent = waitAll.length;
+    $("wsTried").textContent = startN;
+    $("wsNever").textContent = endN;
+    $("wsOld").textContent = oldN;
+    $("wsNote").innerHTML = all.length
+      ? ("지금 <b>" + waitAll.length + "건이 대기 중</b>" + (oldN ? "이고 그중 " + oldN + "건은 30일이 넘었습니다" : "입니다") +
+         " · 이 기간에 " + startN + "건을 시작했고 " + endN + "건을 끝냈습니다." +
+         "<br>꺼내서 한 것도, 언젠가에 둔 채 보드에 같은 이름으로 적어서 한 것도 잡힙니다. " +
+         "게임·영화처럼 종류를 정한 것은 🏁 를 눌러야 끝냄, 그 밖의 일은 한 번 하면 끝냄입니다.")
+      : "아직 언젠가에 담았던 게 없습니다.";
+
+    var ORDER = { wait:0, go:1, end:2, drop:3 };
+    rows.sort(function(a, b){
+      if(a.st !== b.st) return ORDER[a.st] - ORDER[b.st];
+      if(a.st === "wait") return (a.added || "9") < (b.added || "9") ? -1 : 1;   /* 오래 기다린 것부터 */
+      return (a.when || "") < (b.when || "") ? 1 : -1;                           /* 최근 것부터 */
+    });
+    function md(k){ if(!k) return "·"; var d = fromIso(k); return (d.getMonth()+1) + "/" + d.getDate(); }
+    var head = '<thead><tr><th>담아둔 것</th><th>종류</th><th>상태</th><th>담은 날</th><th>시작·끝</th><th>기한</th></tr></thead>', body = "";
+    rows.forEach(function(r){
+      var s = wishStateText(r), w = waitN(r), kc;
+      if(r.kind){ var kd = kindDef(r.kind); kc = '<span class="wktag" style="--c:' + kd.color + '">' + esc(kd.label) + '</span>'; }
+      else kc = catCell(r.cat);
+      var addCell = r.st === "wait"
+        ? '<td class="' + (w !== null && w >= 30 ? "bad" : "z") + '">' + (w === null ? "·" : w + "일째") + '</td>'
+        : '<td class="z">' + md(r.added) + '</td>';
+      var whenCell = r.st === "wait" ? "·" : (r.st === "go" ? md(r.when) + " ~" : md(r.when));
+      var byTxt = (r.it && r.it.by) ? byLabel(r.it) : "";
+      body += '<tr><td class="nm"></td><td>' + kc + '</td>' +
+        '<td class="' + s.cls + '">' + s.t + '</td>' + addCell +
+        '<td class="z">' + whenCell + '</td>' +
+        '<td class="' + (byTxt ? "df" : "z") + '">' + (byTxt || "·") + '</td></tr>';
     });
     var t = $("wsWaitTable");
     t.innerHTML = head + "<tbody>" +
-      (live.length ? body : '<tr><td colspan="6" class="z">담아둔 것이 없습니다</td></tr>') + "</tbody>";
+      (rows.length ? body : '<tr><td colspan="6" class="z">이 기간에 해당하는 것이 없습니다</td></tr>') + "</tbody>";
     Array.prototype.forEach.call(t.querySelectorAll("tbody tr .nm"), function(td, i){
-      if(sorted[i]) td.textContent = sorted[i].text;
+      if(rows[i]) td.textContent = rows[i].name;
     });
   }
 
@@ -8212,7 +8457,13 @@ var HOLIDAYS = {
     return [["작품", s.n + "개"], ["기록", (s.sessions + s.eps) + "회"]];
   }
   function renderWorkStats(){
-    var rows = workRows();
+    /* v9.0 — 기타(구매 인증 같은 것)는 작품 통계에서 뺀다 · 끝낸 것·하차는 고른 기간 안에 있는 것만 */
+    var rows = workRows().filter(function(r){
+      if(kindKey(r.kind) === "etc") return false;
+      var k = wkState(r).k;
+      if(k === "end" || k === "drop") return inStRange(r.finAt || r.last);
+      return true;
+    });
     Array.prototype.forEach.call($("wkTabs").children, function(b){
       b.classList.toggle("on", (b.dataset.k || "") === wkTab);
     });
@@ -8275,11 +8526,15 @@ var HOLIDAYS = {
     if(!rows.length) host.innerHTML = '<p class="hint" style="margin:0;grid-column:1/-1">아직 기록한 작품이 없습니다.</p>';
 
     /* 달마다 끝낸 것 — 종류별로 쌓는다 */
-    var months = [], i2, base = fromIso(todayKey);
-    for(i2 = 11; i2 >= 0; i2--){
-      var d2 = new Date(base.getFullYear(), base.getMonth() - i2, 1);
-      months.push(d2.getFullYear() + "-" + String(d2.getMonth() + 1).padStart(2, "0"));
+    /* v9.0 — 고른 기간의 달들. 열두 달이 넘으면 끝에서 열두 달만 */
+    var months = [], d2 = fromIso(stKeys[0].slice(0, 7) + "-01"), endM = stKeys[stKeys.length - 1].slice(0, 7);
+    while(true){
+      var mk = d2.getFullYear() + "-" + String(d2.getMonth() + 1).padStart(2, "0");
+      months.push(mk);
+      if(mk >= endM || months.length > 36) break;
+      d2.setMonth(d2.getMonth() + 1);
     }
+    if(months.length > 12) months = months.slice(-12);
     var byM = {}, mx = 0;
     months.forEach(function(m){ byM[m] = {}; });
     rows.forEach(function(r){
@@ -8395,7 +8650,7 @@ var HOLIDAYS = {
       ? ("작품 " + rows.length + "개 중 <b>" + endN + "개를 끝냈습니다</b>" +
          (goN ? " · " + goN + "개는 진행 중" : "") + (idleN ? " · " + idleN + "개는 예정" : "") + (dropN ? " · " + dropN + "개는 하차" : "") +
          "<br><b>예정</b>은 종류만 고르고 아직 보드에서 체크한 적이 없는 것, <b>진행 중</b>은 체크한 날은 있는데 끝냈다고 안 한 것입니다. " +
-         "종류 버튼을 누르면 그 종류만 자세히 봅니다. 보관 기간(1년) 전체 기준이라 위 기간 버튼과는 무관합니다.")
+         "종류 카드를 누르면 그 종류만 자세히 봅니다. 기타는 여기서 세지 않습니다.")
       : "아직 기록한 게임·영화가 없습니다. 언젠가 카드나 보드 카드 상세에서 종류를 누르면 바로 기록되고, " +
         "다 봤으면 체크할 때 뜨는 <b>🏁</b> 를 누르세요.";
   }
@@ -8853,17 +9108,17 @@ var HOLIDAYS = {
     var otherNote = $("stBoardNote");
     otherNote.hidden = (stTab === "hab") || (sp === profile);
     otherNote.textContent = "지금 쓰는 보드는 " + (profile === "home" ? "집 보드" : "회사 보드") + "입니다 — 보고만 있습니다";
-    var fs = fromIso(keys[0]), fe = fromIso(keys[keys.length-1]);
-    var longRange = keys.length > 45;
-    $("stRange").textContent =
-      (longRange ? (fs.getFullYear()+"."+(fs.getMonth()+1)+"."+fs.getDate()+" ~ "+
-                    fe.getFullYear()+"."+(fe.getMonth()+1)+"."+fe.getDate()+" (" + keys.length + "일)")
-                 : ((fs.getMonth()+1)+"/"+fs.getDate()+" ~ "+(fe.getMonth()+1)+"/"+fe.getDate())) +
-      " · 카테고리는 완료된 항목만 셉니다";
-    Array.prototype.forEach.call($("stPeriods").children, function(b){ b.classList.toggle("on", b.dataset.r === stRange); });
-    /* 언젠가 탭은 "지금 담아둔 것의 상태"를 보는 곳이라 기간을 나눌 대상이 아니다 */
-    $("stPeriods").hidden = (stTab === "wish" || stTab === "work");
-    $("stRange").hidden = (stTab === "wish" || stTab === "work");
+    /* v9.0 — 기간은 달력 하나로 고르고, 네 탭이 모두 같은 기간을 따른다 */
+    stKeys = keys;
+    var longRange = keys.length > 45;      /* 할 일 탭 막대: 길면 달 단위로 */
+    $("stRangeTxt").textContent = stRangeLabel(keys);
+    $("stRange").textContent = {
+      task:"카테고리는 완료된 항목만 셉니다",
+      wish:"대기 중인 것은 기간과 상관없이 전부, 나머지는 이 기간에 담거나 시작하거나 끝낸 것",
+      work:"끝낸 것·하차는 이 기간 기준, 하는 중·예정은 지금 상태",
+      hab:"평일만인 항목은 주말·공휴일을 빼고 셉니다"
+    }[stTab] || "";
+    if(!$("stRangePop").hidden) strPaint();
     Array.prototype.forEach.call($("wkTabs").children, function(b){
     b.onclick = function(){ wkTab = b.dataset.k || ""; renderWorkStats(); };
   });
@@ -9665,7 +9920,7 @@ var HOLIDAYS = {
   };
   $("statsBtn").onclick = function(){
     stBoard = null; stCache = {};      /* 열 때는 늘 지금 보드부터, 사본은 새로 읽는다 */
-    renderStats(); $("statsOverlay").hidden = false;
+    strClose(); renderStats(); $("statsOverlay").hidden = false;
   };
   Array.prototype.forEach.call($("stBoardSeg").children, function(b){
     b.onclick = function(){
@@ -9676,8 +9931,11 @@ var HOLIDAYS = {
   });
   $("stClose").onclick = function(){ $("statsOverlay").hidden = true; };
   $("statsOverlay").addEventListener("mousedown", function(e){ if(e.target === $("statsOverlay")) $("statsOverlay").hidden = true; });
-  Array.prototype.forEach.call($("stPeriods").children, function(b){
-    b.onclick = function(){ stRange = b.dataset.r; renderStats(); };
+  $("stRangeBtn").onclick = function(){ if($("stRangePop").hidden) strOpen(); else strClose(); };
+  $("strPrev").onclick = function(){ var d = fromIso(strMonth + "-01"); d.setMonth(d.getMonth() - 1); strMonth = iso(d).slice(0, 7); strPaint(); };
+  $("strNext").onclick = function(){ var d = fromIso(strMonth + "-01"); d.setMonth(d.getMonth() + 1); strMonth = iso(d).slice(0, 7); strPaint(); };
+  Array.prototype.forEach.call($("strQuick").children, function(b){
+    b.onclick = function(){ stRange = b.dataset.r; strClose(); renderStats(); };
   });
   Array.prototype.forEach.call($("stTabs").children, function(b){
     b.onclick = function(){ stTab = b.dataset.t; renderStats(); };
@@ -10099,6 +10357,8 @@ var HOLIDAYS = {
                 payload:payload, localNewerThan:localNewerThan,
                 openWork:openWork, workRows:workRows, setWork:setWork,
                 openRename:openRename, renameTexts:renameTexts, workTally:workTally, mn:mn,
+                openSpend:openSpend, openMoney:openMoney, privacyUnlock:privacyUnlock, applyProfile:applyProfile,
+                get privacy(){ return [habUnlocked, wtUnlocked, mnUnlocked]; },
                 get habFresh(){ return habFresh; } };
   window.QBtoast = toast;
   window.QBtouched = function(){ return touched; };          /* 서비스 워커가 새 버전을 알릴 때 쓴다 */
