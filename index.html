@@ -18,6 +18,7 @@
 <style>
   html{ font-size:calc(clamp(12px, calc(0.55vh + 0.75vw), 22px) * var(--fscale, 1)); }
   :root{
+    --ease-out:cubic-bezier(0.23,1,0.32,1); --ease-in-out:cubic-bezier(0.77,0,0.175,1);
     --ink:#0B0F14; --panel:#10161D; --surface:#151C25; --surface-2:#1B242F;
     --line:#26313E; --line-soft:#1E2731;
     --text:#E9EEF5; --muted:#7C8B9E; --dim:#4C5A6B;
@@ -139,7 +140,7 @@
   .wrestore button{margin-left:auto;background:var(--accent);border:0;border-radius:.45rem;
     color:var(--ink);font:inherit;font-weight:600;font-size:.82rem;padding:.35rem .8rem;cursor:pointer;}
   .nav{background:none;border:1px solid var(--line);border-radius:.4rem;width:1.7rem;height:1.7rem;
-    display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none;transition:all .15s ease;}
+    display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .nav:hover{border-color:var(--muted);color:var(--text);}
   .nav svg{width:.7rem;height:.7rem;}
   h1{margin:0;font-family:var(--title-font, "Black Han Sans"),var(--ui-font, "IBM Plex Sans KR"),sans-serif;font-weight:var(--title-weight,400);font-size:2.15rem;line-height:1.02;flex:1;}
@@ -162,7 +163,7 @@
     margin:0 auto;container-type:inline-size;}
   .ring svg{width:100%;height:100%;display:block;transform:rotate(-90deg);}
   .ring .track{fill:none;stroke:var(--surface-2);stroke-width:8;}
-  .ring .seg{fill:none;stroke-width:8;transition:stroke-dashoffset .4s ease;}
+  .ring .seg{fill:none;stroke-width:8;transition:stroke-dashoffset .3s var(--ease-out);}
   .ring-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:.1rem;pointer-events:none;}
   .ring .seg{cursor:pointer;}
@@ -230,7 +231,7 @@
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cprow .cpb{height:.34rem;background:var(--surface-2);border-radius:99px;overflow:hidden;}
   .cprow .cpb i{display:block;height:100%;width:0;background:var(--c,var(--accent));
-    border-radius:99px;transition:width .3s ease;}
+    border-radius:99px;transition:width .3s var(--ease-out);}
   .cprow .cpv{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--text);
     min-width:1.5rem;text-align:right;font-variant-numeric:tabular-nums;}
   .cprow.clear .cpv{color:var(--done);}
@@ -248,7 +249,7 @@
   body.home .wtbox:not([hidden]){display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;
     column-gap:.4rem;row-gap:.1rem;align-items:baseline;width:100%;margin-top:.28rem;cursor:pointer;
     background:var(--surface);border:1px solid var(--line-soft);border-radius:.45rem;
-    padding:.34rem .5rem .28rem;font:inherit;text-align:left;transition:all .15s ease;}
+    padding:.34rem .5rem .28rem;font:inherit;text-align:left;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   body.home .wtbox:hover{border-color:var(--accent-dim);background:var(--surface-2);}
   .wtbox .wtl{font-size:.7rem;color:var(--muted);}
   .wtbox .wtv{font-family:"IBM Plex Mono",monospace;font-size:.95rem;font-weight:600;
@@ -281,14 +282,14 @@
     font-size:.88rem;padding:.6rem;cursor:pointer;transition:background .15s ease;}
   .primary:hover{background:var(--accent);color:var(--ink);}
   .ghost{background:none;border:1px solid var(--line);border-radius:.5rem;color:var(--muted);
-    font-size:.76rem;padding:.42rem .6rem;cursor:pointer;transition:all .15s ease;}
+    font-size:.76rem;padding:.42rem .6rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .ghost:hover{border-color:var(--muted);color:var(--text);}
   .row2{display:flex;gap:.4rem;} .row2 .ghost{flex:1;text-align:center;}
   .hint{margin:0;font-size:.68rem;color:var(--dim);line-height:1.5;}
   .mlist{display:flex;flex-direction:column;gap:.4rem;}
   .mrow{display:flex;flex-direction:column;gap:.15rem;text-align:left;cursor:pointer;
     background:var(--surface);border:1px solid var(--line-soft);border-radius:.6rem;padding:.7rem .85rem;
-    transition:all .15s ease;}
+    transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .mrow:hover{background:var(--surface-2);border-color:var(--line);}
   .mrow b{font-size:.95rem;font-weight:600;}
   .mrow span{font-size:.78rem;color:var(--muted);}
@@ -345,20 +346,20 @@
   .habits .hh{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.16em;color:var(--dim);}
   .hb{display:flex;align-items:center;gap:.45rem;min-width:0;
     background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--dim);
-    border-radius:.5rem;padding:.28rem .38rem .28rem .55rem;transition:all .15s ease;}
+    border-radius:.5rem;padding:.28rem .38rem .28rem .55rem;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .hb .hn{font-size:.86rem;color:var(--muted);word-break:keep-all;}
   .hb.ok{border-left-color:var(--done);background:rgba(63,160,140,.1);}
   .hb.no{border-left-color:var(--urgent);background:rgba(224,101,95,.1);}
   .hb.ex{border-left-color:var(--defer);background:rgba(110,130,160,.12);}
   .hb.ok .hn,.hb.no .hn,.hb.ex .hn{color:var(--text);}
   .hb button{flex:none;background:none;border:1px solid var(--line);border-radius:.35rem;color:var(--dim);
-    font-size:.72rem;font-weight:600;padding:.16rem .45rem;cursor:pointer;transition:all .12s ease;}
+    font-size:.72rem;font-weight:600;padding:.16rem .45rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .hb button:hover{border-color:var(--muted);color:var(--text);}
   .hb .hok.on{background:var(--done);border-color:var(--done);color:var(--ink);}
   .hb .hno.on{background:var(--urgent);border-color:var(--urgent);color:var(--ink);}
   .hb .hex.on{background:var(--defer);border-color:var(--defer);color:var(--ink);}
   .habits .hedit{flex:none;background:none;border:1px dashed var(--line);border-radius:.4rem;color:var(--dim);
-    font-size:.74rem;padding:.22rem .5rem;cursor:pointer;transition:all .12s ease;}
+    font-size:.74rem;padding:.22rem .5rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .habits .hedit:hover{border-color:var(--muted);color:var(--text);border-style:solid;}
   .habits .hoff.on{border-style:solid;border-color:var(--defer);color:var(--defer);font-weight:700;}
   .hlockt{flex:none;}
@@ -377,7 +378,7 @@
   .hlist{display:flex;flex-direction:column;gap:.4rem;max-height:22rem;overflow-y:auto;}
   .hmode{display:flex;gap:.2rem;flex:none;}
   .hmode button{background:var(--surface-2);border:1px solid var(--line);border-radius:.35rem;
-    color:var(--dim);font-size:.72rem;font-weight:600;padding:.24rem .45rem;cursor:pointer;transition:all .12s ease;}
+    color:var(--dim);font-size:.72rem;font-weight:600;padding:.24rem .45rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .hmode button:hover{color:var(--text);}
   .hmode button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .hstat{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;font-size:.9rem;}
@@ -459,9 +460,9 @@
   .open{flex:1;min-width:0;min-height:0;height:100%;display:flex;align-items:center;text-align:left;overflow:hidden;
     background:none;border:none;padding:.7rem .2rem .7rem .15rem;cursor:pointer;border-radius:.7rem;}
   .box{flex:none;width:1.5rem;height:1.5rem;border-radius:.4rem;border:2px solid var(--dim);
-    display:grid;place-items:center;transition:all .15s ease;}
+    display:grid;place-items:center;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .task:hover .box{border-color:var(--muted);}
-  .box svg{width:.92rem;height:.92rem;opacity:0;transform:scale(.7);transition:all .15s ease;}
+  .box svg{width:.92rem;height:.92rem;opacity:0;transform:scale(.8);transition:opacity .15s ease,transform .2s var(--ease-out);}
   .task.done .box{background:var(--done);border-color:var(--done);}
   .task.done .box svg{opacity:1;transform:scale(1);}
   .body{display:flex;flex-direction:column;gap:.22rem;min-width:0;min-height:0;flex:1;overflow:hidden;}
@@ -499,7 +500,7 @@
     background:var(--surface);border:1px solid var(--line);border-radius:.3rem;
     padding:.05rem .4rem;line-height:1.6;font-variant-numeric:tabular-nums;letter-spacing:0;}
   .seqchip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--p,0%);
-    background:var(--accent);opacity:.22;transition:width .35s ease;}
+    background:var(--accent);opacity:.22;transition:width .3s var(--ease-out);}
   .seqchip>*{position:relative;}
   .seqchip .tot{color:var(--dim);font-weight:400;}
   .seqchip .un{font-family:inherit;font-size:.66rem;color:var(--dim);font-weight:400;margin-left:.1rem;}
@@ -509,7 +510,7 @@
   .seqchip.fin .un{color:var(--done);}
   .nextep{flex:none;align-self:center;background:none;border:1px dashed var(--line);border-radius:.45rem;
     color:var(--muted);font-size:.76rem;padding:.3rem .55rem;margin-right:.3rem;cursor:pointer;white-space:nowrap;
-    transition:all .15s ease;}
+    transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .nextep:hover{border-color:var(--accent);border-style:solid;color:var(--accent);}
   .w-seq{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
     border:1px solid var(--line);border-radius:3px;padding:0 3px;margin-right:5px;vertical-align:1px;
@@ -547,7 +548,7 @@
     border-style:dashed;color:var(--dim);font-weight:500;}
   .hb .hwhy.has,.wh .hwhy.has{border-style:solid;border-color:var(--line);color:var(--muted);font-weight:600;}
   .hrow .haskb{background:var(--surface-2);border:1px solid var(--line);border-radius:.35rem;color:var(--dim);
-    font-size:.72rem;font-weight:600;padding:.24rem .45rem;cursor:pointer;transition:all .12s ease;white-space:nowrap;}
+    font-size:.72rem;font-weight:600;padding:.24rem .45rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);white-space:nowrap;}
   .hrow .haskb.on{border-color:var(--accent-dim);color:var(--accent);}
   .amthint{font-size:.82rem;color:var(--accent);font-weight:700;}
   /* 하루에 여러 건 쓴 경우 — 사유·금액 줄을 필요한 만큼 늘린다 */
@@ -562,7 +563,7 @@
   .sprow .fnum span{font-size:.8rem;color:var(--dim);}
   .sprow .spx{flex:none;background:none;border:1px solid var(--line);border-radius:.35rem;
     width:1.7rem;height:1.7rem;display:grid;place-items:center;color:var(--dim);
-    font-size:.9rem;line-height:1;cursor:pointer;transition:all .12s ease;}
+    font-size:.9rem;line-height:1;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .sprow .spx:hover{border-color:var(--urgent);color:var(--urgent);}
   /* v9.0 — 줄마다 분류. 앞의 딱지를 누르거나 줄 안을 누르면 그 줄이 "고르는 줄"이 되고 위 칩이 그 줄에 걸린다 */
   .sprow .spc{flex:none;max-width:7.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -616,7 +617,7 @@
      보고만 있는 시간이 길어지면 시계와 달력만 남긴다. 아무거나 누르면 보드로 돌아온다. */
   /* --bg 라는 변수는 없다. 바탕색은 --ink 다. 배경 이미지를 깔아둔 경우까지 덮어야 하므로 불투명하게. */
   .zen{position:fixed;inset:0;z-index:60;background:var(--ink);display:grid;place-items:center;
-    padding:1.6rem 1.6rem;cursor:pointer;animation:zfade .45s ease;overflow:hidden;}
+    padding:1.6rem 1.6rem;cursor:pointer;animation:zfade .3s var(--ease-out);overflow:hidden;}
   @keyframes zfade{ from{opacity:0} to{opacity:1} }
   /* 시계는 왼쪽, 달력은 오른쪽. 세로로 쌓으면 달력이 잘려서 스크롤해야 했다.
      좁거나 낮은 창에서는 다시 세로로 쌓는다. */
@@ -741,7 +742,7 @@
   .acts{display:flex;gap:.1rem;padding-right:.35rem;opacity:0;transition:opacity .15s ease;flex:none;}
   .task:hover .acts,.task:focus-within .acts{opacity:1;}
   .icon{background:none;border:none;width:1.5rem;height:1.5rem;border-radius:.35rem;color:var(--dim);
-    cursor:pointer;display:grid;place-items:center;transition:all .15s ease;font-weight:700;font-size:.82rem;}
+    cursor:pointer;display:grid;place-items:center;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);font-weight:700;font-size:.82rem;}
   .icon:hover{background:var(--line);color:var(--text);}
   .icon svg{width:.85rem;height:.85rem;}
   .icon.p1{color:var(--accent);} .icon.p2{color:var(--urgent);}
@@ -772,13 +773,13 @@
   .empty{flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.7rem;
     border:1px dashed var(--line);border-radius:.9rem;padding:1.2rem 1.6rem;min-height:0;}
   .empty .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.8rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s ease;}
+    font-size:.8rem;padding:.3rem .8rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .empty .q:hover{border-color:var(--accent);color:var(--accent);}
   .empty .q.on{border-color:var(--accent);color:var(--accent);}
   .rpick{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;max-width:46rem;}
   .rp{display:inline-flex;align-items:center;gap:.35rem;background:var(--surface);
     border:1px solid var(--line);border-radius:99px;color:var(--text);font:inherit;font-size:.82rem;
-    padding:.28rem .7rem;cursor:pointer;transition:all .15s ease;}
+    padding:.28rem .7rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .rp:hover{border-color:var(--accent);}
   .rp .rc{color:var(--c);font-size:.68rem;font-weight:700;}
   .rp i{font-style:normal;font-size:.72rem;color:var(--dim);}
@@ -807,7 +808,7 @@
   .fi:focus,.ft:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent;}
   .seg{display:flex;gap:.35rem;}
   .seg button{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:.5rem;
-    padding:.5rem;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s ease;}
+    padding:.5rem;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .seg button:hover{color:var(--text);}
   .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .seg button.on[data-v="open"]{background:var(--accent);border-color:var(--accent);color:var(--ink);}
@@ -820,12 +821,12 @@
   .seg.tiny button{flex:none;padding:.3rem .7rem;font-size:.8rem;}
   .chips{display:flex;flex-wrap:wrap;gap:.3rem;}
   .chips button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
+    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .chips button:hover{border-color:var(--defer);color:var(--defer);}
   .pchoose{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
   .pcard{display:flex;flex-direction:column;gap:.3rem;text-align:left;cursor:pointer;
     background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);
-    border-radius:.7rem;padding:1rem 1.1rem;transition:all .15s ease;}
+    border-radius:.7rem;padding:1rem 1.1rem;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .pcard:hover{background:var(--surface-2);}
   .pcard .pk{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.2em;}
   .pcard .pn{font-size:1.15rem;font-weight:700;}
@@ -838,7 +839,7 @@
   .profbtn{display:flex;align-items:center;gap:.5rem;width:100%;cursor:pointer;
     background:var(--accent-dim);color:var(--on-accent);border:1px solid transparent;
     border-radius:.5rem;padding:.62rem .8rem;font:inherit;font-size:.92rem;font-weight:700;
-    transition:all .15s ease;}
+    transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .profbtn:hover{background:var(--accent);color:var(--ink);}
   .profbtn .dot{width:.6rem;height:.6rem;border-radius:99px;background:var(--on-accent);flex:none;opacity:.9;}
   .profbtn:hover .dot{background:var(--ink);}
@@ -851,7 +852,7 @@
   .fdate input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:.5rem;
     color:var(--text);font:inherit;font-size:.92rem;padding:.45rem .6rem;color-scheme:dark;}
   .fdate .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
+    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .fdate .q:hover{border-color:var(--accent);color:var(--accent);}
   /* v8.1 — 창(오버레이 20) 위에 띄운다. 창 안에서 한 일의 "되돌리기"가 창 뒤에 깔려 못 누르던 문제 */
   .toast{position:fixed;left:50%;bottom:4.6rem;transform:translateX(-50%);z-index:22;
@@ -904,8 +905,9 @@
     min-width:2.6rem;text-align:right;}
   .swatches{display:flex;flex-wrap:wrap;gap:.4rem;}
   .swatches button{width:1.9rem;height:1.9rem;border-radius:.45rem;cursor:pointer;
-    border:1px solid var(--line);background:var(--sc,var(--surface));transition:all .12s ease;}
-  .swatches button:hover{transform:translateY(-1px);border-color:var(--muted);}
+    border:1px solid var(--line);background:var(--sc,var(--surface));transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
+  .swatches button:hover{border-color:var(--muted);}
+  @media (hover:hover) and (pointer:fine){ .swatches button:hover{transform:translateY(-1px);} }
   .swatches button.on{outline:2px solid var(--focus);outline-offset:2px;border-color:transparent;}
   .swatches button.none{background:var(--surface);color:var(--dim);font-size:.7rem;width:auto;padding:0 .55rem;}
 
@@ -1039,14 +1041,14 @@
   /* ⚠ display:flex 가 [hidden] 의 display:none 을 이긴다 — 숨김 규칙을 따로 적어둔다 */
   .wkbulkrow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.45rem;}
   .wkbulkrow .qb{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.78rem;padding:.28rem .7rem;cursor:pointer;transition:all .15s ease;flex:none;}
+    font-size:.78rem;padding:.28rem .7rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);flex:none;}
   .wkbulkrow .qb:hover{border-color:var(--accent);color:var(--accent);}
   .wkbulkrow[hidden]{display:none;}
   .kbhead{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
   /* ⚠ .q 는 그 자체로는 아무 모양이 없다 (.fdate .q 안에서만 꾸며져 있었다).
      그냥 쓰면 브라우저 기본 버튼(흰 네모)이 나온다 — v7.4 에서 한 번 당했다. */
   .kbhead .q{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:all .15s ease;}
+    font-size:.78rem;padding:.25rem .6rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .kbhead .q:hover{border-color:var(--accent);color:var(--accent);}
   .kbhead .hint{margin-left:auto!important;}
   .kblist{display:flex;flex-direction:column;gap:.15rem;max-height:17rem;overflow-y:auto;
@@ -1069,7 +1071,7 @@
   .mnbox:not([hidden]){display:grid!important;grid-template-columns:1fr auto;grid-template-rows:auto auto;
     column-gap:.4rem;row-gap:.1rem;align-items:baseline;width:100%;margin-top:.28rem;cursor:pointer;
     background:var(--surface);border:1px solid var(--line-soft);border-radius:.45rem;
-    padding:.34rem .5rem .28rem;font:inherit;text-align:left;transition:all .15s ease;}
+    padding:.34rem .5rem .28rem;font:inherit;text-align:left;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .mnbox:hover{border-color:var(--accent-dim);background:var(--surface-2);}
   .mnbox .wtv{color:var(--accent);}
   .mnbox .mnn{grid-column:2;text-align:right;}
@@ -1113,7 +1115,7 @@
   .syb{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
     column-gap:.55rem;row-gap:.15rem;align-items:center;cursor:pointer;user-select:none;
     background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);
-    border-radius:.6rem;padding:.7rem .8rem;transition:all .15s ease;}
+    border-radius:.6rem;padding:.7rem .8rem;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .syb:hover{background:var(--surface-2);}
   .syb input{width:1.15rem;height:1.15rem;cursor:pointer;grid-row:1;}
   .syb .nm{font-size:.95rem;font-weight:600;white-space:nowrap;grid-row:1;}
@@ -1160,7 +1162,7 @@
   .w-datebtn.off{color:var(--accent);}
   .w-count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;flex:none;}
   .w-bar{height:4px;border-radius:99px;background:var(--surface-2);overflow:hidden;flex:none;}
-  .w-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .35s ease;}
+  .w-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .3s var(--ease-out);}
 
   .w-carry{display:flex;align-items:center;gap:6px;flex:none;background:rgba(232,163,61,.1);
     border:1px solid var(--accent-dim);border-radius:8px;padding:6px 8px;font-size:11.5px;}
@@ -1292,12 +1294,12 @@
   .wtools .clr:hover{color:var(--text);}
   .wsort{display:flex;gap:.25rem;flex:none;}
   .wsort button{background:var(--surface-2);border:1px solid var(--line);border-radius:.45rem;color:var(--muted);
-    font-size:.78rem;font-weight:600;padding:.34rem .6rem;cursor:pointer;transition:all .12s ease;}
+    font-size:.78rem;font-weight:600;padding:.34rem .6rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .wsort button:hover{color:var(--text);}
   .wsort button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   .wfilters{display:flex;gap:.3rem;flex-wrap:wrap;}
   .wfilters button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font-size:.76rem;padding:.2rem .55rem;cursor:pointer;transition:all .12s ease;}
+    font-size:.76rem;padding:.2rem .55rem;cursor:pointer;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .wfilters button:hover{border-color:var(--muted);color:var(--text);}
   .wfilters button.on{background:var(--surface-2);border-color:currentColor;font-weight:700;}
   .wfilters button .fc{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--dim);margin-left:.25rem;}
@@ -1325,7 +1327,7 @@
     margin-right:.25rem;flex:none;}
   .wrow .byb{background:none;border:1px dashed var(--line);border-radius:99px;color:var(--dim);
     font-family:"IBM Plex Mono",monospace;font-size:.66rem;padding:.14rem .45rem;cursor:pointer;
-    white-space:nowrap;transition:all .12s ease;}
+    white-space:nowrap;transition:color .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease,transform .16s var(--ease-out);}
   .wrow .byb:hover{border-color:var(--muted);color:var(--text);}
   .wrow .byb.on{border-style:solid;border-color:var(--accent-dim);color:var(--accent);}
   .wrow .pull{flex:none;background:var(--accent-dim);color:var(--on-accent);border:none;
@@ -1346,7 +1348,7 @@
   /* 보드 맨 아래 "언젠가" 줄 — 눌러야 펼쳐진다. 평소에는 보드를 어지럽히지 않는다. */
   .wishbar{display:flex;align-items:center;gap:.5rem;flex:none;width:100%;cursor:pointer;
     background:none;border:1px dashed var(--line);border-radius:.6rem;padding:.42rem .75rem;
-    color:var(--muted);font:inherit;font-size:.84rem;text-align:left;transition:all .15s ease;}
+    color:var(--muted);font:inherit;font-size:.84rem;text-align:left;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .wishbar:hover{border-color:var(--accent-dim);color:var(--text);}
   .wishbar.on{border-style:solid;border-color:var(--accent-dim);color:var(--text);}
   .wishbar .wbn{display:inline-block;min-width:1.2rem;text-align:center;padding:0 .32rem;border-radius:99px;
@@ -1354,7 +1356,7 @@
     font-size:.7rem;font-weight:600;}
   .wishbar.on .wbn,.wishbar:hover .wbn{background:var(--accent-dim);color:var(--on-accent);}
   .wishbar .wbx{margin-left:auto;font-size:.74rem;color:var(--dim);}
-  .wishbar .car{font-size:.7rem;color:var(--dim);transition:transform .2s ease;}
+  .wishbar .car{font-size:.7rem;color:var(--dim);transition:transform .2s var(--ease-in-out);}
   .wishbar.on .car{transform:rotate(180deg);}
   .wishbar .wball{font-size:.74rem;color:var(--muted);border:1px solid var(--line);border-radius:.35rem;
     padding:.1rem .4rem;}
@@ -1363,7 +1365,7 @@
   .wtabs{flex:none;display:flex;gap:.3rem;flex-wrap:wrap;}
   .wtabs button,.wfilters button{position:relative;}
   .wtabs button{background:none;border:1px solid var(--line);border-radius:99px;color:var(--muted);
-    font:inherit;font-size:.78rem;padding:.2rem .65rem;cursor:pointer;transition:all .15s ease;}
+    font:inherit;font-size:.78rem;padding:.2rem .65rem;cursor:pointer;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .wtabs button:hover{border-color:var(--muted);color:var(--text);}
   .wtabs button.on{background:var(--surface-2);border-color:currentColor;font-weight:700;}
   .wtabs button .fc,.wfilters button .fc{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--dim);margin-left:.25rem;}
@@ -1409,7 +1411,7 @@
   .wishtray::-webkit-scrollbar{width:6px;} .wishtray::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;}
   .wcard{display:flex;flex-direction:column;gap:.18rem;text-align:left;cursor:pointer;min-width:0;
     background:none;border:1px dashed var(--line);border-radius:.7rem;padding:.5rem .7rem;
-    color:inherit;font:inherit;transition:all .15s ease;}
+    color:inherit;font:inherit;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .wcard:hover{border-style:solid;border-color:var(--accent);background:var(--surface-2);}
   .wcard .wk{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.14em;color:var(--dim);
     display:flex;align-items:center;gap:.3rem;}
@@ -1427,7 +1429,7 @@
   .fgroup:first-child{margin-top:0;}
   .fcard{display:flex;flex-direction:column;gap:.1rem;text-align:left;cursor:pointer;
     background:var(--surface);border:1px solid var(--line);border-radius:.6rem;
-    padding:.6rem .75rem;transition:all .15s ease;}
+    padding:.6rem .75rem;transition:color .15s ease,background-color .15s ease,border-color .15s ease,opacity .15s ease,box-shadow .15s ease,filter .15s ease,transform .16s var(--ease-out);}
   .fcard:hover{background:var(--surface-2);border-color:var(--muted);}
   .fcard.on{border-color:var(--accent);background:var(--surface-2);
     box-shadow:inset 0 0 0 1px var(--accent);}
@@ -1438,6 +1440,35 @@
   .monly{display:none;} body.is-widget .monly{display:flex;}
   body.is-widget .dtonly{display:none;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+
+  /* ── v9.2 움직임 다듬기 (에밀 코왈스키 규칙) ──
+     누르면 살짝 눌리고, 창·알림은 0에서 튀어나오지 않고 살짝 커지며 나타난다.
+     닫힐 때는 애니메이션 없이 바로 — 하루에 수십 번 여닫는 창이라 기다리게 하지 않는다.
+     나타나기는 [hidden] 이 풀리는 순간 @starting-style 로 잡는다 (JS 손댈 곳 없음). */
+  button{transition:transform .16s var(--ease-out);}
+  button:not(:disabled):not(.chk):not(.open):not(.wopen):not(.wchk):active{transform:scale(.97);}
+  .chk:active .box,.wchk:active .wb{transform:scale(.88);}
+  .box,.w-item .wb{transition:background-color .15s ease,border-color .15s ease,transform .16s var(--ease-out);}
+  .overlay{transition:opacity .2s var(--ease-out);}
+  .sheet{transition:opacity .2s var(--ease-out),transform .22s var(--ease-out);}
+  @starting-style{
+    .overlay{opacity:0;}
+    .sheet{opacity:0;transform:translateY(.5rem) scale(.97);}
+  }
+  .calpop{transform-origin:top left;transition:opacity .15s var(--ease-out),transform .18s var(--ease-out);}
+  @starting-style{ .calpop:not(.strpop){opacity:0;transform:scale(.96);} }
+  .sugbox{transform-origin:bottom center;transition:opacity .14s var(--ease-out),transform .16s var(--ease-out);}
+  @starting-style{ .sugbox{opacity:0;transform:scale(.97);} }
+  .toast,.finbar{transition:opacity .22s var(--ease-out),transform .26s var(--ease-out);}
+  @starting-style{ .toast,.finbar{opacity:0;transform:translate(-50%,.6rem);} }
+  /* 체크한 카드가 아래로 가거나(넓은 화면) 사라질 때(위젯) — 체크 표시를 먼저 보여주고 움직인다 */
+  .w-item.leaving,.w-hero.leaving,.task.leaving{opacity:0;transition:opacity .16s var(--ease-out) .06s;}
+  @media (prefers-reduced-motion:reduce){
+    button,.box,.w-item .wb,.box svg,.sheet,.calpop,.sugbox,.toast,.finbar{transition-property:opacity,color,background-color,border-color;}
+    button:active,.chk:active .box,.wchk:active .wb{transform:none!important;}
+    @starting-style{ .sheet{transform:none;} .calpop:not(.strpop),.sugbox{transform:none;} .toast,.finbar{transform:translateX(-50%);} }
+    .zen{animation-duration:.01s;}
+  }
 </style>
 
 <div class="wrap">
@@ -2593,13 +2624,18 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v9.1";
-  var APP_BUILD = "2026-10-21 00:20";
+  var APP_VERSION = "v9.2";
+  var APP_BUILD = "2026-10-31 10:40";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v9.2",  d:"2026-10-31", n:[
+      "체크하면 표시가 먼저 들어오고 카드가 제자리로 미끄러진다 — 예전엔 맨 아래로 순간이동했다 (지우기·연기 풀기·언젠가로 보내기도 같이)",
+      "버튼을 누르면 살짝 눌리고, 창·달력·자동완성·알림은 살짝 커지며 나타난다 (닫힐 땐 바로)",
+      "움직임 줄이기를 켜 둔 기기에서는 위치 움직임 없이 색만 바뀐다"
+    ]},
     { v:"v9.1",  d:"2026-10-21", n:[
       "회차를 범위로 — 하루에 여러 화를 했으면 '@21~67/67' 또는 상세의 '부터 ~ 현재 / 전체' 칸에 적는다",
       "체크해 둔 카드의 회차를 마지막 화까지 고치면 그 자리에서 🏁 끝냈음을 묻는다 (예전엔 체크하는 순간에만 물었다)",
@@ -2911,7 +2947,19 @@ var HOLIDAYS = {
   function markDone(it, on){
     it.done = !!on;
     if(on){ if(!it.doneAt) it.doneAt = Date.now(); } else { delete it.doneAt; }
-    save(); render();
+    save();
+    /* v9.2 — 체크 표시가 먼저 보이고(.2초) 그다음 카드가 제자리로 미끄러진다.
+       예전엔 누르는 순간 카드가 맨 아래로(위젯은 완료 칸으로) 순간이동했다. */
+    var rows = flipRowsOf(it.id);
+    if(rows.length && !reduceMotion()){
+      rows.forEach(function(r){ r.classList.toggle("done", !!on); });
+      setTimeout(function(){
+        flipArm(); render();
+        if(it.done) askFinish(it); else hideFinBar();
+      }, 200);
+      return;
+    }
+    flipArm(); render();
     if(on) askFinish(it); else hideFinBar();
   }
   function seqChip(it){
@@ -3737,6 +3785,7 @@ var HOLIDAYS = {
   /* ---------- full board rows ---------- */
   function makeRow(item, idx){
     var row = document.createElement("div");
+    row.setAttribute("data-qid", item.id);
     row.className = "task " + levelOf(item) + (item.pri ? " p" + item.pri : "") +
       (item.canceled ? " canceled" : (item.defer && !item.done ? " defer" : "")) + (item.done ? " done" : "");
     var muted = item.defer || item.canceled;
@@ -3790,10 +3839,10 @@ var HOLIDAYS = {
     row.querySelector(".open").onclick = function(){ openItemSheet(item, "edit"); };
     row.querySelector(".js-pri").onclick = function(){ item.pri = ((item.pri||0)+1)%3; save(); render(); };
     row.querySelector(".js-defer").onclick = function(){
-      if(item.defer || item.canceled){ item.defer = false; item.canceled = false; item.reason = ""; save(); render(); }
+      if(item.defer || item.canceled){ item.defer = false; item.canceled = false; item.reason = ""; save(); flipArm(); render(); }
       else openItemSheet(item, "defer");
     };
-    row.querySelector(".js-del").onclick = function(){ var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); render(); };
+    row.querySelector(".js-del").onclick = function(){ dropRow(item, row); };
     row.querySelector(".js-edit").onclick = function(){ openItemSheet(item, "edit"); };
     if(row.querySelector(".js-wish")) row.querySelector(".js-wish").onclick = function(){ quickToWish(item); };
     if(canNext(item)) row.querySelector(".nextep").onclick = function(){ makeNext(item); };
@@ -4732,10 +4781,18 @@ var HOLIDAYS = {
      날짜·시간·연기 같은 "그 날에만 뜻이 있는" 값은 떼고 담은 시각을 지금으로 새로 잡는다. */
   /* v8.9 — 카드의 ↓ 한 번으로 언젠가로. 예전엔 상세를 열어 "언젠가로" 를 눌러야 했다.
      잘못 눌렀을 때를 위해 알림에 되돌리기를 단다 — 보내기 전 모양 그대로 원래 날로 돌려놓는다. */
+  /* v9.2 — 지우는 카드는 먼저 흐려지고(.18초) 그다음 빈자리를 나머지 카드가 메운다 */
+  function dropRow(item, row){
+    function go(){ var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); flipArm(); render(); }
+    if(!row || reduceMotion()){ go(); return; }
+    row.classList.add("leaving");
+    setTimeout(go, 180);
+  }
   function quickToWish(it){
     var from = null, k;
     for(k in store.days){ if(k !== SOMEDAY && store.days[k].indexOf(it) >= 0){ from = k; break; } }
     var snap = JSON.parse(JSON.stringify(it));
+    flipArm();                               /* 빠진 자리를 나머지 카드가 미끄러져 메운다 (v9.2) */
     if(!sendToWish(it)) return;
     toast('"' + it.text + '" 을(를) 언젠가로 보냈습니다', function(){
       var a = wishes(), i = a.indexOf(it);
@@ -6010,9 +6067,9 @@ var HOLIDAYS = {
       '<button class="icon js-del" type="button" title="삭제">' + XMARK + '</button>';
     sp.querySelector(".js-pri").onclick = function(e){ e.stopPropagation(); item.pri = ((item.pri||0)+1)%3; save(); render(); };
     sp.querySelector(".js-defer").onclick = function(e){ e.stopPropagation();
-      if(item.defer || item.canceled){ item.defer = false; item.canceled = false; item.reason = ""; save(); render(); }
+      if(item.defer || item.canceled){ item.defer = false; item.canceled = false; item.reason = ""; save(); flipArm(); render(); }
       else openItemSheet(item, "defer"); };
-    sp.querySelector(".js-del").onclick = function(e){ e.stopPropagation(); var i = idxOf(item); if(i>=0) day(viewKey).splice(i,1); save(); render(); };
+    sp.querySelector(".js-del").onclick = function(e){ e.stopPropagation(); dropRow(item, sp.closest("[data-qid]")); };
     sp.querySelector(".js-edit").onclick = function(e){ e.stopPropagation(); openItemSheet(item, "edit"); };
     if(sp.querySelector(".js-wish")) sp.querySelector(".js-wish").onclick = function(e){ e.stopPropagation(); quickToWish(item); };
     return sp;
@@ -6091,6 +6148,7 @@ var HOLIDAYS = {
       var sub = r.it.defer ? "연기됨" : (st ? st.label : (r.it.pri === 2 ? "긴급" : r.it.pri === 1 ? "중요" : (viewKey === todayKey ? "지금 할 일" : "할 일")));
       if(!r.it.defer && r.it.pushed) sub = (r.it.pushed+1) + "일째 밀림 · " + sub;
       var box = document.createElement("div");
+      box.setAttribute("data-qid", r.it.id);
       box.className = "w-hero " + levelOf(r.it) + (r.it.defer ? " defer" : "");
       var btn = document.createElement("button");
       btn.type = "button"; btn.className = "hb";
@@ -6112,6 +6170,7 @@ var HOLIDAYS = {
     rs.slice(1).forEach(function(r){
       var st = statusOf(r.it);
       var row = document.createElement("div");
+      row.setAttribute("data-qid", r.it.id);
       row.className = "w-item " + levelOf(r.it) + (r.it.pri ? " p" + r.it.pri : "") + (r.it.defer ? " defer" : "");
       if(r.it.color){ row.setAttribute("data-ic",""); row.style.setProperty("--ic", r.it.color); }
       row.style.alignItems = "flex-start";
@@ -6142,6 +6201,7 @@ var HOLIDAYS = {
       list.appendChild(h2);
       arr.forEach(function(r){
         var row = document.createElement("div");
+        row.setAttribute("data-qid", r.it.id);
         row.className = "w-item " + cls + (r.it.pri ? " p" + r.it.pri : "");
         if(r.it.color){ row.setAttribute("data-ic",""); row.style.setProperty("--ic", r.it.color); }
         row.style.alignItems = "flex-start";
@@ -6232,7 +6292,44 @@ var HOLIDAYS = {
   }
 
   /* ---------- render ---------- */
+  /* ---------- v9.2 카드 자리 옮김 (FLIP) ----------
+     render() 는 목록을 통째로 다시 그린다. 그래서 그리기 전에 카드 자리를 id 로 재 두고,
+     다시 그린 뒤 새 카드를 옛 자리에서 출발시켜 미끄러지게 한다.
+     ⚠ 아무 render 에나 걸면 키보드로 적을 때도 출렁인다 — 마우스로 누른 동작에서만 flipArm() 으로 켠다.
+       켜둔 뒤 .5초 안에 render 가 안 돌면 저절로 꺼진다. */
+  var flipAt = 0, FLIP_SCOPE = "#list [data-qid], #wList [data-qid], #wHeroSlot [data-qid]";
+  function reduceMotion(){
+    try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; }
+  }
+  function flipArm(){ flipAt = Date.now(); }
+  function flipRowsOf(id){
+    return Array.prototype.filter.call(document.querySelectorAll(FLIP_SCOPE), function(el){
+      return el.getAttribute("data-qid") === id && el.offsetParent; });
+  }
+  function flipSnap(){
+    var m = {};
+    Array.prototype.forEach.call(document.querySelectorAll(FLIP_SCOPE), function(el){
+      if(el.offsetParent) m[el.getAttribute("data-qid")] = el.getBoundingClientRect();
+    });
+    return m;
+  }
+  function flipPlay(old){
+    Array.prototype.forEach.call(document.querySelectorAll(FLIP_SCOPE), function(el){
+      var o = old[el.getAttribute("data-qid")];
+      if(!o || !el.offsetParent || !el.animate) return;
+      var n = el.getBoundingClientRect(), dx = o.left - n.left, dy = o.top - n.top;
+      if(Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      el.animate([{ transform:"translate(" + dx + "px," + dy + "px)" }, { transform:"none" }],
+        { duration:260, easing:"cubic-bezier(0.77,0,0.175,1)" });
+    });
+  }
   function render(){
+    var snap = (Date.now() - flipAt < 500 && !reduceMotion()) ? flipSnap() : null;
+    flipAt = 0;
+    renderAll();
+    if(snap) flipPlay(snap);
+  }
+  function renderAll(){
     mnPaintBtn();                    /* 위젯 모드에서도 갱신되게 맨 앞에서 부른다 */
     if(document.body.classList.contains("is-widget")){ renderWidget(); return; }
     var items = day(viewKey);
