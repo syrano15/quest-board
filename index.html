@@ -21,7 +21,7 @@
     --ease-out:cubic-bezier(0.23,1,0.32,1); --ease-in-out:cubic-bezier(0.77,0,0.175,1);
     --ink:#0B0F14; --panel:#10161D; --surface:#151C25; --surface-2:#1B242F;
     --line:#26313E; --line-soft:#1E2731;
-    --text:#E9EEF5; --muted:#7C8B9E; --dim:#4C5A6B;
+    --text:#E9EEF5; --muted:#9CAABB; --dim:#7E8C9F;   /* v9.3 대비 4.5:1 맞춤 (전 #7C8B9E / #4C5A6B) */
     --accent:#E8A33D; --accent-dim:#8A6224; --on-accent:var(--on-accent);
     --urgent:#E0655F; --urgent-dim:#7A2F2C;
     --defer:#6E82A0; --defer-dim:#39485C;
@@ -33,7 +33,7 @@
   body.light{
     --ink:#EAEEF3; --panel:#FFFFFF; --surface:#F1F4F8; --surface-2:#FFFFFF;
     --line:#CFD7E1; --line-soft:#E3E8EF;
-    --text:#17202B; --muted:#546373; --dim:#8896A6;
+    --text:#17202B; --muted:#44515E; --dim:#5E6B79;   /* v9.3 대비 4.5:1 맞춤 (전 #546373 / #8896A6) */
     --accent:#8A5805; --accent-dim:#96620A; --on-accent:#FFFFFF;
     --urgent:#C0392E; --urgent-dim:#E0A79F;
     --defer:#4E627E; --defer-dim:#AEBBCC;
@@ -843,7 +843,7 @@
   .profbtn:hover{background:var(--accent);color:var(--ink);}
   .profbtn .dot{width:.6rem;height:.6rem;border-radius:99px;background:var(--on-accent);flex:none;opacity:.9;}
   .profbtn:hover .dot{background:var(--ink);}
-  .profbtn .sw{margin-left:auto;font-size:.74rem;font-weight:600;opacity:.75;letter-spacing:.04em;
+  .profbtn .sw{margin-left:auto;font-size:max(.74rem,12px);font-weight:600;letter-spacing:.04em;
     border:1px solid currentColor;border-radius:.3rem;padding:.02rem .34rem;}
   .w-prof{background:var(--accent-dim);color:var(--on-accent);border:none;border-radius:5px;
     font-size:10px;font-weight:700;padding:2px 6px;cursor:pointer;flex:none;letter-spacing:.02em;}
@@ -1440,6 +1440,14 @@
   .monly{display:none;} body.is-widget .monly{display:flex;}
   body.is-widget .dtonly{display:none;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+  /* v9.3 작은 글자 하한 — 넓은 화면에서 rem 이 작아져도 12px 밑으로 내려가지 않게 */
+  .eyebrow{font-size:max(.72rem,12px);} .today-chip{font-size:max(.62rem,11px);}
+  .who{font-size:max(.75rem,12px);} .ver{font-size:max(.68rem,11px);}
+  .linkbtn{font-size:max(.74rem,12px);} .habits .hh{font-size:max(.66rem,11px);}
+  .sheet:focus{outline:none;}
+  /* v9.3 라이트 테마 요일색 — 어두운 바탕용 빨강·파랑이 흰 바탕에서 흐려서 진하게 */
+  body.light #dowLine.sun,body.light .dow .sun,body.light .w-datebtn .sun,body.light .cal-d.sun,body.light .zdate span.sun{color:#C0392E;}
+  body.light .cal-d.sat,body.light .w-datebtn .sat,body.light .zdate span.sat{color:#1D6FD0;}
 
   /* ── v9.2 움직임 다듬기 (에밀 코왈스키 규칙) ──
      누르면 살짝 눌리고, 창·알림은 0에서 튀어나오지 않고 살짝 커지며 나타난다.
@@ -1532,7 +1540,7 @@
   </aside>
 
   <main class="board">
-    <div class="banner warn" id="tagBanner" hidden>
+    <div class="banner" id="tagBanner" hidden>
       <p id="tagText"></p>
       <button class="primary" id="tagFixBtn" type="button">태그 채우기</button>
       <button class="icon" id="tagDismiss" type="button" aria-label="닫기">
@@ -2384,7 +2392,7 @@
 </div>
 
 <div class="finbar" id="finBar" role="status" hidden></div>
-<div class="toast" id="toast" hidden><p id="toastText"></p><button type="button" id="toastGo">보기</button></div>
+<div class="toast" id="toast" hidden><p id="toastText" role="status" aria-live="polite"></p><button type="button" id="toastGo">보기</button></div>
 
 <div class="overlay" id="itemOverlay" hidden>
   <div class="sheet">
@@ -2624,13 +2632,19 @@
     try{ return (localStorage.getItem(WHO_KEY + p) || "").trim(); }catch(e){ return ""; }
   }
   function whoName(p){ return whoOverride(p) || PROFILES[p].who; }
-  var APP_VERSION = "v9.2";
-  var APP_BUILD = "2026-10-31 10:40";
+  var APP_VERSION = "v9.3";
+  var APP_BUILD = "2026-11-01 01:50";
   var VER_KEY = "questboard:ver";
   /* ---------- 업데이트 기록 ----------
      한 줄씩만 적는다. 무엇이 왜 바뀌었는지 나중에 훑어보는 용도지 문서가 아니다.
      날짜는 그 버전을 만든 날. 이 기기가 언제 올렸는지는 questboard:verlog 에 따로 쌓인다. */
   var CHANGES = [
+    { v:"v9.3",  d:"2026-11-01", n:[
+      "흐린 글자(보조 설명·날짜·카운트)를 조금 밝혀서 어두운 배경에서도 읽히게 했다 — 라이트 테마도 같이",
+      "창이 열리면 키보드 포커스가 창 안으로 들어가고, 닫으면 누르던 버튼으로 돌아온다",
+      "'태그가 비어 있다' 알림을 빨강 대신 기본 색으로 — 빨강은 급한 일에만",
+      "넓은 화면에서 작은 라벨이 12px 아래로 내려가지 않게 했다"
+    ]},
     { v:"v9.2",  d:"2026-10-31", n:[
       "체크하면 표시가 먼저 들어오고 카드가 제자리로 미끄러진다 — 예전엔 맨 아래로 순간이동했다 (지우기·연기 풀기·언젠가로 보내기도 같이)",
       "버튼을 누르면 살짝 눌리고, 창·달력·자동완성·알림은 살짝 커지며 나타난다 (닫힐 땐 바로)",
@@ -10574,6 +10588,62 @@ if("serviceWorker" in navigator){
   /* addEventListener 로 받을 때는 이걸 불러줘야 밀린 메시지가 전달된다 (표준 규정) */
   if(navigator.serviceWorker.startMessages) navigator.serviceWorker.startMessages();
 }
+</script>
+<script>
+/* v9.3 창(오버레이) 접근성
+   창이 열리면: 창 안으로 포커스를 옮기고, 뒤 화면은 inert 로 막아 Tab 이 뒤로 새지 않게 한다.
+   창이 닫히면: 열기 전에 누르던 버튼으로 포커스를 돌려준다. 창이 겹치면 맨 위 창만 살아 있다.
+   각 창을 여닫는 기존 코드는 손대지 않는다 — [hidden] 이 바뀌는 것만 지켜본다. */
+(function(){
+  var overlays = [].slice.call(document.querySelectorAll("body > .overlay"));
+  var keep = { toast:1, finBar:1, calPop:1, syncDot:1, bgLayer:1, bgDim:1 };
+  var stack = [];
+  function sync(){
+    var top = stack.length ? stack[stack.length - 1].el : null;
+    [].forEach.call(document.body.children, function(c){
+      if(c.tagName === "SCRIPT" || keep[c.id]) return;
+      c.inert = !!top && c !== top;
+    });
+  }
+  function prep(ov){
+    var sh = ov.querySelector(".sheet") || ov;
+    sh.setAttribute("role", "dialog");
+    sh.setAttribute("aria-modal", "true");
+    var h = sh.querySelector("h2, h3");
+    if(h){ if(!h.id) h.id = ov.id + "Title"; sh.setAttribute("aria-labelledby", h.id); }
+    if(!sh.hasAttribute("tabindex")) sh.setAttribute("tabindex", "-1");
+    return sh;
+  }
+  function opened(ov){
+    if(stack.some(function(s){ return s.el === ov; })) return;
+    stack.push({ el: ov, ret: document.activeElement });
+    var sh = prep(ov);
+    sync();
+    /* 기존 코드가 입력칸에 포커스를 줬으면 그대로 둔다. 아니면 창 자체에 (모바일 키보드가 튀어나오지 않게) */
+    requestAnimationFrame(function(){
+      if(ov.hidden || ov.contains(document.activeElement)) return;
+      try{ sh.focus({ preventScroll: true }); }catch(e){}
+    });
+  }
+  function closed(ov){
+    var i = -1;
+    stack.forEach(function(s, k){ if(s.el === ov) i = k; });
+    if(i < 0) return;
+    var r = stack.splice(i, 1)[0];
+    sync();
+    var t = r.ret;
+    if(t && t !== document.body && document.contains(t) && !t.closest("[inert]") && !t.closest("[hidden]")){
+      try{ t.focus({ preventScroll: true }); }catch(e){}
+    }
+  }
+  var mo = new MutationObserver(function(list){
+    list.forEach(function(m){ var ov = m.target; if(ov.hidden) closed(ov); else opened(ov); });
+  });
+  overlays.forEach(function(ov){
+    mo.observe(ov, { attributes: true, attributeFilter: ["hidden"] });
+    if(!ov.hidden) opened(ov);
+  });
+})();
 </script>
 </body>
 </html>
