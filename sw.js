@@ -19,7 +19,7 @@ var CACHE = "questboard-shell";           /* 앱 파일 */
 var FONTS = "questboard-fonts";           /* 글꼴 — 버전과 무관하게 오래 남긴다 */
 var SHELL = "./index.html";
 var ASSETS = ["./", "./index.html", "./manifest.json",
-              "./icon-192.png", "./icon-512.png", "./icon-512-maskable.png"];
+              "./icon-192.png", "./icon-512.png", "./icon-512-maskable-v2.png"];
 
 function putSafe(cacheName, req, res){
   try{
